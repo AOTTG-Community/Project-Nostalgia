@@ -21,9 +21,6 @@
     <Reference Include="Boo.Lang, Version=2.0.9.5, Culture=neutral, PublicKeyToken=32c39770e9a21a67">
       <HintPath>..\Resources\Boo.Lang.dll</HintPath>
     </Reference>
-    <Reference Include="Photon3Unity3D, Version=4.0.0.4, Culture=neutral, PublicKeyToken=null">
-      <HintPath>..\Resources\Photon3Unity3D.dll</HintPath>
-    </Reference>
     <Reference Include="UnityEngine, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null">
       <HintPath>..\Resources\UnityEngine.dll</HintPath>
     </Reference>
@@ -33,5 +30,9 @@
     <Reference Include="UnityScript.Lang, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
       <HintPath>..\Resources\UnityScript.Lang.dll</HintPath>
     </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Photon3Unity3D\Photon3Unity3D.csproj" />
   </ItemGroup>
 </Project>
