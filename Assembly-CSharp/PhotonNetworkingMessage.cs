@@ -1,4 +1,6 @@
-﻿public enum PhotonNetworkingMessage
+using System;
+
+public enum PhotonNetworkingMessage
 {
     OnConnectedToPhoton,
     OnLeftRoom,
@@ -26,3 +28,4 @@
     OnCustomAuthenticationFailed,
     OnWebRpcResponse
 }
+

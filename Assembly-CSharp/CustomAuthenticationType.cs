@@ -1,7 +1,10 @@
-﻿public enum CustomAuthenticationType : byte
+using System;
+
+public enum CustomAuthenticationType : byte
 {
-    Custom,
-    Steam,
-    Facebook,
-    None = 255
+    Custom = 0,
+    Facebook = 2,
+    None = 0xff,
+    Steam = 1
 }
+

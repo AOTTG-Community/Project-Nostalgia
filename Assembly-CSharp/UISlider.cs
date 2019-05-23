@@ -1,79 +1,38 @@
-﻿using Optimization.Caching;
 using System;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 [AddComponentMenu("NGUI/Interaction/Slider")]
 public class UISlider : IgnoreTimeScale
 {
-    private Vector2 mCenter = Vectors.zero;
+    public static UISlider current;
+    public Direction direction;
+    public GameObject eventReceiver;
+    public Transform foreground;
+    public string functionName = "OnSliderChange";
+    private Vector2 mCenter = Vector3.zero;
     private BoxCollider mCol;
     private UISprite mFGFilled;
     private Transform mFGTrans;
     private UIWidget mFGWidget;
     private bool mInitDone;
-    private Vector2 mSize = Vectors.v2zero;
+    private Vector2 mSize = Vector2.zero;
     private Transform mTrans;
-
-    [SerializeField]
-    [HideInInspector]
-    private float rawValue = 1f;
-
-    public static UISlider current;
-
-    public UISlider.Direction direction;
-    public GameObject eventReceiver;
-    public Transform foreground;
-
-    public string functionName = "OnSliderChange";
     public int numberOfSteps;
-    public UISlider.OnValueChange onValueChange;
+    public OnValueChange onValueChange;
+    [SerializeField, HideInInspector]
+    private float rawValue = 1f;
     public Transform thumb;
-
-    public delegate void OnValueChange(float val);
-
-    public enum Direction
-    {
-        Horizontal,
-        Vertical
-    }
-
-    public Vector2 fullSize
-    {
-        get
-        {
-            return this.mSize;
-        }
-        set
-        {
-            if (this.mSize != value)
-            {
-                this.mSize = value;
-                this.ForceUpdate();
-            }
-        }
-    }
-
-    public float sliderValue
-    {
-        get
-        {
-            float num = this.rawValue;
-            if (this.numberOfSteps > 1)
-            {
-                num = Mathf.Round(num * (float)(this.numberOfSteps - 1)) / (float)(this.numberOfSteps - 1);
-            }
-            return num;
-        }
-        set
-        {
-            this.Set(value, false);
-        }
-    }
 
     private void Awake()
     {
         this.mTrans = base.transform;
-        this.mCol = (base.collider as BoxCollider);
+        this.mCol = base.collider as BoxCollider;
+    }
+
+    public void ForceUpdate()
+    {
+        this.Set(this.rawValue, true);
     }
 
     private void Init()
@@ -82,24 +41,24 @@ public class UISlider : IgnoreTimeScale
         if (this.foreground != null)
         {
             this.mFGWidget = this.foreground.GetComponent<UIWidget>();
-            this.mFGFilled = ((!(this.mFGWidget != null)) ? null : (this.mFGWidget as UISprite));
+            this.mFGFilled = (this.mFGWidget == null) ? null : (this.mFGWidget as UISprite);
             this.mFGTrans = this.foreground.transform;
-            if (this.mSize == Vectors.v2zero)
+            if (this.mSize == Vector2.zero)
             {
                 this.mSize = this.foreground.localScale;
             }
-            if (this.mCenter == Vectors.v2zero)
+            if (this.mCenter == Vector2.zero)
             {
-                this.mCenter = this.foreground.localPosition + this.foreground.localScale * 0.5f;
+                this.mCenter = (Vector2) (this.foreground.localPosition + (this.foreground.localScale * 0.5f));
             }
         }
         else if (this.mCol != null)
         {
-            if (this.mSize == Vectors.v2zero)
+            if (this.mSize == Vector2.zero)
             {
                 this.mSize = this.mCol.size;
             }
-            if (this.mCenter == Vectors.v2zero)
+            if (this.mCenter == Vector2.zero)
             {
                 this.mCenter = this.mCol.center;
             }
@@ -122,8 +81,8 @@ public class UISlider : IgnoreTimeScale
 
     private void OnKey(KeyCode key)
     {
-        float num = ((float)this.numberOfSteps <= 1f) ? 0.125f : (1f / (float)(this.numberOfSteps - 1));
-        if (this.direction == UISlider.Direction.Horizontal)
+        float num = (this.numberOfSteps <= 1f) ? 0.125f : (1f / ((float) (this.numberOfSteps - 1)));
+        if (this.direction == Direction.Horizontal)
         {
             if (key == KeyCode.LeftArrow)
             {
@@ -146,7 +105,7 @@ public class UISlider : IgnoreTimeScale
 
     private void OnPress(bool pressed)
     {
-        if (pressed && UICamera.currentTouchID != -100)
+        if (pressed && (UICamera.currentTouchID != -100))
         {
             this.UpdateDrag();
         }
@@ -173,28 +132,28 @@ public class UISlider : IgnoreTimeScale
         }
         float sliderValue = this.sliderValue;
         this.rawValue = num;
-        float sliderValue2 = this.sliderValue;
-        if (force || sliderValue != sliderValue2)
+        float num3 = this.sliderValue;
+        if (force || (sliderValue != num3))
         {
-            Vector3 localScale = this.mSize;
-            if (this.direction == UISlider.Direction.Horizontal)
+            Vector3 mSize = (Vector3) this.mSize;
+            if (this.direction == Direction.Horizontal)
             {
-                localScale.x *= sliderValue2;
+                mSize.x *= num3;
             }
             else
             {
-                localScale.y *= sliderValue2;
+                mSize.y *= num3;
             }
-            if (this.mFGFilled != null && this.mFGFilled.type == UISprite.Type.Filled)
+            if ((this.mFGFilled != null) && (this.mFGFilled.type == UISprite.Type.Filled))
             {
-                this.mFGFilled.fillAmount = sliderValue2;
+                this.mFGFilled.fillAmount = num3;
             }
             else if (this.foreground != null)
             {
-                this.mFGTrans.localScale = localScale;
+                this.mFGTrans.localScale = mSize;
                 if (this.mFGWidget != null)
                 {
-                    if (sliderValue2 > 0.001f)
+                    if (num3 > 0.001f)
                     {
                         this.mFGWidget.enabled = true;
                         this.mFGWidget.MarkAsChanged();
@@ -208,81 +167,113 @@ public class UISlider : IgnoreTimeScale
             if (this.thumb != null)
             {
                 Vector3 localPosition = this.thumb.localPosition;
-                if (this.mFGFilled != null && this.mFGFilled.type == UISprite.Type.Filled)
+                if ((this.mFGFilled != null) && (this.mFGFilled.type == UISprite.Type.Filled))
                 {
                     if (this.mFGFilled.fillDirection == UISprite.FillDirection.Horizontal)
                     {
-                        localPosition.x = ((!this.mFGFilled.invert) ? localScale.x : (this.mSize.x - localScale.x));
+                        localPosition.x = !this.mFGFilled.invert ? mSize.x : (this.mSize.x - mSize.x);
                     }
                     else if (this.mFGFilled.fillDirection == UISprite.FillDirection.Vertical)
                     {
-                        localPosition.y = ((!this.mFGFilled.invert) ? localScale.y : (this.mSize.y - localScale.y));
+                        localPosition.y = !this.mFGFilled.invert ? mSize.y : (this.mSize.y - mSize.y);
                     }
                     else
                     {
                         Debug.LogWarning("Slider thumb is only supported with Horizontal or Vertical fill direction", this);
                     }
                 }
-                else if (this.direction == UISlider.Direction.Horizontal)
+                else if (this.direction == Direction.Horizontal)
                 {
-                    localPosition.x = localScale.x;
+                    localPosition.x = mSize.x;
                 }
                 else
                 {
-                    localPosition.y = localScale.y;
+                    localPosition.y = mSize.y;
                 }
                 this.thumb.localPosition = localPosition;
             }
-            UISlider.current = this;
-            if (this.eventReceiver != null && !string.IsNullOrEmpty(this.functionName) && Application.isPlaying)
+            current = this;
+            if (((this.eventReceiver != null) && !string.IsNullOrEmpty(this.functionName)) && Application.isPlaying)
             {
-                this.eventReceiver.SendMessage(this.functionName, sliderValue2, SendMessageOptions.DontRequireReceiver);
+                this.eventReceiver.SendMessage(this.functionName, num3, SendMessageOptions.DontRequireReceiver);
             }
             if (this.onValueChange != null)
             {
-                this.onValueChange(sliderValue2);
+                this.onValueChange(num3);
             }
-            UISlider.current = null;
+            current = null;
         }
     }
 
     private void Start()
     {
         this.Init();
-        if (Application.isPlaying && this.thumb != null && this.thumb.collider != null)
+        if ((Application.isPlaying && (this.thumb != null)) && (this.thumb.collider != null))
         {
-            UIEventListener uieventListener = UIEventListener.Get(this.thumb.gameObject);
-            UIEventListener uieventListener2 = uieventListener;
-            uieventListener2.onPress = (UIEventListener.BoolDelegate)Delegate.Combine(uieventListener2.onPress, new UIEventListener.BoolDelegate(this.OnPressThumb));
-            UIEventListener uieventListener3 = uieventListener;
-            uieventListener3.onDrag = (UIEventListener.VectorDelegate)Delegate.Combine(uieventListener3.onDrag, new UIEventListener.VectorDelegate(this.OnDragThumb));
+            UIEventListener listener = UIEventListener.Get(this.thumb.gameObject);
+            listener.onPress = (UIEventListener.BoolDelegate) Delegate.Combine(listener.onPress, new UIEventListener.BoolDelegate(this.OnPressThumb));
+            listener.onDrag = (UIEventListener.VectorDelegate) Delegate.Combine(listener.onDrag, new UIEventListener.VectorDelegate(this.OnDragThumb));
         }
         this.Set(this.rawValue, true);
     }
 
     private void UpdateDrag()
     {
-        if (this.mCol == null || UICamera.currentCamera == null || UICamera.currentTouch == null)
+        if (((this.mCol != null) && (UICamera.currentCamera != null)) && (UICamera.currentTouch != null))
         {
-            return;
+            float num;
+            UICamera.currentTouch.clickNotification = UICamera.ClickNotification.None;
+            Ray ray = UICamera.currentCamera.ScreenPointToRay((Vector3) UICamera.currentTouch.pos);
+            Plane plane = new Plane((Vector3) (this.mTrans.rotation * Vector3.back), this.mTrans.position);
+            if (plane.Raycast(ray, out num))
+            {
+                Vector3 vector = this.mTrans.localPosition + ((Vector3) (this.mCenter - (this.mSize * 0.5f)));
+                Vector3 vector2 = this.mTrans.localPosition - vector;
+                Vector3 vector4 = this.mTrans.InverseTransformPoint(ray.GetPoint(num)) + vector2;
+                this.Set((this.direction != Direction.Horizontal) ? (vector4.y / this.mSize.y) : (vector4.x / this.mSize.x), false);
+            }
         }
-        UICamera.currentTouch.clickNotification = UICamera.ClickNotification.None;
-        Ray ray = UICamera.currentCamera.ScreenPointToRay(UICamera.currentTouch.pos);
-        Plane plane = new Plane(this.mTrans.rotation * Vectors.back, this.mTrans.position);
-        float distance;
-        if (!plane.Raycast(ray, out distance))
-        {
-            return;
-        }
-        Vector3 b = this.mTrans.localPosition + (Vector3)(this.mCenter - this.mSize * 0.5f);
-        Vector3 b2 = this.mTrans.localPosition - b;
-        Vector3 a = this.mTrans.InverseTransformPoint(ray.GetPoint(distance));
-        Vector3 vector = a + b2;
-        this.Set((this.direction != UISlider.Direction.Horizontal) ? (vector.y / this.mSize.y) : (vector.x / this.mSize.x), false);
     }
 
-    public void ForceUpdate()
+    public Vector2 fullSize
     {
-        this.Set(this.rawValue, true);
+        get
+        {
+            return this.mSize;
+        }
+        set
+        {
+            if (this.mSize != value)
+            {
+                this.mSize = value;
+                this.ForceUpdate();
+            }
+        }
     }
+
+    public float sliderValue
+    {
+        get
+        {
+            float rawValue = this.rawValue;
+            if (this.numberOfSteps > 1)
+            {
+                rawValue = Mathf.Round(rawValue * (this.numberOfSteps - 1)) / ((float) (this.numberOfSteps - 1));
+            }
+            return rawValue;
+        }
+        set
+        {
+            this.Set(value, false);
+        }
+    }
+
+    public enum Direction
+    {
+        Horizontal,
+        Vertical
+    }
+
+    public delegate void OnValueChange(float val);
 }
+

@@ -1,30 +1,25 @@
-﻿using Optimization.Caching;
+using System;
 using UnityEngine;
 
 public class MovementUpdate : MonoBehaviour
 {
+    public bool disabled;
     private Vector3 lastPosition;
     private Quaternion lastRotation;
     private Vector3 lastVelocity;
     private Vector3 targetPosition;
-    public bool disabled;
 
     private void Start()
     {
-        if (IN_GAME_MAIN_CAMERA.GameType == GameType.Single)
+        if (IN_GAME_MAIN_CAMERA.gametype == GAMETYPE.SINGLE)
         {
             this.disabled = true;
             base.enabled = false;
         }
         else if (base.networkView.isMine)
         {
-            base.networkView.RPC("updateMovement", RPCMode.OthersBuffered, new object[]
-            {
-                base.transform.position,
-                base.transform.rotation,
-                base.transform.localScale,
-                Vectors.zero
-            });
+            object[] args = new object[] { base.transform.position, base.transform.rotation, base.transform.localScale, Vector3.zero };
+            base.networkView.RPC("updateMovement", RPCMode.OthersBuffered, args);
         }
         else
         {
@@ -34,57 +29,33 @@ public class MovementUpdate : MonoBehaviour
 
     private void Update()
     {
-        if (this.disabled)
+        if ((!this.disabled && (Network.peerType != NetworkPeerType.Disconnected)) && (Network.peerType != NetworkPeerType.Connecting))
         {
-            return;
-        }
-        if (Network.peerType == NetworkPeerType.Disconnected)
-        {
-            return;
-        }
-        if (Network.peerType == NetworkPeerType.Connecting)
-        {
-            return;
-        }
-        if (base.networkView.isMine)
-        {
-            if (Vector3.Distance(base.transform.position, this.lastPosition) >= 0.5f)
+            if (base.networkView.isMine)
             {
-                this.lastPosition = base.transform.position;
-                base.networkView.RPC("updateMovement", RPCMode.Others, new object[]
+                if (Vector3.Distance(base.transform.position, this.lastPosition) >= 0.5f)
                 {
-                    base.transform.position,
-                    base.transform.rotation,
-                    base.transform.localScale,
-                    base.rigidbody.velocity
-                });
+                    this.lastPosition = base.transform.position;
+                    object[] args = new object[] { base.transform.position, base.transform.rotation, base.transform.localScale, base.rigidbody.velocity };
+                    base.networkView.RPC("updateMovement", RPCMode.Others, args);
+                }
+                else if (Vector3.Distance(base.transform.rigidbody.velocity, this.lastVelocity) >= 0.1f)
+                {
+                    this.lastVelocity = base.transform.rigidbody.velocity;
+                    object[] objArray2 = new object[] { base.transform.position, base.transform.rotation, base.transform.localScale, base.rigidbody.velocity };
+                    base.networkView.RPC("updateMovement", RPCMode.Others, objArray2);
+                }
+                else if (Quaternion.Angle(base.transform.rotation, this.lastRotation) >= 1f)
+                {
+                    this.lastRotation = base.transform.rotation;
+                    object[] objArray3 = new object[] { base.transform.position, base.transform.rotation, base.transform.localScale, base.rigidbody.velocity };
+                    base.networkView.RPC("updateMovement", RPCMode.Others, objArray3);
+                }
             }
-            else if (Vector3.Distance(base.transform.rigidbody.velocity, this.lastVelocity) >= 0.1f)
+            else
             {
-                this.lastVelocity = base.transform.rigidbody.velocity;
-                base.networkView.RPC("updateMovement", RPCMode.Others, new object[]
-                {
-                    base.transform.position,
-                    base.transform.rotation,
-                    base.transform.localScale,
-                    base.rigidbody.velocity
-                });
+                base.transform.position = Vector3.Slerp(base.transform.position, this.targetPosition, Time.deltaTime * 2f);
             }
-            else if (Quaternion.Angle(base.transform.rotation, this.lastRotation) >= 1f)
-            {
-                this.lastRotation = base.transform.rotation;
-                base.networkView.RPC("updateMovement", RPCMode.Others, new object[]
-                {
-                    base.transform.position,
-                    base.transform.rotation,
-                    base.transform.localScale,
-                    base.rigidbody.velocity
-                });
-            }
-        }
-        else
-        {
-            base.transform.position = Vector3.Slerp(base.transform.position, this.targetPosition, Time.deltaTime * 2f);
         }
     }
 
@@ -97,3 +68,4 @@ public class MovementUpdate : MonoBehaviour
         base.rigidbody.velocity = veloctiy;
     }
 }
+

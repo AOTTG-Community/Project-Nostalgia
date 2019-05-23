@@ -1,4 +1,4 @@
-﻿using Optimization.Caching;
+using System;
 using UnityEngine;
 
 public class EffectController : MonoBehaviour
@@ -6,30 +6,35 @@ public class EffectController : MonoBehaviour
     protected XffectCache EffectCache;
     public Transform ObjectCache;
 
+    protected Vector3 GetFaceDirection()
+    {
+        return base.transform.TransformDirection(Vector3.forward);
+    }
+
     private void OnEffect(string eftname)
     {
+        Xffect component;
         if (eftname == "lightning")
         {
             for (int i = 0; i < 9; i++)
             {
-                Xffect component = this.EffectCache.GetObject(eftname).GetComponent<Xffect>();
-                Vector3 zero = Vectors.zero;
-                zero.x = UnityEngine.Random.Range(-2.2f, 2.3f);
-                zero.z = UnityEngine.Random.Range(-2.1f, 2.1f);
+                component = this.EffectCache.GetObject(eftname).GetComponent<Xffect>();
+                Vector3 zero = Vector3.zero;
+                zero.x = UnityEngine.Random.Range((float) -2.2f, (float) 2.3f);
+                zero.z = UnityEngine.Random.Range((float) -2.1f, (float) 2.1f);
                 component.SetEmitPosition(zero);
                 component.Active();
             }
         }
         else if (eftname == "cyclone")
         {
-            Xffect component = this.EffectCache.GetObject(eftname).GetComponent<Xffect>();
+            component = this.EffectCache.GetObject(eftname).GetComponent<Xffect>();
             component.SetDirectionAxis(this.GetFaceDirection().normalized);
             component.Active();
         }
         else if (eftname == "crystal")
         {
-            Xffect component = this.EffectCache.GetObject("crystal_surround").GetComponent<Xffect>();
-            component.Active();
+            this.EffectCache.GetObject("crystal_surround").GetComponent<Xffect>().Active();
             component = this.EffectCache.GetObject("crystal").GetComponent<Xffect>();
             component.SetEmitPosition(new Vector3(0f, 1.9f, 1.4f));
             component.Active();
@@ -45,8 +50,7 @@ public class EffectController : MonoBehaviour
         }
         else
         {
-            Xffect component = this.EffectCache.GetObject(eftname).GetComponent<Xffect>();
-            component.Active();
+            this.EffectCache.GetObject(eftname).GetComponent<Xffect>().Active();
         }
     }
 
@@ -92,9 +96,5 @@ public class EffectController : MonoBehaviour
     {
         this.EffectCache = this.ObjectCache.GetComponent<XffectCache>();
     }
-
-    protected Vector3 GetFaceDirection()
-    {
-        return base.transform.TransformDirection(Vectors.forward);
-    }
 }
+

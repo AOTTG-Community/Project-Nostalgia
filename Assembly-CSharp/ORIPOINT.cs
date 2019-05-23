@@ -1,4 +1,6 @@
-﻿public enum ORIPOINT
+using System;
+
+public enum ORIPOINT
 {
     CENTER,
     LEFT_UP,
@@ -10,3 +12,4 @@
     LEFT_CENTER,
     RIGHT_CENTER
 }
+

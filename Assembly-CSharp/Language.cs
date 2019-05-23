@@ -1,453 +1,447 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 public class Language
 {
-    public static string[] abnormal = new string[25];
-    public static string[] btn_back = new string[25];
-    public static string[] btn_continue = new string[25];
-    public static string[] btn_create_game = new string[25];
-    public static string[] btn_credits = new string[25];
-    public static string[] btn_default = new string[25];
-    public static string[] btn_join = new string[25];
-    public static string[] btn_LAN = new string[25];
-    public static string[] btn_multiplayer = new string[25];
-    public static string[] btn_option = new string[25];
-    public static string[] btn_QUICK_MATCH = new string[25];
-    public static string[] btn_quit = new string[25];
-    public static string[] btn_ready = new string[25];
-    public static string[] btn_refresh = new string[25];
-    public static string[] btn_server_ASIA = new string[25];
-    public static string[] btn_server_EU = new string[25];
-    public static string[] btn_server_JAPAN = new string[25];
-    public static string[] btn_server_US = new string[25];
-    public static string[] btn_single = new string[25];
-    public static string[] btn_start = new string[25];
-    public static string[] camera_info = new string[25];
-    public static string[] camera_original = new string[25];
-    public static string[] camera_tilt = new string[25];
-    public static string[] camera_tps = new string[25];
-    public static string[] camera_type = new string[25];
-    public static string[] camera_wow = new string[25];
-    public static string[] change_quality = new string[25];
-    public static string[] choose_character = new string[25];
-    public static string[] choose_map = new string[25];
-    public static string[] choose_region_server = new string[25];
-    public static string[] difficulty = new string[25];
-    public static string[] game_time = new string[25];
-    public static string[] hard = new string[25];
-    public static string[] invert_mouse = new string[25];
-    public static string[] key_set_info_1 = new string[25];
-    public static string[] key_set_info_2 = new string[25];
-    public static string[] max_player = new string[25];
-    public static string[] max_Time = new string[25];
-    public static string[] mouse_sensitivity = new string[25];
-    public static string[] normal = new string[25];
-    public static string[] port = new string[25];
-    public static string[] select_titan = new string[25];
-    public static string[] server_ip = new string[25];
-    public static string[] server_name = new string[25];
-    public static string[] soldier = new string[25];
-    public static string[] titan = new string[25];
+    public static string[] abnormal = new string[0x19];
+    public static string[] btn_back = new string[0x19];
+    public static string[] btn_continue = new string[0x19];
+    public static string[] btn_create_game = new string[0x19];
+    public static string[] btn_credits = new string[0x19];
+    public static string[] btn_default = new string[0x19];
+    public static string[] btn_join = new string[0x19];
+    public static string[] btn_LAN = new string[0x19];
+    public static string[] btn_multiplayer = new string[0x19];
+    public static string[] btn_option = new string[0x19];
+    public static string[] btn_QUICK_MATCH = new string[0x19];
+    public static string[] btn_quit = new string[0x19];
+    public static string[] btn_ready = new string[0x19];
+    public static string[] btn_refresh = new string[0x19];
+    public static string[] btn_server_ASIA = new string[0x19];
+    public static string[] btn_server_EU = new string[0x19];
+    public static string[] btn_server_JAPAN = new string[0x19];
+    public static string[] btn_server_US = new string[0x19];
+    public static string[] btn_single = new string[0x19];
+    public static string[] btn_start = new string[0x19];
+    public static string[] camera_info = new string[0x19];
+    public static string[] camera_original = new string[0x19];
+    public static string[] camera_tilt = new string[0x19];
+    public static string[] camera_tps = new string[0x19];
+    public static string[] camera_type = new string[0x19];
+    public static string[] camera_wow = new string[0x19];
+    public static string[] change_quality = new string[0x19];
+    public static string[] choose_character = new string[0x19];
+    public static string[] choose_map = new string[0x19];
+    public static string[] choose_region_server = new string[0x19];
+    public static string[] difficulty = new string[0x19];
+    public static string[] game_time = new string[0x19];
+    public static string[] hard = new string[0x19];
+    public static string[] invert_mouse = new string[0x19];
+    public static string[] key_set_info_1 = new string[0x19];
+    public static string[] key_set_info_2 = new string[0x19];
+    public static string[] max_player = new string[0x19];
+    public static string[] max_Time = new string[0x19];
+    public static string[] mouse_sensitivity = new string[0x19];
+    public static string[] normal = new string[0x19];
+    public static string[] port = new string[0x19];
+    public static string[] select_titan = new string[0x19];
+    public static string[] server_ip = new string[0x19];
+    public static string[] server_name = new string[0x19];
+    public static string[] soldier = new string[0x19];
+    public static string[] titan = new string[0x19];
     public static int type = -1;
-    public static string[] waiting_for_input = new string[25];
+    public static string[] waiting_for_input = new string[0x19];
 
     public static string GetLang(int id)
     {
-        if (id == 0)
+        if (id != 0)
         {
-            return "ENGLISH";
-        }
-        if (id == 1)
-        {
-            return "简体中文";
-        }
-        if (id == 2)
-        {
-            return "SPANISH";
-        }
-        if (id == 3)
-        {
-            return "POLSKI";
-        }
-        if (id == 4)
-        {
-            return "ITALIANO";
-        }
-        if (id == 5)
-        {
-            return "NORWEGIAN";
-        }
-        if (id == 6)
-        {
-            return "PORTUGUESE";
-        }
-        if (id == 7)
-        {
-            return "PORTUGUESE_BR";
-        }
-        if (id == 8)
-        {
-            return "繁體中文_台";
-        }
-        if (id == 9)
-        {
-            return "繁體中文_港";
-        }
-        if (id == 10)
-        {
-            return "SLOVAK";
-        }
-        if (id == 11)
-        {
-            return "GERMAN";
-        }
-        if (id == 12)
-        {
-            return "FRANCAIS";
-        }
-        if (id == 13)
-        {
-            return "TÜRKÇE";
-        }
-        if (id == 14)
-        {
-            return "ARABIC";
-        }
-        if (id == 15)
-        {
-            return "Thai";
-        }
-        if (id == 16)
-        {
-            return "Русский";
-        }
-        if (id == 17)
-        {
-            return "NEDERLANDS";
-        }
-        if (id == 18)
-        {
-            return "Hebrew";
-        }
-        if (id == 19)
-        {
-            return "DANSK";
+            if (id == 1)
+            {
+                return "简体中文";
+            }
+            if (id == 2)
+            {
+                return "SPANISH";
+            }
+            if (id == 3)
+            {
+                return "POLSKI";
+            }
+            if (id == 4)
+            {
+                return "ITALIANO";
+            }
+            if (id == 5)
+            {
+                return "NORWEGIAN";
+            }
+            if (id == 6)
+            {
+                return "PORTUGUESE";
+            }
+            if (id == 7)
+            {
+                return "PORTUGUESE_BR";
+            }
+            if (id == 8)
+            {
+                return "繁體中文_台";
+            }
+            if (id == 9)
+            {
+                return "繁體中文_港";
+            }
+            if (id == 10)
+            {
+                return "SLOVAK";
+            }
+            if (id == 11)
+            {
+                return "GERMAN";
+            }
+            if (id == 12)
+            {
+                return "FRANCAIS";
+            }
+            if (id == 13)
+            {
+                return "T\x00dcRK\x00c7E";
+            }
+            if (id == 14)
+            {
+                return "ARABIC";
+            }
+            if (id == 15)
+            {
+                return "Thai";
+            }
+            if (id == 0x10)
+            {
+                return "Русский";
+            }
+            if (id == 0x11)
+            {
+                return "NEDERLANDS";
+            }
+            if (id == 0x12)
+            {
+                return "Hebrew";
+            }
+            if (id == 0x13)
+            {
+                return "DANSK";
+            }
         }
         return "ENGLISH";
     }
 
     public static int GetLangIndex(string txt)
     {
-        if (txt == "ENGLISH")
+        if (txt != "ENGLISH")
         {
-            return 0;
-        }
-        if (txt == "SPANISH")
-        {
-            return 2;
-        }
-        if (txt == "POLSKI")
-        {
-            return 3;
-        }
-        if (txt == "ITALIANO")
-        {
-            return 4;
-        }
-        if (txt == "NORWEGIAN")
-        {
-            return 5;
-        }
-        if (txt == "PORTUGUESE")
-        {
-            return 6;
-        }
-        if (txt == "PORTUGUESE_BR")
-        {
-            return 7;
-        }
-        if (txt == "SLOVAK")
-        {
-            return 10;
-        }
-        if (txt == "GERMAN")
-        {
-            return 11;
-        }
-        if (txt == "FRANCAIS")
-        {
-            return 12;
-        }
-        if (txt == "TÜRKÇE")
-        {
-            return 13;
-        }
-        if (txt == "ARABIC")
-        {
-            return 14;
-        }
-        if (txt == "Thai")
-        {
-            return 15;
-        }
-        if (txt == "Русский")
-        {
-            return 16;
-        }
-        if (txt == "NEDERLANDS")
-        {
-            return 17;
-        }
-        if (txt == "Hebrew")
-        {
-            return 18;
-        }
-        if (txt == "DANSK")
-        {
-            return 19;
-        }
-        if (txt == "简体中文")
-        {
-            return 1;
-        }
-        if (txt == "繁體中文_台")
-        {
-            return 8;
-        }
-        if (txt == "繁體中文_港")
-        {
-            return 9;
+            if (txt == "SPANISH")
+            {
+                return 2;
+            }
+            if (txt == "POLSKI")
+            {
+                return 3;
+            }
+            if (txt == "ITALIANO")
+            {
+                return 4;
+            }
+            if (txt == "NORWEGIAN")
+            {
+                return 5;
+            }
+            if (txt == "PORTUGUESE")
+            {
+                return 6;
+            }
+            if (txt == "PORTUGUESE_BR")
+            {
+                return 7;
+            }
+            if (txt == "SLOVAK")
+            {
+                return 10;
+            }
+            if (txt == "GERMAN")
+            {
+                return 11;
+            }
+            if (txt == "FRANCAIS")
+            {
+                return 12;
+            }
+            if (txt == "T\x00dcRK\x00c7E")
+            {
+                return 13;
+            }
+            if (txt == "ARABIC")
+            {
+                return 14;
+            }
+            if (txt == "Thai")
+            {
+                return 15;
+            }
+            if (txt == "Русский")
+            {
+                return 0x10;
+            }
+            if (txt == "NEDERLANDS")
+            {
+                return 0x11;
+            }
+            if (txt == "Hebrew")
+            {
+                return 0x12;
+            }
+            if (txt == "DANSK")
+            {
+                return 0x13;
+            }
+            if (txt == "简体中文")
+            {
+                return 1;
+            }
+            if (txt == "繁體中文_台")
+            {
+                return 8;
+            }
+            if (txt == "繁體中文_港")
+            {
+                return 9;
+            }
         }
         return 0;
     }
 
     public static void init()
     {
-        string text = ((TextAsset)Resources.Load("lang")).text;
-        string[] array = text.Split(new char[]
+        char[] separator = new char[] { "\n"[0] };
+        string[] strArray = ((TextAsset) Resources.Load("lang")).text.Split(separator);
+        string txt = string.Empty;
+        int index = 0;
+        string str4 = string.Empty;
+        string str5 = string.Empty;
+        for (int i = 0; i < strArray.Length; i++)
         {
-            "\n"[0]
-        });
-        string text2 = string.Empty;
-        int num = 0;
-        string a = string.Empty;
-        string text3 = string.Empty;
-        foreach (string text4 in array)
-        {
-            if (!text4.Contains("//"))
+            string str2 = strArray[i];
+            if (!str2.Contains("//"))
             {
-                if (text4.Contains("#START"))
+                if (str2.Contains("#START"))
                 {
-                    text2 = text4.Split(new char[]
-                    {
-                        "@"[0]
-                    })[1];
-                    num = Language.GetLangIndex(text2);
+                    char[] chArray2 = new char[] { "@"[0] };
+                    txt = str2.Split(chArray2)[1];
+                    index = GetLangIndex(txt);
                 }
-                else if (text4.Contains("#END"))
+                else if (str2.Contains("#END"))
                 {
-                    text2 = string.Empty;
+                    txt = string.Empty;
                 }
-                else if (text2 != string.Empty && text4.Contains("@"))
+                else if ((txt != string.Empty) && str2.Contains("@"))
                 {
-                    a = text4.Split(new char[]
+                    char[] chArray3 = new char[] { "@"[0] };
+                    str4 = str2.Split(chArray3)[0];
+                    char[] chArray4 = new char[] { "@"[0] };
+                    str5 = str2.Split(chArray4)[1];
+                    switch (str4)
                     {
-                        "@"[0]
-                    })[0];
-                    text3 = text4.Split(new char[]
-                    {
-                        "@"[0]
-                    })[1];
-                    if (a == "btn_single")
-                    {
-                        Language.btn_single[num] = text3;
-                    }
-                    else if (a == "btn_multiplayer")
-                    {
-                        Language.btn_multiplayer[num] = text3;
-                    }
-                    else if (a == "btn_option")
-                    {
-                        Language.btn_option[num] = text3;
-                    }
-                    else if (a == "btn_credits")
-                    {
-                        Language.btn_credits[num] = text3;
-                    }
-                    else if (a == "btn_back")
-                    {
-                        Language.btn_back[num] = text3;
-                    }
-                    else if (a == "btn_refresh")
-                    {
-                        Language.btn_refresh[num] = text3;
-                    }
-                    else if (a == "btn_join")
-                    {
-                        Language.btn_join[num] = text3;
-                    }
-                    else if (a == "btn_start")
-                    {
-                        Language.btn_start[num] = text3;
-                    }
-                    else if (a == "btn_create_game")
-                    {
-                        Language.btn_create_game[num] = text3;
-                    }
-                    else if (a == "btn_LAN")
-                    {
-                        Language.btn_LAN[num] = text3;
-                    }
-                    else if (a == "btn_server_US")
-                    {
-                        Language.btn_server_US[num] = text3;
-                    }
-                    else if (a == "btn_server_EU")
-                    {
-                        Language.btn_server_EU[num] = text3;
-                    }
-                    else if (a == "btn_server_ASIA")
-                    {
-                        Language.btn_server_ASIA[num] = text3;
-                    }
-                    else if (a == "btn_server_JAPAN")
-                    {
-                        Language.btn_server_JAPAN[num] = text3;
-                    }
-                    else if (a == "btn_QUICK_MATCH")
-                    {
-                        Language.btn_QUICK_MATCH[num] = text3;
-                    }
-                    else if (a == "btn_default")
-                    {
-                        Language.btn_default[num] = text3;
-                    }
-                    else if (a == "btn_ready")
-                    {
-                        Language.btn_ready[num] = text3;
-                    }
-                    else if (a == "server_name")
-                    {
-                        Language.server_name[num] = text3;
-                    }
-                    else if (a == "server_ip")
-                    {
-                        Language.server_ip[num] = text3;
-                    }
-                    else if (a == "port")
-                    {
-                        Language.port[num] = text3;
-                    }
-                    else if (a == "choose_map")
-                    {
-                        Language.choose_map[num] = text3;
-                    }
-                    else if (a == "choose_character")
-                    {
-                        Language.choose_character[num] = text3;
-                    }
-                    else if (a == "camera_type")
-                    {
-                        Language.camera_type[num] = text3;
-                    }
-                    else if (a == "camera_original")
-                    {
-                        Language.camera_original[num] = text3;
-                    }
-                    else if (a == "camera_wow")
-                    {
-                        Language.camera_wow[num] = text3;
-                    }
-                    else if (a == "camera_tps")
-                    {
-                        Language.camera_tps[num] = text3;
-                    }
-                    else if (a == "max_player")
-                    {
-                        Language.max_player[num] = text3;
-                    }
-                    else if (a == "max_Time")
-                    {
-                        Language.max_Time[num] = text3;
-                    }
-                    else if (a == "game_time")
-                    {
-                        Language.game_time[num] = text3;
-                    }
-                    else if (a == "difficulty")
-                    {
-                        Language.difficulty[num] = text3;
-                    }
-                    else if (a == "normal")
-                    {
-                        Language.normal[num] = text3;
-                    }
-                    else if (a == "hard")
-                    {
-                        Language.hard[num] = text3;
-                    }
-                    else if (a == "abnormal")
-                    {
-                        Language.abnormal[num] = text3;
-                    }
-                    else if (a == "mouse_sensitivity")
-                    {
-                        Language.mouse_sensitivity[num] = text3;
-                    }
-                    else if (a == "change_quality")
-                    {
-                        Language.change_quality[num] = text3;
-                    }
-                    else if (a == "camera_tilt")
-                    {
-                        Language.camera_tilt[num] = text3;
-                    }
-                    else if (a == "invert_mouse")
-                    {
-                        Language.invert_mouse[num] = text3;
-                    }
-                    else if (a == "waiting_for_input")
-                    {
-                        Language.waiting_for_input[num] = text3;
-                    }
-                    else if (a == "key_set_info_1")
-                    {
-                        Language.key_set_info_1[num] = text3;
-                    }
-                    else if (a == "key_set_info_2")
-                    {
-                        Language.key_set_info_2[num] = text3;
-                    }
-                    else if (a == "soldier")
-                    {
-                        Language.soldier[num] = text3;
-                    }
-                    else if (a == "titan")
-                    {
-                        Language.titan[num] = text3;
-                    }
-                    else if (a == "select_titan")
-                    {
-                        Language.select_titan[num] = text3;
-                    }
-                    else if (a == "camera_info")
-                    {
-                        Language.camera_info[num] = text3;
-                    }
-                    else if (a == "btn_continue")
-                    {
-                        Language.btn_continue[num] = text3;
-                    }
-                    else if (a == "btn_quit")
-                    {
-                        Language.btn_quit[num] = text3;
-                    }
-                    else if (a == "choose_region_server")
-                    {
-                        Language.choose_region_server[num] = text3;
+                        case "btn_single":
+                            btn_single[index] = str5;
+                            break;
+
+                        case "btn_multiplayer":
+                            btn_multiplayer[index] = str5;
+                            break;
+
+                        case "btn_option":
+                            btn_option[index] = str5;
+                            break;
+
+                        case "btn_credits":
+                            btn_credits[index] = str5;
+                            break;
+
+                        case "btn_back":
+                            btn_back[index] = str5;
+                            break;
+
+                        case "btn_refresh":
+                            btn_refresh[index] = str5;
+                            break;
+
+                        case "btn_join":
+                            btn_join[index] = str5;
+                            break;
+
+                        case "btn_start":
+                            btn_start[index] = str5;
+                            break;
+
+                        case "btn_create_game":
+                            btn_create_game[index] = str5;
+                            break;
+
+                        case "btn_LAN":
+                            btn_LAN[index] = str5;
+                            break;
+
+                        case "btn_server_US":
+                            btn_server_US[index] = str5;
+                            break;
+
+                        case "btn_server_EU":
+                            btn_server_EU[index] = str5;
+                            break;
+
+                        case "btn_server_ASIA":
+                            btn_server_ASIA[index] = str5;
+                            break;
+
+                        case "btn_server_JAPAN":
+                            btn_server_JAPAN[index] = str5;
+                            break;
+
+                        case "btn_QUICK_MATCH":
+                            btn_QUICK_MATCH[index] = str5;
+                            break;
+
+                        case "btn_default":
+                            btn_default[index] = str5;
+                            break;
+
+                        case "btn_ready":
+                            btn_ready[index] = str5;
+                            break;
+
+                        case "server_name":
+                            server_name[index] = str5;
+                            break;
+
+                        case "server_ip":
+                            server_ip[index] = str5;
+                            break;
+
+                        case "port":
+                            port[index] = str5;
+                            break;
+
+                        case "choose_map":
+                            choose_map[index] = str5;
+                            break;
+
+                        case "choose_character":
+                            choose_character[index] = str5;
+                            break;
+
+                        case "camera_type":
+                            camera_type[index] = str5;
+                            break;
+
+                        case "camera_original":
+                            camera_original[index] = str5;
+                            break;
+
+                        case "camera_wow":
+                            camera_wow[index] = str5;
+                            break;
+
+                        case "camera_tps":
+                            camera_tps[index] = str5;
+                            break;
+
+                        case "max_player":
+                            max_player[index] = str5;
+                            break;
+
+                        case "max_Time":
+                            max_Time[index] = str5;
+                            break;
+
+                        case "game_time":
+                            game_time[index] = str5;
+                            break;
+
+                        case "difficulty":
+                            difficulty[index] = str5;
+                            break;
+
+                        case "normal":
+                            normal[index] = str5;
+                            break;
+
+                        case "hard":
+                            hard[index] = str5;
+                            break;
+
+                        case "abnormal":
+                            abnormal[index] = str5;
+                            break;
+
+                        case "mouse_sensitivity":
+                            mouse_sensitivity[index] = str5;
+                            break;
+
+                        case "change_quality":
+                            change_quality[index] = str5;
+                            break;
+
+                        case "camera_tilt":
+                            camera_tilt[index] = str5;
+                            break;
+
+                        case "invert_mouse":
+                            invert_mouse[index] = str5;
+                            break;
+
+                        case "waiting_for_input":
+                            waiting_for_input[index] = str5;
+                            break;
+
+                        case "key_set_info_1":
+                            key_set_info_1[index] = str5;
+                            break;
+
+                        case "key_set_info_2":
+                            key_set_info_2[index] = str5;
+                            break;
+
+                        case "soldier":
+                            soldier[index] = str5;
+                            break;
+
+                        case "titan":
+                            titan[index] = str5;
+                            break;
+
+                        case "select_titan":
+                            select_titan[index] = str5;
+                            break;
+
+                        case "camera_info":
+                            camera_info[index] = str5;
+                            break;
+
+                        case "btn_continue":
+                            btn_continue[index] = str5;
+                            break;
+
+                        case "btn_quit":
+                            btn_quit[index] = str5;
+                            break;
+
+                        case "choose_region_server":
+                            choose_region_server[index] = str5;
+                            break;
                     }
                 }
             }
         }
     }
 }
+

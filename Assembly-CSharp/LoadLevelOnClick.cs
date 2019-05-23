@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 [AddComponentMenu("NGUI/Examples/Load Level On Click")]
 public class LoadLevelOnClick : MonoBehaviour
@@ -13,3 +14,4 @@ public class LoadLevelOnClick : MonoBehaviour
         }
     }
 }
+

@@ -1,4 +1,6 @@
-﻿public enum UNIFORM_TYPE
+using System;
+
+public enum UNIFORM_TYPE
 {
     UniformA,
     UniformB,
@@ -6,3 +8,4 @@
     CasualB,
     CasualAHSS
 }
+

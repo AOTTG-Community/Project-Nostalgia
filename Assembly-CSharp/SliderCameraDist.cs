@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 public class SliderCameraDist : MonoBehaviour
 {
@@ -27,3 +28,4 @@ public class SliderCameraDist : MonoBehaviour
         IN_GAME_MAIN_CAMERA.cameraDistance = 0.3f + value;
     }
 }
+

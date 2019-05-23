@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 public class LanguageChangeListener : MonoBehaviour
 {
@@ -30,3 +31,4 @@ public class LanguageChangeListener : MonoBehaviour
         }
     }
 }
+

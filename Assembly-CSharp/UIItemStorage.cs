@@ -1,29 +1,33 @@
-﻿using System.Collections.Generic;
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 [AddComponentMenu("NGUI/Examples/UI Item Storage")]
 public class UIItemStorage : MonoBehaviour
 {
-    private List<InvGameItem> mItems = new List<InvGameItem>();
     public UIWidget background;
     public int maxColumns = 4;
     public int maxItemCount = 8;
-
     public int maxRows = 4;
+    private List<InvGameItem> mItems = new List<InvGameItem>();
     public int padding = 10;
-    public int spacing = 128;
+    public int spacing = 0x80;
     public GameObject template;
 
-    public List<InvGameItem> items
+    public InvGameItem GetItem(int slot)
     {
-        get
+        return ((slot >= this.items.Count) ? null : this.mItems[slot]);
+    }
+
+    public InvGameItem Replace(int slot, InvGameItem item)
+    {
+        if (slot < this.maxItemCount)
         {
-            while (this.mItems.Count < this.maxItemCount)
-            {
-                this.mItems.Add(null);
-            }
-            return this.mItems;
+            InvGameItem item2 = this.items[slot];
+            this.mItems[slot] = item;
+            return item2;
         }
+        return item;
     }
 
     private void Start()
@@ -31,21 +35,20 @@ public class UIItemStorage : MonoBehaviour
         if (this.template != null)
         {
             int num = 0;
-            Bounds bounds = default(Bounds);
+            Bounds bounds = new Bounds();
             for (int i = 0; i < this.maxRows; i++)
             {
                 for (int j = 0; j < this.maxColumns; j++)
                 {
-                    GameObject gameObject = NGUITools.AddChild(base.gameObject, this.template);
-                    Transform transform = gameObject.transform;
-                    transform.localPosition = new Vector3((float)this.padding + ((float)j + 0.5f) * (float)this.spacing, (float)(-(float)this.padding) - ((float)i + 0.5f) * (float)this.spacing, 0f);
-                    UIStorageSlot component = gameObject.GetComponent<UIStorageSlot>();
+                    GameObject obj2 = NGUITools.AddChild(base.gameObject, this.template);
+                    obj2.transform.localPosition = new Vector3(this.padding + ((j + 0.5f) * this.spacing), -this.padding - ((i + 0.5f) * this.spacing), 0f);
+                    UIStorageSlot component = obj2.GetComponent<UIStorageSlot>();
                     if (component != null)
                     {
                         component.storage = this;
                         component.slot = num;
                     }
-                    bounds.Encapsulate(new Vector3((float)this.padding * 2f + (float)((j + 1) * this.spacing), (float)(-(float)this.padding) * 2f - (float)((i + 1) * this.spacing), 0f));
+                    bounds.Encapsulate(new Vector3((this.padding * 2f) + ((j + 1) * this.spacing), (-this.padding * 2f) - ((i + 1) * this.spacing), 0f));
                     if (++num >= this.maxItemCount)
                     {
                         if (this.background != null)
@@ -63,19 +66,16 @@ public class UIItemStorage : MonoBehaviour
         }
     }
 
-    public InvGameItem GetItem(int slot)
+    public List<InvGameItem> items
     {
-        return (slot >= this.items.Count) ? null : this.mItems[slot];
-    }
-
-    public InvGameItem Replace(int slot, InvGameItem item)
-    {
-        if (slot < this.maxItemCount)
+        get
         {
-            InvGameItem result = this.items[slot];
-            this.mItems[slot] = item;
-            return result;
+            while (this.mItems.Count < this.maxItemCount)
+            {
+                this.mItems.Add(null);
+            }
+            return this.mItems;
         }
-        return item;
     }
 }
+

@@ -1,22 +1,22 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
-[AddComponentMenu("NGUI/Examples/Chat Input")]
-[RequireComponent(typeof(UIInput))]
+[AddComponentMenu("NGUI/Examples/Chat Input"), RequireComponent(typeof(UIInput))]
 public class ChatInput : MonoBehaviour
 {
+    public bool fillWithDummyData;
     private bool mIgnoreNextEnter;
     private UIInput mInput;
-    public bool fillWithDummyData;
     public UITextList textList;
 
     private void OnSubmit()
     {
         if (this.textList != null)
         {
-            string text = NGUITools.StripSymbols(this.mInput.text);
-            if (!string.IsNullOrEmpty(text))
+            string str = NGUITools.StripSymbols(this.mInput.text);
+            if (!string.IsNullOrEmpty(str))
             {
-                this.textList.Add(text);
+                this.textList.Add(str);
                 this.mInput.text = string.Empty;
                 this.mInput.selected = false;
             }
@@ -27,17 +27,11 @@ public class ChatInput : MonoBehaviour
     private void Start()
     {
         this.mInput = base.GetComponent<UIInput>();
-        if (this.fillWithDummyData && this.textList != null)
+        if (this.fillWithDummyData && (this.textList != null))
         {
             for (int i = 0; i < 30; i++)
             {
-                this.textList.Add(string.Concat(new object[]
-                {
-                    (i % 2 != 0) ? "[AAAAAA]" : "[FFFFFF]",
-                    "This is an example paragraph for the text list, testing line ",
-                    i,
-                    "[-]"
-                }));
+                this.textList.Add(string.Concat(new object[] { ((i % 2) != 0) ? "[AAAAAA]" : "[FFFFFF]", "This is an example paragraph for the text list, testing line ", i, "[-]" }));
             }
         }
     }
@@ -54,3 +48,4 @@ public class ChatInput : MonoBehaviour
         }
     }
 }
+

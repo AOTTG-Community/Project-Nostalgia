@@ -1,4 +1,4 @@
-﻿using Optimization.Caching;
+using System;
 using UnityEngine;
 
 public class OnJoinedInstantiate : MonoBehaviour
@@ -11,20 +11,21 @@ public class OnJoinedInstantiate : MonoBehaviour
     {
         if (this.PrefabsToInstantiate != null)
         {
-            foreach (GameObject gameObject in this.PrefabsToInstantiate)
+            foreach (GameObject obj2 in this.PrefabsToInstantiate)
             {
-                Debug.Log("Instantiating: " + gameObject.name);
-                Vector3 a = Vectors.up;
+                Debug.Log("Instantiating: " + obj2.name);
+                Vector3 up = Vector3.up;
                 if (this.SpawnPosition != null)
                 {
-                    a = this.SpawnPosition.position;
+                    up = this.SpawnPosition.position;
                 }
-                Vector3 a2 = UnityEngine.Random.insideUnitSphere;
-                a2.y = 0f;
-                a2 = a2.normalized;
-                Vector3 position = a + this.PositionOffset * a2;
-                Optimization.Caching.Pool.NetworkEnable(gameObject.name, position, Quaternion.identity, 0);
+                Vector3 insideUnitSphere = UnityEngine.Random.insideUnitSphere;
+                insideUnitSphere.y = 0f;
+                insideUnitSphere = insideUnitSphere.normalized;
+                Vector3 position = up + ((Vector3) (this.PositionOffset * insideUnitSphere));
+                PhotonNetwork.Instantiate(obj2.name, position, Quaternion.identity, 0);
             }
         }
     }
 }
+

@@ -1,4 +1,3 @@
-﻿using Optimization.Caching;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -6,172 +5,121 @@ using UnityEngine;
 public static class NGUITools
 {
     private static float mGlobalVolume = 1f;
-
     private static Color mInvisible = new Color(0f, 0f, 0f, 0f);
-
     private static AudioListener mListener;
-
     private static bool mLoaded = false;
-
-    public static string clipboard
-    {
-        get
-        {
-            return null;
-        }
-        set
-        {
-        }
-    }
-
-    public static bool fileAccess
-    {
-        get
-        {
-            return Application.platform != RuntimePlatform.WindowsWebPlayer && Application.platform != RuntimePlatform.OSXWebPlayer;
-        }
-    }
-
-    public static float soundVolume
-    {
-        get
-        {
-            if (!NGUITools.mLoaded)
-            {
-                NGUITools.mLoaded = true;
-                NGUITools.mGlobalVolume = PlayerPrefs.GetFloat("Sound", 1f);
-            }
-            return NGUITools.mGlobalVolume;
-        }
-        set
-        {
-            if (NGUITools.mGlobalVolume != value)
-            {
-                NGUITools.mLoaded = true;
-                NGUITools.mGlobalVolume = value;
-                PlayerPrefs.SetFloat("Sound", value);
-            }
-        }
-    }
 
     private static void Activate(Transform t)
     {
-        NGUITools.SetActiveSelf(t.gameObject, true);
-        int i = 0;
+        SetActiveSelf(t.gameObject, true);
+        int index = 0;
         int childCount = t.childCount;
-        while (i < childCount)
+        while (index < childCount)
         {
-            Transform child = t.GetChild(i);
-            if (child.gameObject.activeSelf)
+            if (t.GetChild(index).gameObject.activeSelf)
             {
                 return;
             }
-            i++;
+            index++;
         }
-        int j = 0;
-        int childCount2 = t.childCount;
-        while (j < childCount2)
+        int num3 = 0;
+        int num4 = t.childCount;
+        while (num3 < num4)
         {
-            Transform child2 = t.GetChild(j);
-            NGUITools.Activate(child2);
-            j++;
+            Activate(t.GetChild(num3));
+            num3++;
         }
     }
 
-    private static void Deactivate(Transform t)
+    public static T AddChild<T>(GameObject parent) where T: Component
     {
-        NGUITools.SetActiveSelf(t.gameObject, false);
+        GameObject obj2 = AddChild(parent);
+        obj2.name = GetName<T>();
+        return obj2.AddComponent<T>();
     }
 
     public static GameObject AddChild(GameObject parent)
     {
-        GameObject gameObject = new GameObject();
+        GameObject obj2 = new GameObject();
         if (parent != null)
         {
-            Transform transform = gameObject.transform;
+            Transform transform = obj2.transform;
             transform.parent = parent.transform;
-            transform.localPosition = Vectors.zero;
+            transform.localPosition = Vector3.zero;
             transform.localRotation = Quaternion.identity;
-            transform.localScale = Vectors.one;
-            gameObject.layer = parent.layer;
+            transform.localScale = Vector3.one;
+            obj2.layer = parent.layer;
         }
-        return gameObject;
+        return obj2;
     }
 
     public static GameObject AddChild(GameObject parent, GameObject prefab)
     {
-        GameObject gameObject = UnityEngine.Object.Instantiate(prefab) as GameObject;
-        if (gameObject != null && parent != null)
+        GameObject obj2 = UnityEngine.Object.Instantiate(prefab) as GameObject;
+        if ((obj2 != null) && (parent != null))
         {
-            Transform transform = gameObject.transform;
+            Transform transform = obj2.transform;
             transform.parent = parent.transform;
-            transform.localPosition = Vectors.zero;
+            transform.localPosition = Vector3.zero;
             transform.localRotation = Quaternion.identity;
-            transform.localScale = Vectors.one;
-            gameObject.layer = parent.layer;
+            transform.localScale = Vector3.one;
+            obj2.layer = parent.layer;
         }
-        return gameObject;
-    }
-
-    public static T AddChild<T>(GameObject parent) where T : Component
-    {
-        GameObject gameObject = NGUITools.AddChild(parent);
-        gameObject.name = NGUITools.GetName<T>();
-        return gameObject.AddComponent<T>();
+        return obj2;
     }
 
     public static UISprite AddSprite(GameObject go, UIAtlas atlas, string spriteName)
     {
-        UIAtlas.Sprite sprite = (!(atlas != null)) ? null : atlas.GetSprite(spriteName);
-        UISprite uisprite = NGUITools.AddWidget<UISprite>(go);
-        uisprite.type = ((sprite != null && !(sprite.inner == sprite.outer)) ? UISprite.Type.Sliced : UISprite.Type.Simple);
-        uisprite.atlas = atlas;
-        uisprite.spriteName = spriteName;
-        return uisprite;
+        UIAtlas.Sprite sprite = (atlas == null) ? null : atlas.GetSprite(spriteName);
+        UISprite sprite2 = AddWidget<UISprite>(go);
+        sprite2.type = ((sprite != null) && !(sprite.inner == sprite.outer)) ? UISprite.Type.Sliced : UISprite.Type.Simple;
+        sprite2.atlas = atlas;
+        sprite2.spriteName = spriteName;
+        return sprite2;
     }
 
-    public static T AddWidget<T>(GameObject go) where T : UIWidget
+    public static T AddWidget<T>(GameObject go) where T: UIWidget
     {
-        int depth = NGUITools.CalculateNextDepth(go);
-        T result = NGUITools.AddChild<T>(go);
-        result.depth = depth;
-        Transform transform = result.transform;
-        transform.localPosition = Vectors.zero;
+        int num = CalculateNextDepth(go);
+        T local = AddChild<T>(go);
+        local.depth = num;
+        Transform transform = local.transform;
+        transform.localPosition = Vector3.zero;
         transform.localRotation = Quaternion.identity;
         transform.localScale = new Vector3(100f, 100f, 1f);
-        result.gameObject.layer = go.layer;
-        return result;
+        local.gameObject.layer = go.layer;
+        return local;
     }
 
     public static BoxCollider AddWidgetCollider(GameObject go)
     {
-        if (go != null)
+        if (go == null)
         {
-            Collider component = go.GetComponent<Collider>();
-            BoxCollider boxCollider = component as BoxCollider;
-            if (boxCollider == null)
-            {
-                if (component != null)
-                {
-                    if (Application.isPlaying)
-                    {
-                        UnityEngine.Object.Destroy(component);
-                    }
-                    else
-                    {
-                        UnityEngine.Object.DestroyImmediate(component);
-                    }
-                }
-                boxCollider = go.AddComponent<BoxCollider>();
-            }
-            int num = NGUITools.CalculateNextDepth(go);
-            Bounds bounds = NGUIMath.CalculateRelativeWidgetBounds(go.transform);
-            boxCollider.isTrigger = true;
-            boxCollider.center = bounds.center + Vectors.back * ((float)num * 0.25f);
-            boxCollider.size = new Vector3(bounds.size.x, bounds.size.y, 0f);
-            return boxCollider;
+            return null;
         }
-        return null;
+        Collider component = go.GetComponent<Collider>();
+        BoxCollider collider2 = component as BoxCollider;
+        if (collider2 == null)
+        {
+            if (component != null)
+            {
+                if (Application.isPlaying)
+                {
+                    UnityEngine.Object.Destroy(component);
+                }
+                else
+                {
+                    UnityEngine.Object.DestroyImmediate(component);
+                }
+            }
+            collider2 = go.AddComponent<BoxCollider>();
+        }
+        int num = CalculateNextDepth(go);
+        Bounds bounds = NGUIMath.CalculateRelativeWidgetBounds(go.transform);
+        collider2.isTrigger = true;
+        collider2.center = bounds.center + ((Vector3) (Vector3.back * (num * 0.25f)));
+        collider2.size = new Vector3(bounds.size.x, bounds.size.y, 0f);
+        return collider2;
     }
 
     public static Color ApplyPMA(Color c)
@@ -187,40 +135,45 @@ public static class NGUITools
 
     public static void Broadcast(string funcName)
     {
-        GameObject[] array = UnityEngine.Object.FindObjectsOfType(typeof(GameObject)) as GameObject[];
-        int i = 0;
-        int num = array.Length;
-        while (i < num)
+        GameObject[] objArray = UnityEngine.Object.FindObjectsOfType(typeof(GameObject)) as GameObject[];
+        int index = 0;
+        int length = objArray.Length;
+        while (index < length)
         {
-            array[i].SendMessage(funcName, SendMessageOptions.DontRequireReceiver);
-            i++;
+            objArray[index].SendMessage(funcName, SendMessageOptions.DontRequireReceiver);
+            index++;
         }
     }
 
     public static void Broadcast(string funcName, object param)
     {
-        GameObject[] array = UnityEngine.Object.FindObjectsOfType(typeof(GameObject)) as GameObject[];
-        int i = 0;
-        int num = array.Length;
-        while (i < num)
+        GameObject[] objArray = UnityEngine.Object.FindObjectsOfType(typeof(GameObject)) as GameObject[];
+        int index = 0;
+        int length = objArray.Length;
+        while (index < length)
         {
-            array[i].SendMessage(funcName, param, SendMessageOptions.DontRequireReceiver);
-            i++;
+            objArray[index].SendMessage(funcName, param, SendMessageOptions.DontRequireReceiver);
+            index++;
         }
     }
 
     public static int CalculateNextDepth(GameObject go)
     {
-        int num = -1;
+        int a = -1;
         UIWidget[] componentsInChildren = go.GetComponentsInChildren<UIWidget>();
-        int i = 0;
-        int num2 = componentsInChildren.Length;
-        while (i < num2)
+        int index = 0;
+        int length = componentsInChildren.Length;
+        while (index < length)
         {
-            num = Mathf.Max(num, componentsInChildren[i].depth);
-            i++;
+            a = Mathf.Max(a, componentsInChildren[index].depth);
+            index++;
         }
-        return num + 1;
+        return (a + 1);
+    }
+
+    private static void Deactivate(Transform t)
+    {
+        SetActiveSelf(t.gameObject, false);
     }
 
     public static void Destroy(UnityEngine.Object obj)
@@ -231,8 +184,8 @@ public static class NGUITools
             {
                 if (obj is GameObject)
                 {
-                    GameObject gameObject = obj as GameObject;
-                    gameObject.transform.parent = null;
+                    GameObject obj2 = obj as GameObject;
+                    obj2.transform.parent = null;
                 }
                 UnityEngine.Object.Destroy(obj);
             }
@@ -260,110 +213,106 @@ public static class NGUITools
 
     public static string EncodeColor(Color c)
     {
-        int num = 16777215 & NGUIMath.ColorToInt(c) >> 8;
+        int num = 0xffffff & (NGUIMath.ColorToInt(c) >> 8);
         return NGUIMath.DecimalToHex(num);
     }
 
-    public static T[] FindActive<T>() where T : Component
+    public static T[] FindActive<T>() where T: Component
     {
-        return UnityEngine.Object.FindObjectsOfType(typeof(T)) as T[];
+        return (UnityEngine.Object.FindObjectsOfType(typeof(T)) as T[]);
     }
 
     public static Camera FindCameraForLayer(int layer)
     {
-        int num = 1 << layer;
-        Camera[] array = NGUITools.FindActive<Camera>();
-        int i = 0;
-        int num2 = array.Length;
-        while (i < num2)
+        int num = ((int) 1) << layer;
+        Camera[] cameraArray = FindActive<Camera>();
+        int index = 0;
+        int length = cameraArray.Length;
+        while (index < length)
         {
-            Camera camera = array[i];
+            Camera camera = cameraArray[index];
             if ((camera.cullingMask & num) != 0)
             {
                 return camera;
             }
-            i++;
+            index++;
         }
         return null;
     }
 
-    public static T FindInParents<T>(GameObject go) where T : Component
+    public static T FindInParents<T>(GameObject go) where T: Component
     {
         if (go == null)
         {
-            return (T)((object)null);
+            return null;
         }
-        object obj = go.GetComponent<T>();
-        if (obj == null)
+        object component = go.GetComponent<T>();
+        if (component == null)
         {
-            Transform parent = go.transform.parent;
-            while (parent != null && obj == null)
+            for (Transform transform = go.transform.parent; (transform != null) && (component == null); transform = transform.parent)
             {
-                obj = parent.gameObject.GetComponent<T>();
-                parent = parent.parent;
+                component = transform.gameObject.GetComponent<T>();
             }
         }
-        return (T)((object)obj);
+        return (T) component;
     }
 
     public static bool GetActive(GameObject go)
     {
-        return go && go.activeInHierarchy;
+        return ((go != null) && go.activeInHierarchy);
     }
 
     public static string GetHierarchy(GameObject obj)
     {
-        string text = obj.name;
+        string name = obj.name;
         while (obj.transform.parent != null)
         {
             obj = obj.transform.parent.gameObject;
-            text = obj.name + "/" + text;
+            name = obj.name + "/" + name;
         }
-        return "\"" + text + "\"";
+        return ("\"" + name + "\"");
     }
 
-    public static string GetName<T>() where T : Component
+    public static string GetName<T>() where T: Component
     {
-        string text = typeof(T).ToString();
-        if (text.StartsWith("UI"))
+        string str = typeof(T).ToString();
+        if (str.StartsWith("UI"))
         {
-            text = text.Substring(2);
+            return str.Substring(2);
         }
-        else if (text.StartsWith("UnityEngine."))
+        if (str.StartsWith("UnityEngine."))
         {
-            text = text.Substring(12);
+            str = str.Substring(12);
         }
-        return text;
+        return str;
     }
 
     public static GameObject GetRoot(GameObject go)
     {
         Transform transform = go.transform;
-        for (; ; )
+        while (true)
         {
             Transform parent = transform.parent;
             if (parent == null)
             {
-                break;
+                return transform.gameObject;
             }
             transform = parent;
         }
-        return transform.gameObject;
     }
 
     public static bool IsChild(Transform parent, Transform child)
     {
-        if (parent == null || child == null)
+        if ((parent != null) && (child != null))
         {
-            return false;
-        }
-        while (child != null)
-        {
-            if (child == parent)
+            while (child != null)
             {
-                return true;
+                if (child == parent)
+                {
+                    return true;
+                }
+                child = child.parent;
             }
-            child = child.parent;
         }
         return false;
     }
@@ -382,14 +331,14 @@ public static class NGUITools
         }
         else
         {
-            t.localPosition = NGUITools.Round(t.localPosition);
-            t.localScale = NGUITools.Round(t.localScale);
-            int i = 0;
+            t.localPosition = Round(t.localPosition);
+            t.localScale = Round(t.localScale);
+            int index = 0;
             int childCount = t.childCount;
-            while (i < childCount)
+            while (index < childCount)
             {
-                NGUITools.MakePixelPerfect(t.GetChild(i));
-                i++;
+                MakePixelPerfect(t.GetChild(index));
+                index++;
             }
         }
     }
@@ -397,87 +346,88 @@ public static class NGUITools
     public static void MarkParentAsChanged(GameObject go)
     {
         UIWidget[] componentsInChildren = go.GetComponentsInChildren<UIWidget>();
-        int i = 0;
-        int num = componentsInChildren.Length;
-        while (i < num)
+        int index = 0;
+        int length = componentsInChildren.Length;
+        while (index < length)
         {
-            componentsInChildren[i].ParentHasChanged();
-            i++;
+            componentsInChildren[index].ParentHasChanged();
+            index++;
         }
     }
 
     public static WWW OpenURL(string url)
     {
-        WWW result = null;
+        WWW www = null;
         try
         {
-            result = new WWW(url);
+            www = new WWW(url);
         }
-        catch (Exception ex)
+        catch (Exception exception)
         {
-            Debug.LogError(ex.Message);
+            Debug.LogError(exception.Message);
         }
-        return result;
+        return www;
     }
 
     public static WWW OpenURL(string url, WWWForm form)
     {
         if (form == null)
         {
-            return NGUITools.OpenURL(url);
+            return OpenURL(url);
         }
-        WWW result = null;
+        WWW www = null;
         try
         {
-            result = new WWW(url, form);
+            www = new WWW(url, form);
         }
-        catch (Exception ex)
+        catch (Exception exception)
         {
-            Debug.LogError((ex == null) ? "<null>" : ex.Message);
+            Debug.LogError((exception == null) ? "<null>" : exception.Message);
         }
-        return result;
+        return www;
     }
 
     public static Color ParseColor(string text, int offset)
     {
-        int num = NGUIMath.HexToDecimal(text[offset]) << 4 | NGUIMath.HexToDecimal(text[offset + 1]);
-        int num2 = NGUIMath.HexToDecimal(text[offset + 2]) << 4 | NGUIMath.HexToDecimal(text[offset + 3]);
-        int num3 = NGUIMath.HexToDecimal(text[offset + 4]) << 4 | NGUIMath.HexToDecimal(text[offset + 5]);
+        int num = (NGUIMath.HexToDecimal(text[offset]) << 4) | NGUIMath.HexToDecimal(text[offset + 1]);
+        int num2 = (NGUIMath.HexToDecimal(text[offset + 2]) << 4) | NGUIMath.HexToDecimal(text[offset + 3]);
+        int num3 = (NGUIMath.HexToDecimal(text[offset + 4]) << 4) | NGUIMath.HexToDecimal(text[offset + 5]);
         float num4 = 0.003921569f;
-        return new Color(num4 * (float)num, num4 * (float)num2, num4 * (float)num3);
+        return new Color(num4 * num, num4 * num2, num4 * num3);
     }
 
     public static int ParseSymbol(string text, int index, List<Color> colors, bool premultiply)
     {
         int length = text.Length;
-        if (index + 2 < length)
+        if ((index + 2) < length)
         {
             if (text[index + 1] == '-')
             {
                 if (text[index + 2] == ']')
                 {
-                    if (colors != null && colors.Count > 1)
+                    if ((colors != null) && (colors.Count > 1))
                     {
                         colors.RemoveAt(colors.Count - 1);
                     }
                     return 3;
                 }
             }
-            else if (index + 7 < length && text[index + 7] == ']')
+            else if (((index + 7) < length) && (text[index + 7] == ']'))
             {
                 if (colors != null)
                 {
-                    Color color = NGUITools.ParseColor(text, index + 1);
-                    if (NGUITools.EncodeColor(color) != text.Substring(index + 1, 6).ToUpper())
+                    Color c = ParseColor(text, index + 1);
+                    if (EncodeColor(c) != text.Substring(index + 1, 6).ToUpper())
                     {
                         return 0;
                     }
-                    color.a = colors[colors.Count - 1].a;
-                    if (premultiply && color.a != 1f)
+                    Color color2 = colors[colors.Count - 1];
+                    c.a = color2.a;
+                    if (premultiply && (c.a != 1f))
                     {
-                        color = Color.Lerp(NGUITools.mInvisible, color, color.a);
+                        c = Color.Lerp(mInvisible, c, c.a);
                     }
-                    colors.Add(color);
+                    colors.Add(c);
                 }
                 return 8;
             }
@@ -487,45 +437,45 @@ public static class NGUITools
 
     public static AudioSource PlaySound(AudioClip clip)
     {
-        return NGUITools.PlaySound(clip, 1f, 1f);
+        return PlaySound(clip, 1f, 1f);
     }
 
     public static AudioSource PlaySound(AudioClip clip, float volume)
     {
-        return NGUITools.PlaySound(clip, volume, 1f);
+        return PlaySound(clip, volume, 1f);
     }
 
     public static AudioSource PlaySound(AudioClip clip, float volume, float pitch)
     {
-        volume *= NGUITools.soundVolume;
-        if (clip != null && volume > 0.01f)
+        volume *= soundVolume;
+        if ((clip != null) && (volume > 0.01f))
         {
-            if (NGUITools.mListener == null)
+            if (mListener == null)
             {
-                NGUITools.mListener = (UnityEngine.Object.FindObjectOfType(typeof(AudioListener)) as AudioListener);
-                if (NGUITools.mListener == null)
+                mListener = UnityEngine.Object.FindObjectOfType(typeof(AudioListener)) as AudioListener;
+                if (mListener == null)
                 {
-                    Camera camera = IN_GAME_MAIN_CAMERA.BaseCamera;
-                    if (camera == null)
+                    Camera main = Camera.main;
+                    if (main == null)
                     {
-                        camera = (UnityEngine.Object.FindObjectOfType(typeof(Camera)) as Camera);
+                        main = UnityEngine.Object.FindObjectOfType(typeof(Camera)) as Camera;
                     }
-                    if (camera != null)
+                    if (main != null)
                     {
-                        NGUITools.mListener = camera.gameObject.AddComponent<AudioListener>();
+                        mListener = main.gameObject.AddComponent<AudioListener>();
                     }
                 }
             }
-            if (NGUITools.mListener != null && NGUITools.mListener.enabled && NGUITools.GetActive(NGUITools.mListener.gameObject))
+            if (((mListener != null) && mListener.enabled) && GetActive(mListener.gameObject))
             {
-                AudioSource audioSource = NGUITools.mListener.audio;
-                if (audioSource == null)
+                AudioSource audio = mListener.audio;
+                if (audio == null)
                 {
-                    audioSource = NGUITools.mListener.gameObject.AddComponent<AudioSource>();
+                    audio = mListener.gameObject.AddComponent<AudioSource>();
                 }
-                audioSource.pitch = pitch;
-                audioSource.PlayOneShot(clip, volume);
-                return audioSource;
+                audio.pitch = pitch;
+                audio.PlayOneShot(clip, volume);
+                return audio;
             }
         }
         return null;
@@ -557,11 +507,11 @@ public static class NGUITools
     {
         if (state)
         {
-            NGUITools.Activate(go.transform);
+            Activate(go.transform);
         }
         else
         {
-            NGUITools.Deactivate(go.transform);
+            Deactivate(go.transform);
         }
     }
 
@@ -570,24 +520,22 @@ public static class NGUITools
         Transform transform = go.transform;
         if (state)
         {
-            int i = 0;
+            int index = 0;
             int childCount = transform.childCount;
-            while (i < childCount)
+            while (index < childCount)
             {
-                Transform child = transform.GetChild(i);
-                NGUITools.Activate(child);
-                i++;
+                Activate(transform.GetChild(index));
+                index++;
             }
         }
         else
         {
-            int j = 0;
-            int childCount2 = transform.childCount;
-            while (j < childCount2)
+            int num3 = 0;
+            int num4 = transform.childCount;
+            while (num3 < num4)
             {
-                Transform child2 = transform.GetChild(j);
-                NGUITools.Deactivate(child2);
-                j++;
+                Deactivate(transform.GetChild(num3));
+                num3++;
             }
         }
     }
@@ -601,13 +549,12 @@ public static class NGUITools
     {
         go.layer = layer;
         Transform transform = go.transform;
-        int i = 0;
+        int index = 0;
         int childCount = transform.childCount;
-        while (i < childCount)
+        while (index < childCount)
         {
-            Transform child = transform.GetChild(i);
-            NGUITools.SetLayer(child.gameObject, layer);
-            i++;
+            SetLayer(transform.GetChild(index).gameObject, layer);
+            index++;
         }
     }
 
@@ -615,24 +562,66 @@ public static class NGUITools
     {
         if (text != null)
         {
-            int i = 0;
+            int index = 0;
             int length = text.Length;
-            while (i < length)
+            while (index < length)
             {
-                char c = text[i];
-                if (c == '[')
+                char ch = text[index];
+                if (ch == '[')
                 {
-                    int num = NGUITools.ParseSymbol(text, i, null, false);
-                    if (num > 0)
+                    int count = ParseSymbol(text, index, null, false);
+                    if (count > 0)
                     {
-                        text = text.Remove(i, num);
+                        text = text.Remove(index, count);
                         length = text.Length;
                         continue;
                     }
                 }
-                i++;
+                index++;
             }
         }
         return text;
     }
+
+    public static string clipboard
+    {
+        get
+        {
+            return null;
+        }
+        set
+        {
+        }
+    }
+
+    public static bool fileAccess
+    {
+        get
+        {
+            return ((Application.platform != RuntimePlatform.WindowsWebPlayer) && (Application.platform != RuntimePlatform.OSXWebPlayer));
+        }
+    }
+
+    public static float soundVolume
+    {
+        get
+        {
+            if (!mLoaded)
+            {
+                mLoaded = true;
+                mGlobalVolume = PlayerPrefs.GetFloat("Sound", 1f);
+            }
+            return mGlobalVolume;
+        }
+        set
+        {
+            if (mGlobalVolume != value)
+            {
+                mLoaded = true;
+                mGlobalVolume = value;
+                PlayerPrefs.SetFloat("Sound", value);
+            }
+        }
+    }
 }
+

@@ -1,22 +1,12 @@
-﻿using Optimization.Caching;
+using System;
 using UnityEngine;
 
 public class VortexAffector : Affector
 {
-    private float Magnitude;
-
-    private bool UseCurve;
-
-    private AnimationCurve VortexCurve;
-
     protected Vector3 Direction;
-
-    public VortexAffector(AnimationCurve vortexCurve, Vector3 dir, EffectNode node) : base(node)
-    {
-        this.VortexCurve = vortexCurve;
-        this.Direction = dir;
-        this.UseCurve = true;
-    }
+    private float Magnitude;
+    private bool UseCurve;
+    private AnimationCurve VortexCurve;
 
     public VortexAffector(float mag, Vector3 dir, EffectNode node) : base(node)
     {
@@ -25,36 +15,42 @@ public class VortexAffector : Affector
         this.UseCurve = false;
     }
 
+    public VortexAffector(AnimationCurve vortexCurve, Vector3 dir, EffectNode node) : base(node)
+    {
+        this.VortexCurve = vortexCurve;
+        this.Direction = dir;
+        this.UseCurve = true;
+    }
+
     public override void Update()
     {
-        Vector3 vector = this.Node.GetLocalPosition() - this.Node.Owner.EmitPoint;
-        float magnitude = vector.magnitude;
-        if (magnitude == 0f)
+        Vector3 rhs = base.Node.GetLocalPosition() - base.Node.Owner.EmitPoint;
+        if (rhs.magnitude != 0f)
         {
-            return;
+            float magnitude;
+            float num2 = Vector3.Dot(this.Direction, rhs);
+            rhs -= (Vector3) (num2 * this.Direction);
+            Vector3 zero = Vector3.zero;
+            if (rhs == Vector3.zero)
+            {
+                zero = rhs;
+            }
+            else
+            {
+                zero = Vector3.Cross(this.Direction, rhs).normalized;
+            }
+            float elapsedTime = base.Node.GetElapsedTime();
+            if (this.UseCurve)
+            {
+                magnitude = this.VortexCurve.Evaluate(elapsedTime);
+            }
+            else
+            {
+                magnitude = this.Magnitude;
+            }
+            zero = (Vector3) (zero * (magnitude * Time.deltaTime));
+            base.Node.Position += zero;
         }
-        float d = Vector3.Dot(this.Direction, vector);
-        vector -= d * this.Direction;
-        Vector3 vector2 = Vectors.zero;
-        if (vector == Vectors.zero)
-        {
-            vector2 = vector;
-        }
-        else
-        {
-            vector2 = Vector3.Cross(this.Direction, vector).normalized;
-        }
-        float elapsedTime = this.Node.GetElapsedTime();
-        float num;
-        if (this.UseCurve)
-        {
-            num = this.VortexCurve.Evaluate(elapsedTime);
-        }
-        else
-        {
-            num = this.Magnitude;
-        }
-        vector2 *= num * Time.deltaTime;
-        this.Node.Position += vector2;
     }
 }
+

@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 using UnityEngine.UI;
 
 public class ButtonImageFitText : MonoBehaviour
@@ -8,17 +9,11 @@ public class ButtonImageFitText : MonoBehaviour
 
     private void Start()
     {
-        MonoBehaviour.print(string.Concat(new object[]
-        {
-            this.text.flexibleWidth,
-            " ",
-            this.text.minWidth,
-            " ",
-            this.text.preferredWidth
-        }));
+        MonoBehaviour.print(string.Concat(new object[] { this.text.flexibleWidth, " ", this.text.minWidth, " ", this.text.preferredWidth }));
     }
 
     private void Update()
     {
     }
 }
+

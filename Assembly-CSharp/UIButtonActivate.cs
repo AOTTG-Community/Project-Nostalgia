@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 [AddComponentMenu("NGUI/Interaction/Button Activate")]
 public class UIButtonActivate : MonoBehaviour
@@ -14,3 +15,4 @@ public class UIButtonActivate : MonoBehaviour
         }
     }
 }
+

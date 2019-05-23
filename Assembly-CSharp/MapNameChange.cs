@@ -1,14 +1,15 @@
-﻿using Optimization.Caching;
+using System;
 using UnityEngine;
 
 public class MapNameChange : MonoBehaviour
 {
     private void OnSelectionChange()
     {
-        LevelInfo info = LevelInfo.GetInfo(base.GetComponent<UIPopupList>().selection);
+        LevelInfo info = LevelInfo.getInfo(base.GetComponent<UIPopupList>().selection);
         if (info != null)
         {
-            CacheGameObject.Find("LabelLevelInfo").GetComponent<UILabel>().text = info.Description;
+            GameObject.Find("LabelLevelInfo").GetComponent<UILabel>().text = info.desc;
         }
     }
 }
+

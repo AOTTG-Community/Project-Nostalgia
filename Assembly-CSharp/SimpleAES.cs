@@ -1,88 +1,25 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 
 public class SimpleAES
 {
-    private static byte[] key = new byte[]
-                            {
-        123,
-        217,
-        19,
-        11,
-        24,
-        26,
-        85,
-        45,
-        114,
-        184,
-        27,
-        162,
-        37,
-        112,
-        222,
-        209,
-        241,
-        24,
-        175,
-        144,
-        173,
-        53,
-        196,
-        29,
-        24,
-        26,
-        17,
-        218,
-        131,
-        236,
-        53,
-        209
-    };
-
-    private static byte[] vector = new byte[]
-    {
-        146,
-        64,
-        191,
-        111,
-        23,
-        3,
-        113,
-        119,
-        231,
-        121,
-        221,
-        112,
-        79,
-        32,
-        114,
-        156
-    };
-
     private ICryptoTransform decryptor;
-
     private UTF8Encoding encoder;
-
     private ICryptoTransform encryptor;
+    private static byte[] key = new byte[] { 
+        0x7b, 0xd9, 0x13, 11, 0x18, 0x1a, 0x55, 0x2d, 0x72, 0xb8, 0x1b, 0xa2, 0x25, 0x70, 0xde, 0xd1, 
+        0xf1, 0x18, 0xaf, 0x90, 0xad, 0x35, 0xc4, 0x1d, 0x18, 0x1a, 0x11, 0xda, 0x83, 0xec, 0x35, 0xd1
+     };
+    private static byte[] vector = new byte[] { 0x92, 0x40, 0xbf, 0x6f, 0x17, 3, 0x71, 0x77, 0xe7, 0x79, 0xdd, 0x70, 0x4f, 0x20, 0x72, 0x9c };
 
     public SimpleAES()
     {
-        RijndaelManaged rijndaelManaged = new RijndaelManaged();
-        this.encryptor = rijndaelManaged.CreateEncryptor(SimpleAES.key, SimpleAES.vector);
-        this.decryptor = rijndaelManaged.CreateDecryptor(SimpleAES.key, SimpleAES.vector);
+        RijndaelManaged managed = new RijndaelManaged();
+        this.encryptor = managed.CreateEncryptor(key, vector);
+        this.decryptor = managed.CreateDecryptor(key, vector);
         this.encoder = new UTF8Encoding();
-    }
-
-    protected byte[] Transform(byte[] buffer, ICryptoTransform transform)
-    {
-        MemoryStream memoryStream = new MemoryStream();
-        using (CryptoStream cryptoStream = new CryptoStream(memoryStream, transform, CryptoStreamMode.Write))
-        {
-            cryptoStream.Write(buffer, 0, buffer.Length);
-        }
-        return memoryStream.ToArray();
     }
 
     public string Decrypt(string encrypted)
@@ -104,4 +41,15 @@ public class SimpleAES
     {
         return this.Transform(buffer, this.encryptor);
     }
+
+    protected byte[] Transform(byte[] buffer, ICryptoTransform transform)
+    {
+        MemoryStream stream = new MemoryStream();
+        using (CryptoStream stream2 = new CryptoStream(stream, transform, CryptoStreamMode.Write))
+        {
+            stream2.Write(buffer, 0, buffer.Length);
+        }
+        return stream.ToArray();
+    }
 }
+

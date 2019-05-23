@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -11,11 +11,10 @@ public class InvBaseItem
     public UIAtlas iconAtlas;
     public string iconName = string.Empty;
     public int id16;
-
     public int maxItemLevel = 50;
     public int minItemLevel = 1;
     public string name;
-    public InvBaseItem.Slot slot;
+    public Slot slot;
     public List<InvStat> stats = new List<InvStat>();
 
     public enum Slot
@@ -31,3 +30,4 @@ public class InvBaseItem
         _LastDoNotUse
     }
 }
+

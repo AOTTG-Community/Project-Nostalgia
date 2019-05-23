@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 public class CheckBoxCostume : MonoBehaviour
 {
@@ -9,7 +10,8 @@ public class CheckBoxCostume : MonoBehaviour
     {
         if (yes)
         {
-            CheckBoxCostume.costumeSet = this.set;
+            costumeSet = this.set;
         }
     }
 }
+

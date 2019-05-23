@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 public class CheckBoxEnableSS : MonoBehaviour
 {
@@ -6,17 +7,16 @@ public class CheckBoxEnableSS : MonoBehaviour
 
     private void OnActivate(bool yes)
     {
-        if (!this.init)
+        if (this.init)
         {
-            return;
-        }
-        if (yes)
-        {
-            PlayerPrefs.SetInt("EnableSS", 1);
-        }
-        else
-        {
-            PlayerPrefs.SetInt("EnableSS", 0);
+            if (yes)
+            {
+                PlayerPrefs.SetInt("EnableSS", 1);
+            }
+            else
+            {
+                PlayerPrefs.SetInt("EnableSS", 0);
+            }
         }
     }
 
@@ -41,3 +41,4 @@ public class CheckBoxEnableSS : MonoBehaviour
         }
     }
 }
+

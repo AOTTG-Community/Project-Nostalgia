@@ -1,32 +1,32 @@
-﻿using Optimization.Caching;
+using System;
 using System.Collections;
 using UnityEngine;
 
 public class EffectNode
 {
+    public float Acceleration;
     protected ArrayList AffectorList;
+    public Transform ClientTrans;
+    public UnityEngine.Color Color;
     protected Vector3 CurDirection;
     protected Vector3 CurWorldPos;
     protected float ElapsedTime;
-    protected Vector3 LastWorldPos = Vectors.zero;
+    public int Index;
+    protected Vector3 LastWorldPos = Vector3.zero;
     protected float LifeTime;
+    public Vector2 LowerLeftUV;
     protected Vector3 OriDirection;
     protected int OriRotateAngle;
     protected float OriScaleX;
     protected float OriScaleY;
-    protected int Type;
-    public float Acceleration;
-    public Transform ClientTrans;
-    public Color Color;
-    public int Index;
-    public Vector2 LowerLeftUV;
     public EffectLayer Owner;
     public Vector3 Position;
     public RibbonTrail Ribbon;
     public float RotateAngle;
     public Vector2 Scale;
-    public global::Sprite Sprite;
+    public Sprite Sprite;
     public bool SyncClient;
+    protected int Type;
     public Vector2 UVDimensions;
     public Vector3 Velocity;
 
@@ -36,11 +36,11 @@ public class EffectNode
         this.ClientTrans = clienttrans;
         this.SyncClient = sync;
         this.Owner = owner;
-        this.LowerLeftUV = Vectors.v2zero;
-        this.UVDimensions = Vectors.v2one;
-        this.Scale = Vectors.v2one;
+        this.LowerLeftUV = Vector2.zero;
+        this.UVDimensions = Vector2.one;
+        this.Scale = Vector2.one;
         this.RotateAngle = 0f;
-        this.Color = Color.white;
+        this.Color = UnityEngine.Color.white;
     }
 
     public float GetElapsedTime()
@@ -58,7 +58,7 @@ public class EffectNode
         return this.Position;
     }
 
-    public void Init(Vector3 oriDir, float speed, float life, int oriRot, float oriScaleX, float oriScaleY, Color oriColor, Vector2 oriLowerUv, Vector2 oriUVDimension)
+    public void Init(Vector3 oriDir, float speed, float life, int oriRot, float oriScaleX, float oriScaleY, UnityEngine.Color oriColor, Vector2 oriLowerUv, Vector2 oriUVDimension)
     {
         this.OriDirection = oriDir;
         this.LifeTime = life;
@@ -67,7 +67,7 @@ public class EffectNode
         this.OriScaleY = oriScaleY;
         this.Color = oriColor;
         this.ElapsedTime = 0f;
-        this.Velocity = this.OriDirection * speed;
+        this.Velocity = (Vector3) (this.OriDirection * speed);
         this.Acceleration = 0f;
         this.LowerLeftUV = oriLowerUv;
         this.UVDimensions = oriUVDimension;
@@ -80,7 +80,7 @@ public class EffectNode
         {
             this.Ribbon.SetUVCoord(this.LowerLeftUV, this.UVDimensions);
             this.Ribbon.SetColor(oriColor);
-            this.Ribbon.SetHeadPosition(this.ClientTrans.position + this.Position + this.OriDirection.normalized * this.Owner.TailDistance);
+            this.Ribbon.SetHeadPosition((this.ClientTrans.position + this.Position) + ((Vector3) (this.OriDirection.normalized * this.Owner.TailDistance)));
             this.Ribbon.ResetElementsPos();
         }
         if (this.Type == 1)
@@ -96,30 +96,41 @@ public class EffectNode
 
     public void Reset()
     {
-        this.Position = Vectors.up * 9999f;
-        this.Velocity = Vectors.zero;
+        this.Position = (Vector3) (Vector3.up * 9999f);
+        this.Velocity = Vector3.zero;
         this.Acceleration = 0f;
         this.ElapsedTime = 0f;
-        this.LastWorldPos = (this.CurWorldPos = Vectors.zero);
-        foreach (object obj in this.AffectorList)
+        this.LastWorldPos = this.CurWorldPos = Vector3.zero;
+        IEnumerator enumerator = this.AffectorList.GetEnumerator();
+        try
         {
-            Affector affector = (Affector)obj;
-            affector.Reset();
+            while (enumerator.MoveNext())
+            {
+                ((Affector) enumerator.Current).Reset();
+            }
+        }
+        finally
+        {
+            IDisposable disposable = enumerator as IDisposable;
+            if (disposable != null)
+            {
+	            disposable.Dispose();
+            }
         }
         if (this.Type == 1)
         {
-            this.Sprite.SetRotation((float)this.OriRotateAngle);
+            this.Sprite.SetRotation((float) this.OriRotateAngle);
             this.Sprite.SetPosition(this.Position);
-            this.Sprite.SetColor(Color.clear);
+            this.Sprite.SetColor(UnityEngine.Color.clear);
             this.Sprite.Update(true);
-            this.Scale = Vectors.v2one;
+            this.Scale = Vector2.one;
         }
         else if (this.Type == 2)
         {
-            this.Ribbon.SetHeadPosition(this.ClientTrans.position + this.OriDirection.normalized * this.Owner.TailDistance);
+            this.Ribbon.SetHeadPosition(this.ClientTrans.position + ((Vector3) (this.OriDirection.normalized * this.Owner.TailDistance)));
             this.Ribbon.Reset();
-            this.Ribbon.SetColor(Color.clear);
-            this.Ribbon.UpdateVertices(Vectors.zero);
+            this.Ribbon.SetColor(UnityEngine.Color.clear);
+            this.Ribbon.UpdateVertices(Vector3.zero);
         }
     }
 
@@ -133,30 +144,41 @@ public class EffectNode
         this.Position = pos;
     }
 
-    public void SetType(float width, float height, STYPE type, ORIPOINT orip, int uvStretch, float maxFps)
-    {
-        this.Type = 1;
-        this.Sprite = this.Owner.GetVertexPool().AddSprite(width, height, type, orip, IN_GAME_MAIN_CAMERA.BaseCamera, uvStretch, maxFps);
-    }
-
     public void SetType(float width, int maxelemnt, float len, Vector3 pos, int stretchType, float maxFps)
     {
         this.Type = 2;
         this.Ribbon = this.Owner.GetVertexPool().AddRibbonTrail(width, maxelemnt, len, pos, stretchType, maxFps);
     }
 
+    public void SetType(float width, float height, STYPE type, ORIPOINT orip, int uvStretch, float maxFps)
+    {
+        this.Type = 1;
+        this.Sprite = this.Owner.GetVertexPool().AddSprite(width, height, type, orip, Camera.main, uvStretch, maxFps);
+    }
+
     public void Update()
     {
         this.ElapsedTime += Time.deltaTime;
-        foreach (object obj in this.AffectorList)
+        IEnumerator enumerator = this.AffectorList.GetEnumerator();
+        try
         {
-            Affector affector = (Affector)obj;
-            affector.Update();
+            while (enumerator.MoveNext())
+            {
+                ((Affector) enumerator.Current).Update();
+            }
         }
-        this.Position += this.Velocity * Time.deltaTime;
-        if ((double)Mathf.Abs(this.Acceleration) > 0.0001)
+        finally
         {
-            this.Velocity += this.Velocity.normalized * this.Acceleration * Time.deltaTime;
+            IDisposable disposable = enumerator as IDisposable;
+            if (disposable != null)
+            {
+	            disposable.Dispose();
+            }
+        }
+        this.Position += (Vector3) (this.Velocity * Time.deltaTime);
+        if (Mathf.Abs(this.Acceleration) > 0.0001)
+        {
+            this.Velocity += (Vector3) ((this.Velocity.normalized * this.Acceleration) * Time.deltaTime);
         }
         if (this.SyncClient)
         {
@@ -175,7 +197,7 @@ public class EffectNode
             this.UpdateRibbonTrail();
         }
         this.LastWorldPos = this.CurWorldPos;
-        if (this.ElapsedTime > this.LifeTime && this.LifeTime > 0f)
+        if ((this.ElapsedTime > this.LifeTime) && (this.LifeTime > 0f))
         {
             this.Reset();
             this.Remove();
@@ -197,15 +219,18 @@ public class EffectNode
     {
         if (this.Owner.AlongVelocity)
         {
-            Vector3 vector = Vectors.zero;
-            if (!(this.LastWorldPos != Vectors.zero))
+            Vector3 zero = Vector3.zero;
+            if (this.LastWorldPos != Vector3.zero)
+            {
+                zero = this.CurWorldPos - this.LastWorldPos;
+            }
+            else
             {
                 return;
             }
-            vector = this.CurWorldPos - this.LastWorldPos;
-            if (vector != Vectors.zero)
+            if (zero != Vector3.zero)
             {
-                this.CurDirection = vector;
+                this.CurDirection = zero;
                 this.Sprite.SetRotationTo(this.CurDirection);
             }
         }
@@ -218,8 +243,9 @@ public class EffectNode
         {
             this.Sprite.SetUVCoord(this.LowerLeftUV, this.UVDimensions);
         }
-        this.Sprite.SetRotation((float)this.OriRotateAngle + this.RotateAngle);
+        this.Sprite.SetRotation((float) (this.OriRotateAngle + this.RotateAngle));
         this.Sprite.SetPosition(this.CurWorldPos);
         this.Sprite.Update(false);
     }
 }
+

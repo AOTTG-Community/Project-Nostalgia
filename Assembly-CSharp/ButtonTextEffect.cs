@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 public class ButtonTextEffect : MonoBehaviour
 {
@@ -10,3 +11,4 @@ public class ButtonTextEffect : MonoBehaviour
     {
     }
 }
+

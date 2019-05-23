@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 public class Btn_TO_CC : MonoBehaviour
 {
@@ -7,3 +8,4 @@ public class Btn_TO_CC : MonoBehaviour
         Application.LoadLevel("characterCreation");
     }
 }
+

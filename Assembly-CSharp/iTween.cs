@@ -1,5131 +1,8548 @@
-﻿using Optimization.Caching;
+// Copyright (c) 2011 Bob Berkebile (pixelplacment)
+// Please direct any bugs/comments/suggestions to http://pixelplacement.com
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+
+/*
+TERMS OF USE - EASING EQUATIONS
+Open source under the BSD License.
+Copyright (c)2001 Robert Penner
+All rights reserved.
+Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+Neither the name of the author nor the names of contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+#region Namespaces
 using System;
 using System.Collections;
-using System.Collections.Generic;
+using System.Reflection;
 using UnityEngine;
+#endregion
 
+/// <summary>
+/// <para>Version: 2.0.45</para>	 
+/// <para>Author: Bob Berkebile (http://pixelplacement.com)</para>
+/// <para>Support: http://itween.pixelplacement.com</para>
+/// </summary>
 public class iTween : MonoBehaviour
 {
-    private static GameObject cameraFade;
-    private static Dictionary<string, int> f__switchmap10;
-    private static Dictionary<string, int> f__switchmap11;
-    private static Dictionary<string, int> f__switchmap12;
-    private static Dictionary<string, int> f__switchmap13;
-    private static Dictionary<string, int> f__switchmap14;
-    private static Dictionary<string, int> f__switchmap8;
-    private static Dictionary<string, int> f__switchmap9;
-    private static Dictionary<string, int> f__switchmapA;
-    private static Dictionary<string, int> f__switchmapB;
-    private static Dictionary<string, int> f__switchmapC;
-    private static Dictionary<string, int> f__switchmapD;
-    private static Dictionary<string, int> f__switchmapE;
-    private static Dictionary<string, int> f__switchmapF;
-    private ApplyTween apply;
-    private AudioSource audioSource;
-    private Color[,] colors;
-    private EasingFunction ease;
-    private float[] floats;
-    private bool isLocal;
-    private float lastRealTime;
-    private bool loop;
-    private NamedValueColor namedcolorvalue;
-    private CRSpline path;
-    private float percentage;
-    private bool physics;
-    private Vector3 postUpdate;
-    private Vector3 preUpdate;
-    private Rect[] rects;
-    private bool reverse;
-    private float runningTime;
-    private Space space;
-    private Transform thisTransform;
-    private Hashtable tweenArguments;
-    private bool useRealTime;
-    private Vector2[] vector2s;
-    private Vector3[] vector3s;
-    private bool wasPaused;
-    public static List<Hashtable> tweens = new List<Hashtable>();
-    public string _name;
-
-    public float delay;
-    public float delayStarted;
-    public EaseType easeType;
-    public string id;
-    public bool isPaused;
-    public bool isRunning;
-    public LoopType loopType;
-    public string method;
-    public float time;
-    public string type;
-
-    private iTween(Hashtable h)
-    {
-        this.tweenArguments = h;
-    }
-
-    private delegate void ApplyTween();
-
-    private delegate float EasingFunction(float start, float end, float Value);
-
-    public enum EaseType
-    {
-        easeInQuad,
-        easeOutQuad,
-        easeInOutQuad,
-        easeInCubic,
-        easeOutCubic,
-        easeInOutCubic,
-        easeInQuart,
-        easeOutQuart,
-        easeInOutQuart,
-        easeInQuint,
-        easeOutQuint,
-        easeInOutQuint,
-        easeInSine,
-        easeOutSine,
-        easeInOutSine,
-        easeInExpo,
-        easeOutExpo,
-        easeInOutExpo,
-        easeInCirc,
-        easeOutCirc,
-        easeInOutCirc,
-        linear,
-        spring,
-        easeInBounce,
-        easeOutBounce,
-        easeInOutBounce,
-        easeInBack,
-        easeOutBack,
-        easeInOutBack,
-        easeInElastic,
-        easeOutElastic,
-        easeInOutElastic,
-        punch
-    }
-
-    public enum LoopType
-    {
-        none,
-        loop,
-        pingPong
-    }
-
-    public enum NamedValueColor
-    {
-        _Color,
-        _SpecColor,
-        _Emission,
-        _ReflectColor
-    }
-
-    private static Hashtable CleanArgs(Hashtable args)
-    {
-        Hashtable hashtable = new Hashtable(args.Count);
-        Hashtable hashtable2 = new Hashtable(args.Count);
-        foreach (DictionaryEntry dictionaryEntry in args)
-        {
-            hashtable.Add(dictionaryEntry.Key, dictionaryEntry.Value);
-        }
-        foreach (DictionaryEntry dictionaryEntry2 in hashtable)
-        {
-            if (dictionaryEntry2.Value.GetType() == typeof(int))
-            {
-                int num = (int)dictionaryEntry2.Value;
-                float num2 = (float)num;
-                args[dictionaryEntry2.Key] = num2;
-            }
-            if (dictionaryEntry2.Value.GetType() == typeof(double))
-            {
-                double num3 = (double)dictionaryEntry2.Value;
-                float num4 = (float)num3;
-                args[dictionaryEntry2.Key] = num4;
-            }
-        }
-        foreach (DictionaryEntry dictionaryEntry3 in args)
-        {
-            hashtable2.Add(dictionaryEntry3.Key.ToString().ToLower(), dictionaryEntry3.Value);
-        }
-        args = hashtable2;
-        return args;
-    }
-
-    private static void DrawLineHelper(Vector3[] line, Color color, string method)
-    {
-        Gizmos.color = color;
-        for (int i = 0; i < (line.Length - 1); i++)
-        {
-            if (method == "gizmos")
-            {
-                Gizmos.DrawLine(line[i], line[i + 1]);
-            }
-            else if (method == "handles")
-            {
-                UnityEngine.Debug.LogError("iTween Error: Drawing a line with Handles is temporarily disabled because of compatability issues with Unity 2.6!");
-            }
-        }
-    }
-
-    private static void DrawPathHelper(Vector3[] path, Color color, string method)
-    {
-        Vector3[] pts = PathControlPointGenerator(path);
-        Vector3 to = Interp(pts, 0f);
-        Gizmos.color = color;
-        int num = path.Length * 20;
-        for (int i = 1; i <= num; i++)
-        {
-            float t = ((float)i) / ((float)num);
-            Vector3 from = Interp(pts, t);
-            if (method == "gizmos")
-            {
-                Gizmos.DrawLine(from, to);
-            }
-            else if (method == "handles")
-            {
-                UnityEngine.Debug.LogError("iTween Error: Drawing a path with Handles is temporarily disabled because of compatability issues with Unity 2.6!");
-            }
-            to = from;
-        }
-    }
-
-    private static string GenerateID()
-    {
-        return Guid.NewGuid().ToString();
-    }
-
-    private static Vector3 Interp(Vector3[] pts, float t)
-    {
-        int num = pts.Length - 3;
-        int index = Mathf.Min(Mathf.FloorToInt(t * num), num - 1);
-        float num3 = (t * num) - index;
-        Vector3 vector = pts[index];
-        Vector3 vector2 = pts[index + 1];
-        Vector3 vector3 = pts[index + 2];
-        Vector3 vector4 = pts[index + 3];
-        return (Vector3)(0.5f * (((((((-vector + (3f * vector2)) - (3f * vector3)) + vector4) * ((num3 * num3) * num3)) + (((((2f * vector) - (5f * vector2)) + (4f * vector3)) - vector4) * (num3 * num3))) + ((-vector + vector3) * num3)) + (2f * vector2)));
-    }
-
-    private static void Launch(GameObject target, Hashtable args)
-    {
-        if (!args.Contains("id"))
-        {
-            args["id"] = GenerateID();
-        }
-        if (!args.Contains("target"))
-        {
-            args["target"] = target;
-        }
-        tweens.Insert(0, args);
-        target.AddComponent<iTween>();
-    }
-
-    private static Vector3[] PathControlPointGenerator(Vector3[] path)
-    {
-        Vector3[] sourceArray = path;
-        int num = 2;
-        Vector3[] destinationArray = new Vector3[sourceArray.Length + num];
-        Array.Copy(sourceArray, 0, destinationArray, 1, sourceArray.Length);
-        destinationArray[0] = destinationArray[1] + (destinationArray[1] - destinationArray[2]);
-        destinationArray[destinationArray.Length - 1] = destinationArray[destinationArray.Length - 2] + (destinationArray[destinationArray.Length - 2] - destinationArray[destinationArray.Length - 3]);
-        if (destinationArray[1] == destinationArray[destinationArray.Length - 2])
-        {
-            Vector3[] vectorArray3 = new Vector3[destinationArray.Length];
-            Array.Copy(destinationArray, vectorArray3, destinationArray.Length);
-            vectorArray3[0] = vectorArray3[vectorArray3.Length - 3];
-            vectorArray3[vectorArray3.Length - 1] = vectorArray3[2];
-            destinationArray = new Vector3[vectorArray3.Length];
-            Array.Copy(vectorArray3, destinationArray, vectorArray3.Length);
-        }
-        return destinationArray;
-    }
-
-    private void ApplyAudioToTargets()
-    {
-        this.vector2s[2].x = this.ease(this.vector2s[0].x, this.vector2s[1].x, this.percentage);
-        this.vector2s[2].y = this.ease(this.vector2s[0].y, this.vector2s[1].y, this.percentage);
-        this.audioSource.volume = this.vector2s[2].x;
-        this.audioSource.pitch = this.vector2s[2].y;
-        if (this.percentage == 1f)
-        {
-            this.audioSource.volume = this.vector2s[1].x;
-            this.audioSource.pitch = this.vector2s[1].y;
-        }
-    }
-
-    private void ApplyColorTargets()
-    {
-        this.colors[0, 2].r = this.ease(this.colors[0, 0].r, this.colors[0, 1].r, this.percentage);
-        this.colors[0, 2].g = this.ease(this.colors[0, 0].g, this.colors[0, 1].g, this.percentage);
-        this.colors[0, 2].b = this.ease(this.colors[0, 0].b, this.colors[0, 1].b, this.percentage);
-        this.colors[0, 2].a = this.ease(this.colors[0, 0].a, this.colors[0, 1].a, this.percentage);
-        this.tweenArguments["onupdateparams"] = this.colors[0, 2];
-        if (this.percentage == 1f)
-        {
-            this.tweenArguments["onupdateparams"] = this.colors[0, 1];
-        }
-    }
-
-    private void ApplyColorToTargets()
-    {
-        for (int i = 0; i < this.colors.GetLength(0); i++)
-        {
-            this.colors[i, 2].r = this.ease(this.colors[i, 0].r, this.colors[i, 1].r, this.percentage);
-            this.colors[i, 2].g = this.ease(this.colors[i, 0].g, this.colors[i, 1].g, this.percentage);
-            this.colors[i, 2].b = this.ease(this.colors[i, 0].b, this.colors[i, 1].b, this.percentage);
-            this.colors[i, 2].a = this.ease(this.colors[i, 0].a, this.colors[i, 1].a, this.percentage);
-        }
-        if (base.GetComponent<GUITexture>() != null)
-        {
-            base.guiTexture.color = this.colors[0, 2];
-        }
-        else if (base.GetComponent<GUIText>() != null)
-        {
-            base.guiText.material.color = this.colors[0, 2];
-        }
-        else if (base.renderer != null)
-        {
-            for (int j = 0; j < this.colors.GetLength(0); j++)
-            {
-                base.renderer.materials[j].SetColor(this.namedcolorvalue.ToString(), this.colors[j, 2]);
-            }
-        }
-        else if (base.light != null)
-        {
-            base.light.color = this.colors[0, 2];
-        }
-        if (this.percentage == 1f)
-        {
-            if (base.GetComponent<GUITexture>() != null)
-            {
-                base.guiTexture.color = this.colors[0, 1];
-            }
-            else if (base.GetComponent<GUIText>() != null)
-            {
-                base.guiText.material.color = this.colors[0, 1];
-            }
-            else if (base.renderer != null)
-            {
-                for (int k = 0; k < this.colors.GetLength(0); k++)
-                {
-                    base.renderer.materials[k].SetColor(this.namedcolorvalue.ToString(), this.colors[k, 1]);
-                }
-            }
-            else if (base.light != null)
-            {
-                base.light.color = this.colors[0, 1];
-            }
-        }
-    }
-
-    private void ApplyFloatTargets()
-    {
-        this.floats[2] = this.ease(this.floats[0], this.floats[1], this.percentage);
-        this.tweenArguments["onupdateparams"] = this.floats[2];
-        if (this.percentage == 1f)
-        {
-            this.tweenArguments["onupdateparams"] = this.floats[1];
-        }
-    }
-
-    private void ApplyLookToTargets()
-    {
-        this.vector3s[2].x = this.ease(this.vector3s[0].x, this.vector3s[1].x, this.percentage);
-        this.vector3s[2].y = this.ease(this.vector3s[0].y, this.vector3s[1].y, this.percentage);
-        this.vector3s[2].z = this.ease(this.vector3s[0].z, this.vector3s[1].z, this.percentage);
-        if (this.isLocal)
-        {
-            this.thisTransform.localRotation = Quaternion.Euler(this.vector3s[2]);
-        }
-        else
-        {
-            this.thisTransform.rotation = Quaternion.Euler(this.vector3s[2]);
-        }
-    }
-
-    private void ApplyMoveByTargets()
-    {
-        this.preUpdate = this.thisTransform.position;
-        Vector3 eulerAngles = new Vector3();
-        if (this.tweenArguments.Contains("looktarget"))
-        {
-            eulerAngles = this.thisTransform.eulerAngles;
-            this.thisTransform.eulerAngles = this.vector3s[4];
-        }
-        this.vector3s[2].x = this.ease(this.vector3s[0].x, this.vector3s[1].x, this.percentage);
-        this.vector3s[2].y = this.ease(this.vector3s[0].y, this.vector3s[1].y, this.percentage);
-        this.vector3s[2].z = this.ease(this.vector3s[0].z, this.vector3s[1].z, this.percentage);
-        this.thisTransform.Translate(this.vector3s[2] - this.vector3s[3], this.space);
-        this.vector3s[3] = this.vector3s[2];
-        if (this.tweenArguments.Contains("looktarget"))
-        {
-            this.thisTransform.eulerAngles = eulerAngles;
-        }
-        this.postUpdate = this.thisTransform.position;
-        if (this.physics)
-        {
-            this.thisTransform.position = this.preUpdate;
-            base.rigidbody.MovePosition(this.postUpdate);
-        }
-    }
-
-    private void ApplyMoveToPathTargets()
-    {
-        this.preUpdate = this.thisTransform.position;
-        float num = this.ease(0f, 1f, this.percentage);
-        if (this.isLocal)
-        {
-            this.thisTransform.localPosition = this.path.Interp(Mathf.Clamp(num, 0f, 1f));
-        }
-        else
-        {
-            this.thisTransform.position = this.path.Interp(Mathf.Clamp(num, 0f, 1f));
-        }
-        if (this.tweenArguments.Contains("orienttopath") && ((bool)this.tweenArguments["orienttopath"]))
-        {
-            float lookAhead;
-            if (this.tweenArguments.Contains("lookahead"))
-            {
-                lookAhead = (float)this.tweenArguments["lookahead"];
-            }
-            else
-            {
-                lookAhead = Defaults.lookAhead;
-            }
-            float num3 = this.ease(0f, 1f, Mathf.Min((float)1f, (float)(this.percentage + lookAhead)));
-            this.tweenArguments["looktarget"] = this.path.Interp(Mathf.Clamp(num3, 0f, 1f));
-        }
-        this.postUpdate = this.thisTransform.position;
-        if (this.physics)
-        {
-            this.thisTransform.position = this.preUpdate;
-            base.rigidbody.MovePosition(this.postUpdate);
-        }
-    }
-
-    private void ApplyMoveToTargets()
-    {
-        this.preUpdate = this.thisTransform.position;
-        this.vector3s[2].x = this.ease(this.vector3s[0].x, this.vector3s[1].x, this.percentage);
-        this.vector3s[2].y = this.ease(this.vector3s[0].y, this.vector3s[1].y, this.percentage);
-        this.vector3s[2].z = this.ease(this.vector3s[0].z, this.vector3s[1].z, this.percentage);
-        if (this.isLocal)
-        {
-            this.thisTransform.localPosition = this.vector3s[2];
-        }
-        else
-        {
-            this.thisTransform.position = this.vector3s[2];
-        }
-        if (this.percentage == 1f)
-        {
-            if (this.isLocal)
-            {
-                this.thisTransform.localPosition = this.vector3s[1];
-            }
-            else
-            {
-                this.thisTransform.position = this.vector3s[1];
-            }
-        }
-        this.postUpdate = this.thisTransform.position;
-        if (this.physics)
-        {
-            this.thisTransform.position = this.preUpdate;
-            base.rigidbody.MovePosition(this.postUpdate);
-        }
-    }
-
-    private void ApplyPunchPositionTargets()
-    {
-        this.preUpdate = this.thisTransform.position;
-        Vector3 eulerAngles = new Vector3();
-        if (this.tweenArguments.Contains("looktarget"))
-        {
-            eulerAngles = this.thisTransform.eulerAngles;
-            this.thisTransform.eulerAngles = this.vector3s[4];
-        }
-        if (this.vector3s[1].x > 0f)
-        {
-            this.vector3s[2].x = this.punch(this.vector3s[1].x, this.percentage);
-        }
-        else if (this.vector3s[1].x < 0f)
-        {
-            this.vector3s[2].x = -this.punch(Mathf.Abs(this.vector3s[1].x), this.percentage);
-        }
-        if (this.vector3s[1].y > 0f)
-        {
-            this.vector3s[2].y = this.punch(this.vector3s[1].y, this.percentage);
-        }
-        else if (this.vector3s[1].y < 0f)
-        {
-            this.vector3s[2].y = -this.punch(Mathf.Abs(this.vector3s[1].y), this.percentage);
-        }
-        if (this.vector3s[1].z > 0f)
-        {
-            this.vector3s[2].z = this.punch(this.vector3s[1].z, this.percentage);
-        }
-        else if (this.vector3s[1].z < 0f)
-        {
-            this.vector3s[2].z = -this.punch(Mathf.Abs(this.vector3s[1].z), this.percentage);
-        }
-        this.thisTransform.Translate(this.vector3s[2] - this.vector3s[3], this.space);
-        this.vector3s[3] = this.vector3s[2];
-        if (this.tweenArguments.Contains("looktarget"))
-        {
-            this.thisTransform.eulerAngles = eulerAngles;
-        }
-        this.postUpdate = this.thisTransform.position;
-        if (this.physics)
-        {
-            this.thisTransform.position = this.preUpdate;
-            base.rigidbody.MovePosition(this.postUpdate);
-        }
-    }
-
-    private void ApplyPunchRotationTargets()
-    {
-        this.preUpdate = this.thisTransform.eulerAngles;
-        if (this.vector3s[1].x > 0f)
-        {
-            this.vector3s[2].x = this.punch(this.vector3s[1].x, this.percentage);
-        }
-        else if (this.vector3s[1].x < 0f)
-        {
-            this.vector3s[2].x = -this.punch(Mathf.Abs(this.vector3s[1].x), this.percentage);
-        }
-        if (this.vector3s[1].y > 0f)
-        {
-            this.vector3s[2].y = this.punch(this.vector3s[1].y, this.percentage);
-        }
-        else if (this.vector3s[1].y < 0f)
-        {
-            this.vector3s[2].y = -this.punch(Mathf.Abs(this.vector3s[1].y), this.percentage);
-        }
-        if (this.vector3s[1].z > 0f)
-        {
-            this.vector3s[2].z = this.punch(this.vector3s[1].z, this.percentage);
-        }
-        else if (this.vector3s[1].z < 0f)
-        {
-            this.vector3s[2].z = -this.punch(Mathf.Abs(this.vector3s[1].z), this.percentage);
-        }
-        this.thisTransform.Rotate(this.vector3s[2] - this.vector3s[3], this.space);
-        this.vector3s[3] = this.vector3s[2];
-        this.postUpdate = this.thisTransform.eulerAngles;
-        if (this.physics)
-        {
-            this.thisTransform.eulerAngles = this.preUpdate;
-            base.rigidbody.MoveRotation(Quaternion.Euler(this.postUpdate));
-        }
-    }
-
-    private void ApplyPunchScaleTargets()
-    {
-        if (this.vector3s[1].x > 0f)
-        {
-            this.vector3s[2].x = this.punch(this.vector3s[1].x, this.percentage);
-        }
-        else if (this.vector3s[1].x < 0f)
-        {
-            this.vector3s[2].x = -this.punch(Mathf.Abs(this.vector3s[1].x), this.percentage);
-        }
-        if (this.vector3s[1].y > 0f)
-        {
-            this.vector3s[2].y = this.punch(this.vector3s[1].y, this.percentage);
-        }
-        else if (this.vector3s[1].y < 0f)
-        {
-            this.vector3s[2].y = -this.punch(Mathf.Abs(this.vector3s[1].y), this.percentage);
-        }
-        if (this.vector3s[1].z > 0f)
-        {
-            this.vector3s[2].z = this.punch(this.vector3s[1].z, this.percentage);
-        }
-        else if (this.vector3s[1].z < 0f)
-        {
-            this.vector3s[2].z = -this.punch(Mathf.Abs(this.vector3s[1].z), this.percentage);
-        }
-        this.thisTransform.localScale = this.vector3s[0] + this.vector3s[2];
-    }
-
-    private void ApplyRectTargets()
-    {
-        this.rects[2].x = this.ease(this.rects[0].x, this.rects[1].x, this.percentage);
-        this.rects[2].y = this.ease(this.rects[0].y, this.rects[1].y, this.percentage);
-        this.rects[2].width = this.ease(this.rects[0].width, this.rects[1].width, this.percentage);
-        this.rects[2].height = this.ease(this.rects[0].height, this.rects[1].height, this.percentage);
-        this.tweenArguments["onupdateparams"] = this.rects[2];
-        if (this.percentage == 1f)
-        {
-            this.tweenArguments["onupdateparams"] = this.rects[1];
-        }
-    }
-
-    private void ApplyRotateAddTargets()
-    {
-        this.preUpdate = this.thisTransform.eulerAngles;
-        this.vector3s[2].x = this.ease(this.vector3s[0].x, this.vector3s[1].x, this.percentage);
-        this.vector3s[2].y = this.ease(this.vector3s[0].y, this.vector3s[1].y, this.percentage);
-        this.vector3s[2].z = this.ease(this.vector3s[0].z, this.vector3s[1].z, this.percentage);
-        this.thisTransform.Rotate(this.vector3s[2] - this.vector3s[3], this.space);
-        this.vector3s[3] = this.vector3s[2];
-        this.postUpdate = this.thisTransform.eulerAngles;
-        if (this.physics)
-        {
-            this.thisTransform.eulerAngles = this.preUpdate;
-            base.rigidbody.MoveRotation(Quaternion.Euler(this.postUpdate));
-        }
-    }
-
-    private void ApplyRotateToTargets()
-    {
-        this.preUpdate = this.thisTransform.eulerAngles;
-        this.vector3s[2].x = this.ease(this.vector3s[0].x, this.vector3s[1].x, this.percentage);
-        this.vector3s[2].y = this.ease(this.vector3s[0].y, this.vector3s[1].y, this.percentage);
-        this.vector3s[2].z = this.ease(this.vector3s[0].z, this.vector3s[1].z, this.percentage);
-        if (this.isLocal)
-        {
-            this.thisTransform.localRotation = Quaternion.Euler(this.vector3s[2]);
-        }
-        else
-        {
-            this.thisTransform.rotation = Quaternion.Euler(this.vector3s[2]);
-        }
-        if (this.percentage == 1f)
-        {
-            if (this.isLocal)
-            {
-                this.thisTransform.localRotation = Quaternion.Euler(this.vector3s[1]);
-            }
-            else
-            {
-                this.thisTransform.rotation = Quaternion.Euler(this.vector3s[1]);
-            }
-        }
-        this.postUpdate = this.thisTransform.eulerAngles;
-        if (this.physics)
-        {
-            this.thisTransform.eulerAngles = this.preUpdate;
-            base.rigidbody.MoveRotation(Quaternion.Euler(this.postUpdate));
-        }
-    }
-
-    private void ApplyScaleToTargets()
-    {
-        this.vector3s[2].x = this.ease(this.vector3s[0].x, this.vector3s[1].x, this.percentage);
-        this.vector3s[2].y = this.ease(this.vector3s[0].y, this.vector3s[1].y, this.percentage);
-        this.vector3s[2].z = this.ease(this.vector3s[0].z, this.vector3s[1].z, this.percentage);
-        this.thisTransform.localScale = this.vector3s[2];
-        if (this.percentage == 1f)
-        {
-            this.thisTransform.localScale = this.vector3s[1];
-        }
-    }
-
-    private void ApplyShakePositionTargets()
-    {
-        if (this.isLocal)
-        {
-            this.preUpdate = this.thisTransform.localPosition;
-        }
-        else
-        {
-            this.preUpdate = this.thisTransform.position;
-        }
-        Vector3 eulerAngles = new Vector3();
-        if (this.tweenArguments.Contains("looktarget"))
-        {
-            eulerAngles = this.thisTransform.eulerAngles;
-            this.thisTransform.eulerAngles = this.vector3s[3];
-        }
-        if (this.percentage == 0f)
-        {
-            this.thisTransform.Translate(this.vector3s[1], this.space);
-        }
-        if (this.isLocal)
-        {
-            this.thisTransform.localPosition = this.vector3s[0];
-        }
-        else
-        {
-            this.thisTransform.position = this.vector3s[0];
-        }
-        float num = 1f - this.percentage;
-        this.vector3s[2].x = UnityEngine.Random.Range((float)(-this.vector3s[1].x * num), (float)(this.vector3s[1].x * num));
-        this.vector3s[2].y = UnityEngine.Random.Range((float)(-this.vector3s[1].y * num), (float)(this.vector3s[1].y * num));
-        this.vector3s[2].z = UnityEngine.Random.Range((float)(-this.vector3s[1].z * num), (float)(this.vector3s[1].z * num));
-        if (this.isLocal)
-        {
-            this.thisTransform.localPosition += this.vector3s[2];
-        }
-        else
-        {
-            this.thisTransform.position += this.vector3s[2];
-        }
-        if (this.tweenArguments.Contains("looktarget"))
-        {
-            this.thisTransform.eulerAngles = eulerAngles;
-        }
-        this.postUpdate = this.thisTransform.position;
-        if (this.physics)
-        {
-            this.thisTransform.position = this.preUpdate;
-            base.rigidbody.MovePosition(this.postUpdate);
-        }
-    }
-
-    private void ApplyShakeRotationTargets()
-    {
-        this.preUpdate = this.thisTransform.eulerAngles;
-        if (this.percentage == 0f)
-        {
-            this.thisTransform.Rotate(this.vector3s[1], this.space);
-        }
-        this.thisTransform.eulerAngles = this.vector3s[0];
-        float num = 1f - this.percentage;
-        this.vector3s[2].x = UnityEngine.Random.Range((float)(-this.vector3s[1].x * num), (float)(this.vector3s[1].x * num));
-        this.vector3s[2].y = UnityEngine.Random.Range((float)(-this.vector3s[1].y * num), (float)(this.vector3s[1].y * num));
-        this.vector3s[2].z = UnityEngine.Random.Range((float)(-this.vector3s[1].z * num), (float)(this.vector3s[1].z * num));
-        this.thisTransform.Rotate(this.vector3s[2], this.space);
-        this.postUpdate = this.thisTransform.eulerAngles;
-        if (this.physics)
-        {
-            this.thisTransform.eulerAngles = this.preUpdate;
-            base.rigidbody.MoveRotation(Quaternion.Euler(this.postUpdate));
-        }
-    }
-
-    private void ApplyShakeScaleTargets()
-    {
-        if (this.percentage == 0f)
-        {
-            this.thisTransform.localScale = this.vector3s[1];
-        }
-        this.thisTransform.localScale = this.vector3s[0];
-        float num = 1f - this.percentage;
-        this.vector3s[2].x = UnityEngine.Random.Range((float)(-this.vector3s[1].x * num), (float)(this.vector3s[1].x * num));
-        this.vector3s[2].y = UnityEngine.Random.Range((float)(-this.vector3s[1].y * num), (float)(this.vector3s[1].y * num));
-        this.vector3s[2].z = UnityEngine.Random.Range((float)(-this.vector3s[1].z * num), (float)(this.vector3s[1].z * num));
-        this.thisTransform.localScale += this.vector3s[2];
-    }
-
-    private void ApplyStabTargets()
-    {
-    }
-
-    private void ApplyVector2Targets()
-    {
-        this.vector2s[2].x = this.ease(this.vector2s[0].x, this.vector2s[1].x, this.percentage);
-        this.vector2s[2].y = this.ease(this.vector2s[0].y, this.vector2s[1].y, this.percentage);
-        this.tweenArguments["onupdateparams"] = this.vector2s[2];
-        if (this.percentage == 1f)
-        {
-            this.tweenArguments["onupdateparams"] = this.vector2s[1];
-        }
-    }
-
-    private void ApplyVector3Targets()
-    {
-        this.vector3s[2].x = this.ease(this.vector3s[0].x, this.vector3s[1].x, this.percentage);
-        this.vector3s[2].y = this.ease(this.vector3s[0].y, this.vector3s[1].y, this.percentage);
-        this.vector3s[2].z = this.ease(this.vector3s[0].z, this.vector3s[1].z, this.percentage);
-        this.tweenArguments["onupdateparams"] = this.vector3s[2];
-        if (this.percentage == 1f)
-        {
-            this.tweenArguments["onupdateparams"] = this.vector3s[1];
-        }
-    }
-
-    private void Awake()
-    {
-        this.thisTransform = base.transform;
-        this.RetrieveArgs();
-        this.lastRealTime = Time.realtimeSinceStartup;
-    }
-
-    private void CallBack(string callbackType)
-    {
-        if (this.tweenArguments.Contains(callbackType) && !this.tweenArguments.Contains("ischild"))
-        {
-            GameObject gameObject;
-            if (this.tweenArguments.Contains(callbackType + "target"))
-            {
-                gameObject = (GameObject)this.tweenArguments[callbackType + "target"];
-            }
-            else
-            {
-                gameObject = base.gameObject;
-            }
-            if (this.tweenArguments[callbackType].GetType() == typeof(string))
-            {
-                gameObject.SendMessage((string)this.tweenArguments[callbackType], this.tweenArguments[callbackType + "params"], SendMessageOptions.DontRequireReceiver);
-            }
-            else
-            {
-                UnityEngine.Debug.LogError("iTween Error: Callback method references must be passed as a String!");
-                UnityEngine.Object.Destroy(this);
-            }
-        }
-    }
-
-    private float clerp(float start, float end, float value)
-    {
-        float num = 0f;
-        float num2 = 360f;
-        float num3 = Mathf.Abs((float)((num2 - num) * 0.5f));
-        float num5 = 0f;
-        if ((end - start) < -num3)
-        {
-            num5 = ((num2 - start) + end) * value;
-            return (start + num5);
-        }
-        if ((end - start) > num3)
-        {
-            num5 = -((num2 - end) + start) * value;
-            return (start + num5);
-        }
-        return (start + ((end - start) * value));
-    }
-
-    // iTween
-    private void ConflictCheck()
-    {
-        Component[] components = base.GetComponents<iTween>();
-        Component[] array = components;
-        for (int i = 0; i < array.Length; i++)
-        {
-            iTween iTween = (iTween)array[i];
-            if (iTween.type == "value")
-            {
-                return;
-            }
-            if (iTween.isRunning && iTween.type == this.type)
-            {
-                if (iTween.method != this.method)
-                {
-                    return;
-                }
-                if (iTween.tweenArguments.Count != this.tweenArguments.Count)
-                {
-                    iTween.Dispose();
-                    return;
-                }
-                foreach (DictionaryEntry dictionaryEntry in this.tweenArguments)
-                {
-                    if (!iTween.tweenArguments.Contains(dictionaryEntry.Key))
-                    {
-                        iTween.Dispose();
-                        return;
-                    }
-                    if (!iTween.tweenArguments[dictionaryEntry.Key].Equals(this.tweenArguments[dictionaryEntry.Key]) && (string)dictionaryEntry.Key != "id")
-                    {
-                        iTween.Dispose();
-                        return;
-                    }
-                }
-                this.Dispose();
-            }
-        }
-    }
-
-    private void DisableKinematic()
-    {
-    }
-
-    private void Dispose()
-    {
-        for (int i = 0; i < tweens.Count; i++)
-        {
-            Hashtable hashtable = tweens[i];
-            if (((string)hashtable["id"]) == this.id)
-            {
-                tweens.RemoveAt(i);
-                break;
-            }
-        }
-        UnityEngine.Object.Destroy(this);
-    }
-
-    private float easeInBack(float start, float end, float value)
-    {
-        end -= start;
-        value /= 1f;
-        float num = 1.70158f;
-        return ((((end * value) * value) * (((num + 1f) * value) - num)) + start);
-    }
-
-    private float easeInBounce(float start, float end, float value)
-    {
-        end -= start;
-        float num = 1f;
-        return ((end - this.easeOutBounce(0f, end, num - value)) + start);
-    }
-
-    private float easeInCirc(float start, float end, float value)
-    {
-        end -= start;
-        return ((-end * (Mathf.Sqrt(1f - (value * value)) - 1f)) + start);
-    }
-
-    private float easeInCubic(float start, float end, float value)
-    {
-        end -= start;
-        return ((((end * value) * value) * value) + start);
-    }
-
-    private float easeInElastic(float start, float end, float value)
-    {
-        end -= start;
-        float num = 1f;
-        float num2 = num * 0.3f;
-        float num3 = 0f;
-        float num4 = 0f;
-        if (value == 0f)
-        {
-            return start;
-        }
-        if ((value /= num) == 1f)
-        {
-            return (start + end);
-        }
-        if ((num4 == 0f) || (num4 < Mathf.Abs(end)))
-        {
-            num4 = end;
-            num3 = num2 / 4f;
-        }
-        else
-        {
-            num3 = (num2 / 6.283185f) * Mathf.Asin(end / num4);
-        }
-        return (-((num4 * Mathf.Pow(2f, 10f * --value)) * Mathf.Sin((((value * num) - num3) * 6.283185f) / num2)) + start);
-    }
-
-    private float easeInExpo(float start, float end, float value)
-    {
-        end -= start;
-        return ((end * Mathf.Pow(2f, 10f * (value - 1f))) + start);
-    }
-
-    private float easeInOutBack(float start, float end, float value)
-    {
-        float num = 1.70158f;
-        end -= start;
-        value /= 0.5f;
-        if (value < 1f)
-        {
-            num *= 1.525f;
-            return (((end * 0.5f) * ((value * value) * (((num + 1f) * value) - num))) + start);
-        }
-        value -= 2f;
-        num *= 1.525f;
-        return (((end * 0.5f) * (((value * value) * (((num + 1f) * value) + num)) + 2f)) + start);
-    }
-
-    private float easeInOutBounce(float start, float end, float value)
-    {
-        end -= start;
-        float num = 1f;
-        if (value < (num * 0.5f))
-        {
-            return ((this.easeInBounce(0f, end, value * 2f) * 0.5f) + start);
-        }
-        return (((this.easeOutBounce(0f, end, (value * 2f) - num) * 0.5f) + (end * 0.5f)) + start);
-    }
-
-    private float easeInOutCirc(float start, float end, float value)
-    {
-        value /= 0.5f;
-        end -= start;
-        if (value < 1f)
-        {
-            return (((-end * 0.5f) * (Mathf.Sqrt(1f - (value * value)) - 1f)) + start);
-        }
-        value -= 2f;
-        return (((end * 0.5f) * (Mathf.Sqrt(1f - (value * value)) + 1f)) + start);
-    }
-
-    private float easeInOutCubic(float start, float end, float value)
-    {
-        value /= 0.5f;
-        end -= start;
-        if (value < 1f)
-        {
-            return (((((end * 0.5f) * value) * value) * value) + start);
-        }
-        value -= 2f;
-        return (((end * 0.5f) * (((value * value) * value) + 2f)) + start);
-    }
-
-    private float easeInOutElastic(float start, float end, float value)
-    {
-        end -= start;
-        float num = 1f;
-        float num2 = num * 0.3f;
-        float num3 = 0f;
-        float num4 = 0f;
-        if (value == 0f)
-        {
-            return start;
-        }
-        if ((value /= (num * 0.5f)) == 2f)
-        {
-            return (start + end);
-        }
-        if ((num4 == 0f) || (num4 < Mathf.Abs(end)))
-        {
-            num4 = end;
-            num3 = num2 / 4f;
-        }
-        else
-        {
-            num3 = (num2 / 6.283185f) * Mathf.Asin(end / num4);
-        }
-        if (value < 1f)
-        {
-            return ((-0.5f * ((num4 * Mathf.Pow(2f, 10f * --value)) * Mathf.Sin((((value * num) - num3) * 6.283185f) / num2))) + start);
-        }
-        return (((((num4 * Mathf.Pow(2f, -10f * --value)) * Mathf.Sin((((value * num) - num3) * 6.283185f) / num2)) * 0.5f) + end) + start);
-    }
-
-    private float easeInOutExpo(float start, float end, float value)
-    {
-        value /= 0.5f;
-        end -= start;
-        if (value < 1f)
-        {
-            return (((end * 0.5f) * Mathf.Pow(2f, 10f * (value - 1f))) + start);
-        }
-        value--;
-        return (((end * 0.5f) * (-Mathf.Pow(2f, -10f * value) + 2f)) + start);
-    }
-
-    private float easeInOutQuad(float start, float end, float value)
-    {
-        value /= 0.5f;
-        end -= start;
-        if (value < 1f)
-        {
-            return ((((end * 0.5f) * value) * value) + start);
-        }
-        value--;
-        return (((-end * 0.5f) * ((value * (value - 2f)) - 1f)) + start);
-    }
-
-    private float easeInOutQuart(float start, float end, float value)
-    {
-        value /= 0.5f;
-        end -= start;
-        if (value < 1f)
-        {
-            return ((((((end * 0.5f) * value) * value) * value) * value) + start);
-        }
-        value -= 2f;
-        return (((-end * 0.5f) * ((((value * value) * value) * value) - 2f)) + start);
-    }
-
-    private float easeInOutQuint(float start, float end, float value)
-    {
-        value /= 0.5f;
-        end -= start;
-        if (value < 1f)
-        {
-            return (((((((end * 0.5f) * value) * value) * value) * value) * value) + start);
-        }
-        value -= 2f;
-        return (((end * 0.5f) * (((((value * value) * value) * value) * value) + 2f)) + start);
-    }
-
-    private float easeInOutSine(float start, float end, float value)
-    {
-        end -= start;
-        return (((-end * 0.5f) * (Mathf.Cos(3.141593f * value) - 1f)) + start);
-    }
-
-    private float easeInQuad(float start, float end, float value)
-    {
-        end -= start;
-        return (((end * value) * value) + start);
-    }
-
-    private float easeInQuart(float start, float end, float value)
-    {
-        end -= start;
-        return (((((end * value) * value) * value) * value) + start);
-    }
-
-    private float easeInQuint(float start, float end, float value)
-    {
-        end -= start;
-        return ((((((end * value) * value) * value) * value) * value) + start);
-    }
-
-    private float easeInSine(float start, float end, float value)
-    {
-        end -= start;
-        return (((-end * Mathf.Cos(value * 1.570796f)) + end) + start);
-    }
-
-    private float easeOutBack(float start, float end, float value)
-    {
-        float num = 1.70158f;
-        end -= start;
-        value--;
-        return ((end * (((value * value) * (((num + 1f) * value) + num)) + 1f)) + start);
-    }
-
-    private float easeOutBounce(float start, float end, float value)
-    {
-        value /= 1f;
-        end -= start;
-        if (value < 0.3636364f)
-        {
-            return ((end * ((7.5625f * value) * value)) + start);
-        }
-        if (value < 0.7272727f)
-        {
-            value -= 0.5454546f;
-            return ((end * (((7.5625f * value) * value) + 0.75f)) + start);
-        }
-        if (value < 0.90909090909090906)
-        {
-            value -= 0.8181818f;
-            return ((end * (((7.5625f * value) * value) + 0.9375f)) + start);
-        }
-        value -= 0.9545454f;
-        return ((end * (((7.5625f * value) * value) + 0.984375f)) + start);
-    }
-
-    private float easeOutCirc(float start, float end, float value)
-    {
-        value--;
-        end -= start;
-        return ((end * Mathf.Sqrt(1f - (value * value))) + start);
-    }
-
-    private float easeOutCubic(float start, float end, float value)
-    {
-        value--;
-        end -= start;
-        return ((end * (((value * value) * value) + 1f)) + start);
-    }
-
-    private float easeOutElastic(float start, float end, float value)
-    {
-        end -= start;
-        float num = 1f;
-        float num2 = num * 0.3f;
-        float num3 = 0f;
-        float num4 = 0f;
-        if (value == 0f)
-        {
-            return start;
-        }
-        if ((value /= num) == 1f)
-        {
-            return (start + end);
-        }
-        if ((num4 == 0f) || (num4 < Mathf.Abs(end)))
-        {
-            num4 = end;
-            num3 = num2 * 0.25f;
-        }
-        else
-        {
-            num3 = (num2 / 6.283185f) * Mathf.Asin(end / num4);
-        }
-        return ((((num4 * Mathf.Pow(2f, -10f * value)) * Mathf.Sin((((value * num) - num3) * 6.283185f) / num2)) + end) + start);
-    }
-
-    private float easeOutExpo(float start, float end, float value)
-    {
-        end -= start;
-        return ((end * (-Mathf.Pow(2f, -10f * value) + 1f)) + start);
-    }
-
-    private float easeOutQuad(float start, float end, float value)
-    {
-        end -= start;
-        return (((-end * value) * (value - 2f)) + start);
-    }
-
-    private float easeOutQuart(float start, float end, float value)
-    {
-        value--;
-        end -= start;
-        return ((-end * ((((value * value) * value) * value) - 1f)) + start);
-    }
-
-    private float easeOutQuint(float start, float end, float value)
-    {
-        value--;
-        end -= start;
-        return ((end * (((((value * value) * value) * value) * value) + 1f)) + start);
-    }
-
-    private float easeOutSine(float start, float end, float value)
-    {
-        end -= start;
-        return ((end * Mathf.Sin(value * 1.570796f)) + start);
-    }
-
-    private void EnableKinematic()
-    {
-    }
-
-    private void FixedUpdate()
-    {
-        if (this.isRunning && this.physics)
-        {
-            if (!this.reverse)
-            {
-                if (this.percentage < 1f)
-                {
-                    this.TweenUpdate();
-                }
-                else
-                {
-                    this.TweenComplete();
-                }
-            }
-            else if (this.percentage > 0f)
-            {
-                this.TweenUpdate();
-            }
-            else
-            {
-                this.TweenComplete();
-            }
-        }
-    }
-
-    private void GenerateAudioToTargets()
-    {
-        this.vector2s = new Vector2[3];
-        if (this.tweenArguments.Contains("audiosource"))
-        {
-            this.audioSource = (AudioSource)this.tweenArguments["audiosource"];
-        }
-        else if (base.GetComponent<AudioSource>() != null)
-        {
-            this.audioSource = base.audio;
-        }
-        else
-        {
-            UnityEngine.Debug.LogError("iTween Error: AudioTo requires an AudioSource.");
-            this.Dispose();
-        }
-        this.vector2s[0] = this.vector2s[1] = new Vector2(this.audioSource.volume, this.audioSource.pitch);
-        if (this.tweenArguments.Contains("volume"))
-        {
-            this.vector2s[1].x = (float)this.tweenArguments["volume"];
-        }
-        if (this.tweenArguments.Contains("pitch"))
-        {
-            this.vector2s[1].y = (float)this.tweenArguments["pitch"];
-        }
-    }
-
-    private void GenerateColorTargets()
-    {
-        this.colors = new Color[1, 3];
-        this.colors[0, 0] = (Color)this.tweenArguments["from"];
-        this.colors[0, 1] = (Color)this.tweenArguments["to"];
-    }
-
-    private void GenerateColorToTargets()
-    {
-        if (base.GetComponent<GUITexture>() != null)
-        {
-            this.colors = new Color[1, 3];
-            this.colors[0, 0] = this.colors[0, 1] = base.guiTexture.color;
-        }
-        else if (base.GetComponent<GUIText>() != null)
-        {
-            this.colors = new Color[1, 3];
-            this.colors[0, 0] = this.colors[0, 1] = base.guiText.material.color;
-        }
-        else if (base.renderer != null)
-        {
-            this.colors = new Color[base.renderer.materials.Length, 3];
-            for (int i = 0; i < base.renderer.materials.Length; i++)
-            {
-                this.colors[i, 0] = base.renderer.materials[i].GetColor(this.namedcolorvalue.ToString());
-                this.colors[i, 1] = base.renderer.materials[i].GetColor(this.namedcolorvalue.ToString());
-            }
-        }
-        else if (base.light != null)
-        {
-            this.colors = new Color[1, 3];
-            this.colors[0, 0] = this.colors[0, 1] = base.light.color;
-        }
-        else
-        {
-            this.colors = new Color[1, 3];
-        }
-        if (this.tweenArguments.Contains("color"))
-        {
-            for (int j = 0; j < this.colors.GetLength(0); j++)
-            {
-                this.colors[j, 1] = (Color)this.tweenArguments["color"];
-            }
-        }
-        else
-        {
-            if (this.tweenArguments.Contains("r"))
-            {
-                for (int k = 0; k < this.colors.GetLength(0); k++)
-                {
-                    this.colors[k, 1].r = (float)this.tweenArguments["r"];
-                }
-            }
-            if (this.tweenArguments.Contains("g"))
-            {
-                for (int m = 0; m < this.colors.GetLength(0); m++)
-                {
-                    this.colors[m, 1].g = (float)this.tweenArguments["g"];
-                }
-            }
-            if (this.tweenArguments.Contains("b"))
-            {
-                for (int n = 0; n < this.colors.GetLength(0); n++)
-                {
-                    this.colors[n, 1].b = (float)this.tweenArguments["b"];
-                }
-            }
-            if (this.tweenArguments.Contains("a"))
-            {
-                for (int num6 = 0; num6 < this.colors.GetLength(0); num6++)
-                {
-                    this.colors[num6, 1].a = (float)this.tweenArguments["a"];
-                }
-            }
-        }
-        if (this.tweenArguments.Contains("amount"))
-        {
-            for (int num7 = 0; num7 < this.colors.GetLength(0); num7++)
-            {
-                this.colors[num7, 1].a = (float)this.tweenArguments["amount"];
-            }
-        }
-        else if (this.tweenArguments.Contains("alpha"))
-        {
-            for (int num8 = 0; num8 < this.colors.GetLength(0); num8++)
-            {
-                this.colors[num8, 1].a = (float)this.tweenArguments["alpha"];
-            }
-        }
-    }
-
-    private void GenerateFloatTargets()
-    {
-        this.floats = new float[3];
-        this.floats[0] = (float)this.tweenArguments["from"];
-        this.floats[1] = (float)this.tweenArguments["to"];
-        if (this.tweenArguments.Contains("speed"))
-        {
-            float num = Math.Abs((float)(this.floats[0] - this.floats[1]));
-            this.time = num / ((float)this.tweenArguments["speed"]);
-        }
-    }
-
-    private void GenerateLookToTargets()
-    {
-        this.vector3s = new Vector3[3];
-        this.vector3s[0] = this.thisTransform.eulerAngles;
-        if (this.tweenArguments.Contains("looktarget"))
-        {
-            if (this.tweenArguments["looktarget"].GetType() == typeof(Transform))
-            {
-                Vector3? nullable = (Vector3?)this.tweenArguments["up"];
-                this.thisTransform.LookAt((Transform)this.tweenArguments["looktarget"], !nullable.HasValue ? Defaults.up : nullable.Value);
-            }
-            else if (this.tweenArguments["looktarget"].GetType() == typeof(Vector3))
-            {
-                Vector3? nullable2 = (Vector3?)this.tweenArguments["up"];
-                this.thisTransform.LookAt((Vector3)this.tweenArguments["looktarget"], !nullable2.HasValue ? Defaults.up : nullable2.Value);
-            }
-        }
-        else
-        {
-            UnityEngine.Debug.LogError("iTween Error: LookTo needs a 'looktarget' property!");
-            this.Dispose();
-        }
-        this.vector3s[1] = this.thisTransform.eulerAngles;
-        this.thisTransform.eulerAngles = this.vector3s[0];
-        if (this.tweenArguments.Contains("axis"))
-        {
-            string key = (string)this.tweenArguments["axis"];
-            if (key != null)
-            {
-                int num;
-                if (f__switchmap13 == null)
-                {
-                    Dictionary<string, int> dictionary = new Dictionary<string, int>(3);
-                    dictionary.Add("x", 0);
-                    dictionary.Add("y", 1);
-                    dictionary.Add("z", 2);
-                    f__switchmap13 = dictionary;
-                }
-                if (f__switchmap13.TryGetValue(key, out num))
-                {
-                    switch (num)
-                    {
-                        case 0:
-                            this.vector3s[1].y = this.vector3s[0].y;
-                            this.vector3s[1].z = this.vector3s[0].z;
-                            break;
-
-                        case 1:
-                            this.vector3s[1].x = this.vector3s[0].x;
-                            this.vector3s[1].z = this.vector3s[0].z;
-                            break;
-
-                        case 2:
-                            this.vector3s[1].x = this.vector3s[0].x;
-                            this.vector3s[1].y = this.vector3s[0].y;
-                            break;
-                    }
-                }
-            }
-        }
-        this.vector3s[1] = new Vector3(this.clerp(this.vector3s[0].x, this.vector3s[1].x, 1f), this.clerp(this.vector3s[0].y, this.vector3s[1].y, 1f), this.clerp(this.vector3s[0].z, this.vector3s[1].z, 1f));
-        if (this.tweenArguments.Contains("speed"))
-        {
-            float num2 = Math.Abs(Vector3.Distance(this.vector3s[0], this.vector3s[1]));
-            this.time = num2 / ((float)this.tweenArguments["speed"]);
-        }
-    }
-
-    private void GenerateMoveByTargets()
-    {
-        Vector3 vector;
-        this.vector3s = new Vector3[6];
-        this.vector3s[4] = this.thisTransform.eulerAngles;
-        this.vector3s[3] = vector = this.thisTransform.position;
-        this.vector3s[0] = this.vector3s[1] = vector;
-        if (this.tweenArguments.Contains("amount"))
-        {
-            this.vector3s[1] = this.vector3s[0] + ((Vector3)this.tweenArguments["amount"]);
-        }
-        else
-        {
-            if (this.tweenArguments.Contains("x"))
-            {
-                this.vector3s[1].x = this.vector3s[0].x + ((float)this.tweenArguments["x"]);
-            }
-            if (this.tweenArguments.Contains("y"))
-            {
-                this.vector3s[1].y = this.vector3s[0].y + ((float)this.tweenArguments["y"]);
-            }
-            if (this.tweenArguments.Contains("z"))
-            {
-                this.vector3s[1].z = this.vector3s[0].z + ((float)this.tweenArguments["z"]);
-            }
-        }
-        this.thisTransform.Translate(this.vector3s[1], this.space);
-        this.vector3s[5] = this.thisTransform.position;
-        this.thisTransform.position = this.vector3s[0];
-        if (this.tweenArguments.Contains("orienttopath") && ((bool)this.tweenArguments["orienttopath"]))
-        {
-            this.tweenArguments["looktarget"] = this.vector3s[1];
-        }
-        if (this.tweenArguments.Contains("speed"))
-        {
-            float num = Math.Abs(Vector3.Distance(this.vector3s[0], this.vector3s[1]));
-            this.time = num / ((float)this.tweenArguments["speed"]);
-        }
-    }
-
-    private void GenerateMoveToPathTargets()
-    {
-        Vector3[] vectorArray2;
-        bool flag;
-        int num2;
-        if (this.tweenArguments["path"].GetType() == typeof(Vector3[]))
-        {
-            Vector3[] sourceArray = (Vector3[])this.tweenArguments["path"];
-            if (sourceArray.Length == 1)
-            {
-                UnityEngine.Debug.LogError("iTween Error: Attempting a path movement with MoveTo requires an array of more than 1 entry!");
-                this.Dispose();
-            }
-            vectorArray2 = new Vector3[sourceArray.Length];
-            Array.Copy(sourceArray, vectorArray2, sourceArray.Length);
-        }
-        else
-        {
-            Transform[] transformArray = (Transform[])this.tweenArguments["path"];
-            if (transformArray.Length == 1)
-            {
-                UnityEngine.Debug.LogError("iTween Error: Attempting a path movement with MoveTo requires an array of more than 1 entry!");
-                this.Dispose();
-            }
-            vectorArray2 = new Vector3[transformArray.Length];
-            for (int i = 0; i < transformArray.Length; i++)
-            {
-                vectorArray2[i] = transformArray[i].position;
-            }
-        }
-        if (this.thisTransform.position != vectorArray2[0])
-        {
-            if (!this.tweenArguments.Contains("movetopath") || ((bool)this.tweenArguments["movetopath"]))
-            {
-                flag = true;
-                num2 = 3;
-            }
-            else
-            {
-                flag = false;
-                num2 = 2;
-            }
-        }
-        else
-        {
-            flag = false;
-            num2 = 2;
-        }
-        this.vector3s = new Vector3[vectorArray2.Length + num2];
-        if (flag)
-        {
-            this.vector3s[1] = this.thisTransform.position;
-            num2 = 2;
-        }
-        else
-        {
-            num2 = 1;
-        }
-        Array.Copy(vectorArray2, 0, this.vector3s, num2, vectorArray2.Length);
-        this.vector3s[0] = this.vector3s[1] + (this.vector3s[1] - this.vector3s[2]);
-        this.vector3s[this.vector3s.Length - 1] = this.vector3s[this.vector3s.Length - 2] + (this.vector3s[this.vector3s.Length - 2] - this.vector3s[this.vector3s.Length - 3]);
-        if (this.vector3s[1] == this.vector3s[this.vector3s.Length - 2])
-        {
-            Vector3[] destinationArray = new Vector3[this.vector3s.Length];
-            Array.Copy(this.vector3s, destinationArray, this.vector3s.Length);
-            destinationArray[0] = destinationArray[destinationArray.Length - 3];
-            destinationArray[destinationArray.Length - 1] = destinationArray[2];
-            this.vector3s = new Vector3[destinationArray.Length];
-            Array.Copy(destinationArray, this.vector3s, destinationArray.Length);
-        }
-        this.path = new CRSpline(this.vector3s);
-        if (this.tweenArguments.Contains("speed"))
-        {
-            float num3 = PathLength(this.vector3s);
-            this.time = num3 / ((float)this.tweenArguments["speed"]);
-        }
-    }
-
-    private void GenerateMoveToTargets()
-    {
-        this.vector3s = new Vector3[3];
-        if (this.isLocal)
-        {
-            this.vector3s[0] = this.vector3s[1] = this.thisTransform.localPosition;
-        }
-        else
-        {
-            this.vector3s[0] = this.vector3s[1] = this.thisTransform.position;
-        }
-        if (this.tweenArguments.Contains("position"))
-        {
-            if (this.tweenArguments["position"].GetType() == typeof(Transform))
-            {
-                Transform transform = (Transform)this.tweenArguments["position"];
-                this.vector3s[1] = transform.position;
-            }
-            else if (this.tweenArguments["position"].GetType() == typeof(Vector3))
-            {
-                this.vector3s[1] = (Vector3)this.tweenArguments["position"];
-            }
-        }
-        else
-        {
-            if (this.tweenArguments.Contains("x"))
-            {
-                this.vector3s[1].x = (float)this.tweenArguments["x"];
-            }
-            if (this.tweenArguments.Contains("y"))
-            {
-                this.vector3s[1].y = (float)this.tweenArguments["y"];
-            }
-            if (this.tweenArguments.Contains("z"))
-            {
-                this.vector3s[1].z = (float)this.tweenArguments["z"];
-            }
-        }
-        if (this.tweenArguments.Contains("orienttopath") && ((bool)this.tweenArguments["orienttopath"]))
-        {
-            this.tweenArguments["looktarget"] = this.vector3s[1];
-        }
-        if (this.tweenArguments.Contains("speed"))
-        {
-            float num = Math.Abs(Vector3.Distance(this.vector3s[0], this.vector3s[1]));
-            this.time = num / ((float)this.tweenArguments["speed"]);
-        }
-    }
-
-    private void GeneratePunchPositionTargets()
-    {
-        this.vector3s = new Vector3[5];
-        this.vector3s[4] = this.thisTransform.eulerAngles;
-        this.vector3s[0] = this.thisTransform.position;
-        this.vector3s[1] = this.vector3s[3] = Vectors.zero;
-        if (this.tweenArguments.Contains("amount"))
-        {
-            this.vector3s[1] = (Vector3)this.tweenArguments["amount"];
-        }
-        else
-        {
-            if (this.tweenArguments.Contains("x"))
-            {
-                this.vector3s[1].x = (float)this.tweenArguments["x"];
-            }
-            if (this.tweenArguments.Contains("y"))
-            {
-                this.vector3s[1].y = (float)this.tweenArguments["y"];
-            }
-            if (this.tweenArguments.Contains("z"))
-            {
-                this.vector3s[1].z = (float)this.tweenArguments["z"];
-            }
-        }
-    }
-
-    private void GeneratePunchRotationTargets()
-    {
-        this.vector3s = new Vector3[4];
-        this.vector3s[0] = this.thisTransform.eulerAngles;
-        this.vector3s[1] = this.vector3s[3] = Vectors.zero;
-        if (this.tweenArguments.Contains("amount"))
-        {
-            this.vector3s[1] = (Vector3)this.tweenArguments["amount"];
-        }
-        else
-        {
-            if (this.tweenArguments.Contains("x"))
-            {
-                this.vector3s[1].x = (float)this.tweenArguments["x"];
-            }
-            if (this.tweenArguments.Contains("y"))
-            {
-                this.vector3s[1].y = (float)this.tweenArguments["y"];
-            }
-            if (this.tweenArguments.Contains("z"))
-            {
-                this.vector3s[1].z = (float)this.tweenArguments["z"];
-            }
-        }
-    }
-
-    private void GeneratePunchScaleTargets()
-    {
-        this.vector3s = new Vector3[3];
-        this.vector3s[0] = this.thisTransform.localScale;
-        this.vector3s[1] = Vectors.zero;
-        if (this.tweenArguments.Contains("amount"))
-        {
-            this.vector3s[1] = (Vector3)this.tweenArguments["amount"];
-        }
-        else
-        {
-            if (this.tweenArguments.Contains("x"))
-            {
-                this.vector3s[1].x = (float)this.tweenArguments["x"];
-            }
-            if (this.tweenArguments.Contains("y"))
-            {
-                this.vector3s[1].y = (float)this.tweenArguments["y"];
-            }
-            if (this.tweenArguments.Contains("z"))
-            {
-                this.vector3s[1].z = (float)this.tweenArguments["z"];
-            }
-        }
-    }
-
-    private void GenerateRectTargets()
-    {
-        this.rects = new Rect[3];
-        this.rects[0] = (Rect)this.tweenArguments["from"];
-        this.rects[1] = (Rect)this.tweenArguments["to"];
-    }
-
-    private void GenerateRotateAddTargets()
-    {
-        Vector3 vector;
-        this.vector3s = new Vector3[5];
-        this.vector3s[3] = vector = this.thisTransform.eulerAngles;
-        this.vector3s[0] = this.vector3s[1] = vector;
-        if (this.tweenArguments.Contains("amount"))
-        {
-            this.vector3s[1] += (Vector3)this.tweenArguments["amount"];
-        }
-        else
-        {
-            if (this.tweenArguments.Contains("x"))
-            {
-                this.vector3s[1].x += (float)this.tweenArguments["x"];
-            }
-            if (this.tweenArguments.Contains("y"))
-            {
-                this.vector3s[1].y += (float)this.tweenArguments["y"];
-            }
-            if (this.tweenArguments.Contains("z"))
-            {
-                this.vector3s[1].z += (float)this.tweenArguments["z"];
-            }
-        }
-        if (this.tweenArguments.Contains("speed"))
-        {
-            float num = Math.Abs(Vector3.Distance(this.vector3s[0], this.vector3s[1]));
-            this.time = num / ((float)this.tweenArguments["speed"]);
-        }
-    }
-
-    private void GenerateRotateByTargets()
-    {
-        Vector3 vector;
-        this.vector3s = new Vector3[4];
-        this.vector3s[3] = vector = this.thisTransform.eulerAngles;
-        this.vector3s[0] = this.vector3s[1] = vector;
-        if (this.tweenArguments.Contains("amount"))
-        {
-            this.vector3s[1] += Vector3.Scale((Vector3)this.tweenArguments["amount"], new Vector3(360f, 360f, 360f));
-        }
-        else
-        {
-            if (this.tweenArguments.Contains("x"))
-            {
-                this.vector3s[1].x += 360f * ((float)this.tweenArguments["x"]);
-            }
-            if (this.tweenArguments.Contains("y"))
-            {
-                this.vector3s[1].y += 360f * ((float)this.tweenArguments["y"]);
-            }
-            if (this.tweenArguments.Contains("z"))
-            {
-                this.vector3s[1].z += 360f * ((float)this.tweenArguments["z"]);
-            }
-        }
-        if (this.tweenArguments.Contains("speed"))
-        {
-            float num = Math.Abs(Vector3.Distance(this.vector3s[0], this.vector3s[1]));
-            this.time = num / ((float)this.tweenArguments["speed"]);
-        }
-    }
-
-    private void GenerateRotateToTargets()
-    {
-        this.vector3s = new Vector3[3];
-        if (this.isLocal)
-        {
-            this.vector3s[0] = this.vector3s[1] = this.thisTransform.localEulerAngles;
-        }
-        else
-        {
-            this.vector3s[0] = this.vector3s[1] = this.thisTransform.eulerAngles;
-        }
-        if (this.tweenArguments.Contains("rotation"))
-        {
-            if (this.tweenArguments["rotation"].GetType() == typeof(Transform))
-            {
-                Transform transform = (Transform)this.tweenArguments["rotation"];
-                this.vector3s[1] = transform.eulerAngles;
-            }
-            else if (this.tweenArguments["rotation"].GetType() == typeof(Vector3))
-            {
-                this.vector3s[1] = (Vector3)this.tweenArguments["rotation"];
-            }
-        }
-        else
-        {
-            if (this.tweenArguments.Contains("x"))
-            {
-                this.vector3s[1].x = (float)this.tweenArguments["x"];
-            }
-            if (this.tweenArguments.Contains("y"))
-            {
-                this.vector3s[1].y = (float)this.tweenArguments["y"];
-            }
-            if (this.tweenArguments.Contains("z"))
-            {
-                this.vector3s[1].z = (float)this.tweenArguments["z"];
-            }
-        }
-        this.vector3s[1] = new Vector3(this.clerp(this.vector3s[0].x, this.vector3s[1].x, 1f), this.clerp(this.vector3s[0].y, this.vector3s[1].y, 1f), this.clerp(this.vector3s[0].z, this.vector3s[1].z, 1f));
-        if (this.tweenArguments.Contains("speed"))
-        {
-            float num = Math.Abs(Vector3.Distance(this.vector3s[0], this.vector3s[1]));
-            this.time = num / ((float)this.tweenArguments["speed"]);
-        }
-    }
-
-    private void GenerateScaleAddTargets()
-    {
-        this.vector3s = new Vector3[3];
-        this.vector3s[0] = this.vector3s[1] = this.thisTransform.localScale;
-        if (this.tweenArguments.Contains("amount"))
-        {
-            this.vector3s[1] += (Vector3)this.tweenArguments["amount"];
-        }
-        else
-        {
-            if (this.tweenArguments.Contains("x"))
-            {
-                this.vector3s[1].x += (float)this.tweenArguments["x"];
-            }
-            if (this.tweenArguments.Contains("y"))
-            {
-                this.vector3s[1].y += (float)this.tweenArguments["y"];
-            }
-            if (this.tweenArguments.Contains("z"))
-            {
-                this.vector3s[1].z += (float)this.tweenArguments["z"];
-            }
-        }
-        if (this.tweenArguments.Contains("speed"))
-        {
-            float num = Math.Abs(Vector3.Distance(this.vector3s[0], this.vector3s[1]));
-            this.time = num / ((float)this.tweenArguments["speed"]);
-        }
-    }
-
-    private void GenerateScaleByTargets()
-    {
-        this.vector3s = new Vector3[3];
-        this.vector3s[0] = this.vector3s[1] = this.thisTransform.localScale;
-        if (this.tweenArguments.Contains("amount"))
-        {
-            this.vector3s[1] = Vector3.Scale(this.vector3s[1], (Vector3)this.tweenArguments["amount"]);
-        }
-        else
-        {
-            if (this.tweenArguments.Contains("x"))
-            {
-                this.vector3s[1].x *= (float)this.tweenArguments["x"];
-            }
-            if (this.tweenArguments.Contains("y"))
-            {
-                this.vector3s[1].y *= (float)this.tweenArguments["y"];
-            }
-            if (this.tweenArguments.Contains("z"))
-            {
-                this.vector3s[1].z *= (float)this.tweenArguments["z"];
-            }
-        }
-        if (this.tweenArguments.Contains("speed"))
-        {
-            float num = Math.Abs(Vector3.Distance(this.vector3s[0], this.vector3s[1]));
-            this.time = num / ((float)this.tweenArguments["speed"]);
-        }
-    }
-
-    private void GenerateScaleToTargets()
-    {
-        this.vector3s = new Vector3[3];
-        this.vector3s[0] = this.vector3s[1] = this.thisTransform.localScale;
-        if (this.tweenArguments.Contains("scale"))
-        {
-            if (this.tweenArguments["scale"].GetType() == typeof(Transform))
-            {
-                Transform transform = (Transform)this.tweenArguments["scale"];
-                this.vector3s[1] = transform.localScale;
-            }
-            else if (this.tweenArguments["scale"].GetType() == typeof(Vector3))
-            {
-                this.vector3s[1] = (Vector3)this.tweenArguments["scale"];
-            }
-        }
-        else
-        {
-            if (this.tweenArguments.Contains("x"))
-            {
-                this.vector3s[1].x = (float)this.tweenArguments["x"];
-            }
-            if (this.tweenArguments.Contains("y"))
-            {
-                this.vector3s[1].y = (float)this.tweenArguments["y"];
-            }
-            if (this.tweenArguments.Contains("z"))
-            {
-                this.vector3s[1].z = (float)this.tweenArguments["z"];
-            }
-        }
-        if (this.tweenArguments.Contains("speed"))
-        {
-            float num = Math.Abs(Vector3.Distance(this.vector3s[0], this.vector3s[1]));
-            this.time = num / ((float)this.tweenArguments["speed"]);
-        }
-    }
-
-    private void GenerateShakePositionTargets()
-    {
-        this.vector3s = new Vector3[4];
-        this.vector3s[3] = this.thisTransform.eulerAngles;
-        this.vector3s[0] = this.thisTransform.position;
-        if (this.tweenArguments.Contains("amount"))
-        {
-            this.vector3s[1] = (Vector3)this.tweenArguments["amount"];
-        }
-        else
-        {
-            if (this.tweenArguments.Contains("x"))
-            {
-                this.vector3s[1].x = (float)this.tweenArguments["x"];
-            }
-            if (this.tweenArguments.Contains("y"))
-            {
-                this.vector3s[1].y = (float)this.tweenArguments["y"];
-            }
-            if (this.tweenArguments.Contains("z"))
-            {
-                this.vector3s[1].z = (float)this.tweenArguments["z"];
-            }
-        }
-    }
-
-    private void GenerateShakeRotationTargets()
-    {
-        this.vector3s = new Vector3[3];
-        this.vector3s[0] = this.thisTransform.eulerAngles;
-        if (this.tweenArguments.Contains("amount"))
-        {
-            this.vector3s[1] = (Vector3)this.tweenArguments["amount"];
-        }
-        else
-        {
-            if (this.tweenArguments.Contains("x"))
-            {
-                this.vector3s[1].x = (float)this.tweenArguments["x"];
-            }
-            if (this.tweenArguments.Contains("y"))
-            {
-                this.vector3s[1].y = (float)this.tweenArguments["y"];
-            }
-            if (this.tweenArguments.Contains("z"))
-            {
-                this.vector3s[1].z = (float)this.tweenArguments["z"];
-            }
-        }
-    }
-
-    private void GenerateShakeScaleTargets()
-    {
-        this.vector3s = new Vector3[3];
-        this.vector3s[0] = this.thisTransform.localScale;
-        if (this.tweenArguments.Contains("amount"))
-        {
-            this.vector3s[1] = (Vector3)this.tweenArguments["amount"];
-        }
-        else
-        {
-            if (this.tweenArguments.Contains("x"))
-            {
-                this.vector3s[1].x = (float)this.tweenArguments["x"];
-            }
-            if (this.tweenArguments.Contains("y"))
-            {
-                this.vector3s[1].y = (float)this.tweenArguments["y"];
-            }
-            if (this.tweenArguments.Contains("z"))
-            {
-                this.vector3s[1].z = (float)this.tweenArguments["z"];
-            }
-        }
-    }
-
-    private void GenerateStabTargets()
-    {
-        if (this.tweenArguments.Contains("audiosource"))
-        {
-            this.audioSource = (AudioSource)this.tweenArguments["audiosource"];
-        }
-        else if (base.GetComponent<AudioSource>() != null)
-        {
-            this.audioSource = base.audio;
-        }
-        else
-        {
-            base.gameObject.AddComponent<AudioSource>();
-            this.audioSource = base.audio;
-            this.audioSource.playOnAwake = false;
-        }
-        this.audioSource.clip = (AudioClip)this.tweenArguments["audioclip"];
-        if (this.tweenArguments.Contains("pitch"))
-        {
-            this.audioSource.pitch = (float)this.tweenArguments["pitch"];
-        }
-        if (this.tweenArguments.Contains("volume"))
-        {
-            this.audioSource.volume = (float)this.tweenArguments["volume"];
-        }
-        this.time = this.audioSource.clip.length / this.audioSource.pitch;
-    }
-
-    private void GenerateTargets()
-    {
-        string type = this.type;
-        if (type != null)
-        {
-            Dictionary<string, int> dictionary;
-            int num;
-            if (f__switchmap12 == null)
-            {
-                dictionary = new Dictionary<string, int>(10);
-                dictionary.Add("value", 0);
-                dictionary.Add("color", 1);
-                dictionary.Add("audio", 2);
-                dictionary.Add("move", 3);
-                dictionary.Add("scale", 4);
-                dictionary.Add("rotate", 5);
-                dictionary.Add("shake", 6);
-                dictionary.Add("punch", 7);
-                dictionary.Add("look", 8);
-                dictionary.Add("stab", 9);
-                f__switchmap12 = dictionary;
-            }
-            if (f__switchmap12.TryGetValue(type, out num))
-            {
-                string method;
-                int num2;
-                switch (num)
-                {
-                    case 0:
-                        method = this.method;
-                        if (method != null)
-                        {
-                            if (f__switchmap9 == null)
-                            {
-                                dictionary = new Dictionary<string, int>(5);
-                                dictionary.Add("float", 0);
-                                dictionary.Add("vector2", 1);
-                                dictionary.Add("vector3", 2);
-                                dictionary.Add("color", 3);
-                                dictionary.Add("rect", 4);
-                                f__switchmap9 = dictionary;
-                            }
-                            if (f__switchmap9.TryGetValue(method, out num2))
-                            {
-                                switch (num2)
-                                {
-                                    case 0:
-                                        this.GenerateFloatTargets();
-                                        this.apply = new ApplyTween(this.ApplyFloatTargets);
-                                        return;
-
-                                    case 1:
-                                        this.GenerateVector2Targets();
-                                        this.apply = new ApplyTween(this.ApplyVector2Targets);
-                                        return;
-
-                                    case 2:
-                                        this.GenerateVector3Targets();
-                                        this.apply = new ApplyTween(this.ApplyVector3Targets);
-                                        return;
-
-                                    case 3:
-                                        this.GenerateColorTargets();
-                                        this.apply = new ApplyTween(this.ApplyColorTargets);
-                                        return;
-
-                                    case 4:
-                                        this.GenerateRectTargets();
-                                        this.apply = new ApplyTween(this.ApplyRectTargets);
-                                        return;
-                                }
-                            }
-                        }
-                        break;
-
-                    case 1:
-                        method = this.method;
-                        if (method != null)
-                        {
-                            if (f__switchmapA == null)
-                            {
-                                dictionary = new Dictionary<string, int>(1);
-                                dictionary.Add("to", 0);
-                                f__switchmapA = dictionary;
-                            }
-                            if (f__switchmapA.TryGetValue(method, out num2) && (num2 == 0))
-                            {
-                                this.GenerateColorToTargets();
-                                this.apply = new ApplyTween(this.ApplyColorToTargets);
-                            }
-                        }
-                        break;
-
-                    case 2:
-                        method = this.method;
-                        if (method != null)
-                        {
-                            if (f__switchmapB == null)
-                            {
-                                dictionary = new Dictionary<string, int>(1);
-                                dictionary.Add("to", 0);
-                                f__switchmapB = dictionary;
-                            }
-                            if (f__switchmapB.TryGetValue(method, out num2) && (num2 == 0))
-                            {
-                                this.GenerateAudioToTargets();
-                                this.apply = new ApplyTween(this.ApplyAudioToTargets);
-                            }
-                        }
-                        break;
-
-                    case 3:
-                        method = this.method;
-                        if (method != null)
-                        {
-                            if (f__switchmapC == null)
-                            {
-                                dictionary = new Dictionary<string, int>(3);
-                                dictionary.Add("to", 0);
-                                dictionary.Add("by", 1);
-                                dictionary.Add("add", 1);
-                                f__switchmapC = dictionary;
-                            }
-                            if (f__switchmapC.TryGetValue(method, out num2))
-                            {
-                                if (num2 == 0)
-                                {
-                                    if (this.tweenArguments.Contains("path"))
-                                    {
-                                        this.GenerateMoveToPathTargets();
-                                        this.apply = new ApplyTween(this.ApplyMoveToPathTargets);
-                                    }
-                                    else
-                                    {
-                                        this.GenerateMoveToTargets();
-                                        this.apply = new ApplyTween(this.ApplyMoveToTargets);
-                                    }
-                                }
-                                else if (num2 == 1)
-                                {
-                                    this.GenerateMoveByTargets();
-                                    this.apply = new ApplyTween(this.ApplyMoveByTargets);
-                                    break;
-                                }
-                            }
-                        }
-                        break;
-
-                    case 4:
-                        method = this.method;
-                        if (method != null)
-                        {
-                            if (f__switchmapD == null)
-                            {
-                                dictionary = new Dictionary<string, int>(3);
-                                dictionary.Add("to", 0);
-                                dictionary.Add("by", 1);
-                                dictionary.Add("add", 2);
-                                f__switchmapD = dictionary;
-                            }
-                            if (f__switchmapD.TryGetValue(method, out num2))
-                            {
-                                switch (num2)
-                                {
-                                    case 0:
-                                        this.GenerateScaleToTargets();
-                                        this.apply = new ApplyTween(this.ApplyScaleToTargets);
-                                        return;
-
-                                    case 1:
-                                        this.GenerateScaleByTargets();
-                                        this.apply = new ApplyTween(this.ApplyScaleToTargets);
-                                        return;
-
-                                    case 2:
-                                        this.GenerateScaleAddTargets();
-                                        this.apply = new ApplyTween(this.ApplyScaleToTargets);
-                                        return;
-                                }
-                            }
-                        }
-                        break;
-
-                    case 5:
-                        method = this.method;
-                        if (method != null)
-                        {
-                            if (f__switchmapE == null)
-                            {
-                                dictionary = new Dictionary<string, int>(3);
-                                dictionary.Add("to", 0);
-                                dictionary.Add("add", 1);
-                                dictionary.Add("by", 2);
-                                f__switchmapE = dictionary;
-                            }
-                            if (f__switchmapE.TryGetValue(method, out num2))
-                            {
-                                switch (num2)
-                                {
-                                    case 0:
-                                        this.GenerateRotateToTargets();
-                                        this.apply = new ApplyTween(this.ApplyRotateToTargets);
-                                        return;
-
-                                    case 1:
-                                        this.GenerateRotateAddTargets();
-                                        this.apply = new ApplyTween(this.ApplyRotateAddTargets);
-                                        return;
-
-                                    case 2:
-                                        this.GenerateRotateByTargets();
-                                        this.apply = new ApplyTween(this.ApplyRotateAddTargets);
-                                        return;
-                                }
-                            }
-                        }
-                        break;
-
-                    case 6:
-                        method = this.method;
-                        if (method != null)
-                        {
-                            if (f__switchmapF == null)
-                            {
-                                dictionary = new Dictionary<string, int>(3);
-                                dictionary.Add("position", 0);
-                                dictionary.Add("scale", 1);
-                                dictionary.Add("rotation", 2);
-                                f__switchmapF = dictionary;
-                            }
-                            if (f__switchmapF.TryGetValue(method, out num2))
-                            {
-                                switch (num2)
-                                {
-                                    case 0:
-                                        this.GenerateShakePositionTargets();
-                                        this.apply = new ApplyTween(this.ApplyShakePositionTargets);
-                                        return;
-
-                                    case 1:
-                                        this.GenerateShakeScaleTargets();
-                                        this.apply = new ApplyTween(this.ApplyShakeScaleTargets);
-                                        return;
-
-                                    case 2:
-                                        this.GenerateShakeRotationTargets();
-                                        this.apply = new ApplyTween(this.ApplyShakeRotationTargets);
-                                        return;
-                                }
-                            }
-                        }
-                        break;
-
-                    case 7:
-                        method = this.method;
-                        if (method != null)
-                        {
-                            if (f__switchmap10 == null)
-                            {
-                                dictionary = new Dictionary<string, int>(3);
-                                dictionary.Add("position", 0);
-                                dictionary.Add("rotation", 1);
-                                dictionary.Add("scale", 2);
-                                f__switchmap10 = dictionary;
-                            }
-                            if (f__switchmap10.TryGetValue(method, out num2))
-                            {
-                                switch (num2)
-                                {
-                                    case 0:
-                                        this.GeneratePunchPositionTargets();
-                                        this.apply = new ApplyTween(this.ApplyPunchPositionTargets);
-                                        return;
-
-                                    case 1:
-                                        this.GeneratePunchRotationTargets();
-                                        this.apply = new ApplyTween(this.ApplyPunchRotationTargets);
-                                        return;
-
-                                    case 2:
-                                        this.GeneratePunchScaleTargets();
-                                        this.apply = new ApplyTween(this.ApplyPunchScaleTargets);
-                                        return;
-                                }
-                            }
-                        }
-                        break;
-
-                    case 8:
-                        method = this.method;
-                        if (method != null)
-                        {
-                            if (f__switchmap11 == null)
-                            {
-                                dictionary = new Dictionary<string, int>(1);
-                                dictionary.Add("to", 0);
-                                f__switchmap11 = dictionary;
-                            }
-                            if (f__switchmap11.TryGetValue(method, out num2) && (num2 == 0))
-                            {
-                                this.GenerateLookToTargets();
-                                this.apply = new ApplyTween(this.ApplyLookToTargets);
-                            }
-                        }
-                        break;
-
-                    case 9:
-                        this.GenerateStabTargets();
-                        this.apply = new ApplyTween(this.ApplyStabTargets);
-                        break;
-                }
-            }
-        }
-    }
-
-    private void GenerateVector2Targets()
-    {
-        this.vector2s = new Vector2[3];
-        this.vector2s[0] = (Vector2)this.tweenArguments["from"];
-        this.vector2s[1] = (Vector2)this.tweenArguments["to"];
-        if (this.tweenArguments.Contains("speed"))
-        {
-            Vector3 a = new Vector3(this.vector2s[0].x, this.vector2s[0].y, 0f);
-            Vector3 b = new Vector3(this.vector2s[1].x, this.vector2s[1].y, 0f);
-            float num = Math.Abs(Vector3.Distance(a, b));
-            this.time = num / ((float)this.tweenArguments["speed"]);
-        }
-    }
-
-    private void GenerateVector3Targets()
-    {
-        this.vector3s = new Vector3[3];
-        this.vector3s[0] = (Vector3)this.tweenArguments["from"];
-        this.vector3s[1] = (Vector3)this.tweenArguments["to"];
-        if (this.tweenArguments.Contains("speed"))
-        {
-            float num = Math.Abs(Vector3.Distance(this.vector3s[0], this.vector3s[1]));
-            this.time = num / ((float)this.tweenArguments["speed"]);
-        }
-    }
-
-    private void GetEasingFunction()
-    {
-        switch (this.easeType)
-        {
-            case EaseType.easeInQuad:
-                this.ease = new EasingFunction(this.easeInQuad);
-                break;
-
-            case EaseType.easeOutQuad:
-                this.ease = new EasingFunction(this.easeOutQuad);
-                break;
-
-            case EaseType.easeInOutQuad:
-                this.ease = new EasingFunction(this.easeInOutQuad);
-                break;
-
-            case EaseType.easeInCubic:
-                this.ease = new EasingFunction(this.easeInCubic);
-                break;
-
-            case EaseType.easeOutCubic:
-                this.ease = new EasingFunction(this.easeOutCubic);
-                break;
-
-            case EaseType.easeInOutCubic:
-                this.ease = new EasingFunction(this.easeInOutCubic);
-                break;
-
-            case EaseType.easeInQuart:
-                this.ease = new EasingFunction(this.easeInQuart);
-                break;
-
-            case EaseType.easeOutQuart:
-                this.ease = new EasingFunction(this.easeOutQuart);
-                break;
-
-            case EaseType.easeInOutQuart:
-                this.ease = new EasingFunction(this.easeInOutQuart);
-                break;
-
-            case EaseType.easeInQuint:
-                this.ease = new EasingFunction(this.easeInQuint);
-                break;
-
-            case EaseType.easeOutQuint:
-                this.ease = new EasingFunction(this.easeOutQuint);
-                break;
-
-            case EaseType.easeInOutQuint:
-                this.ease = new EasingFunction(this.easeInOutQuint);
-                break;
-
-            case EaseType.easeInSine:
-                this.ease = new EasingFunction(this.easeInSine);
-                break;
-
-            case EaseType.easeOutSine:
-                this.ease = new EasingFunction(this.easeOutSine);
-                break;
-
-            case EaseType.easeInOutSine:
-                this.ease = new EasingFunction(this.easeInOutSine);
-                break;
-
-            case EaseType.easeInExpo:
-                this.ease = new EasingFunction(this.easeInExpo);
-                break;
-
-            case EaseType.easeOutExpo:
-                this.ease = new EasingFunction(this.easeOutExpo);
-                break;
-
-            case EaseType.easeInOutExpo:
-                this.ease = new EasingFunction(this.easeInOutExpo);
-                break;
-
-            case EaseType.easeInCirc:
-                this.ease = new EasingFunction(this.easeInCirc);
-                break;
-
-            case EaseType.easeOutCirc:
-                this.ease = new EasingFunction(this.easeOutCirc);
-                break;
-
-            case EaseType.easeInOutCirc:
-                this.ease = new EasingFunction(this.easeInOutCirc);
-                break;
-
-            case EaseType.linear:
-                this.ease = new EasingFunction(this.linear);
-                break;
-
-            case EaseType.spring:
-                this.ease = new EasingFunction(this.spring);
-                break;
-
-            case EaseType.easeInBounce:
-                this.ease = new EasingFunction(this.easeInBounce);
-                break;
-
-            case EaseType.easeOutBounce:
-                this.ease = new EasingFunction(this.easeOutBounce);
-                break;
-
-            case EaseType.easeInOutBounce:
-                this.ease = new EasingFunction(this.easeInOutBounce);
-                break;
-
-            case EaseType.easeInBack:
-                this.ease = new EasingFunction(this.easeInBack);
-                break;
-
-            case EaseType.easeOutBack:
-                this.ease = new EasingFunction(this.easeOutBack);
-                break;
-
-            case EaseType.easeInOutBack:
-                this.ease = new EasingFunction(this.easeInOutBack);
-                break;
-
-            case EaseType.easeInElastic:
-                this.ease = new EasingFunction(this.easeInElastic);
-                break;
-
-            case EaseType.easeOutElastic:
-                this.ease = new EasingFunction(this.easeOutElastic);
-                break;
-
-            case EaseType.easeInOutElastic:
-                this.ease = new EasingFunction(this.easeInOutElastic);
-                break;
-        }
-    }
-
-    private void LateUpdate()
-    {
-        if ((this.tweenArguments.Contains("looktarget") && this.isRunning) && (((this.type == "move") || (this.type == "shake")) || (this.type == "punch")))
-        {
-            LookUpdate(base.gameObject, this.tweenArguments);
-        }
-    }
-
-    private float linear(float start, float end, float value)
-    {
-        return Mathf.Lerp(start, end, value);
-    }
-
-    private void OnDisable()
-    {
-        this.DisableKinematic();
-    }
-
-    private void OnEnable()
-    {
-        if (this.isRunning)
-        {
-            this.EnableKinematic();
-        }
-        if (this.isPaused)
-        {
-            this.isPaused = false;
-            if (this.delay > 0f)
-            {
-                this.wasPaused = true;
-                this.ResumeDelay();
-            }
-        }
-    }
-
-    private float punch(float amplitude, float value)
-    {
-        float num = 9f;
-        if (value == 0f)
-        {
-            return 0f;
-        }
-        if (value == 1f)
-        {
-            return 0f;
-        }
-        float num2 = 0.3f;
-        num = (num2 / 6.283185f) * Mathf.Asin(0f);
-        return ((amplitude * Mathf.Pow(2f, -10f * value)) * Mathf.Sin((((value * 1f) - num) * 6.283185f) / num2));
-    }
-
-    private void ResumeDelay()
-    {
-        base.StartCoroutine("TweenDelay");
-    }
-
-    private void RetrieveArgs()
-    {
-        foreach (Hashtable hashtable in tweens)
-        {
-            if (((GameObject)hashtable["target"]) == base.gameObject)
-            {
-                this.tweenArguments = hashtable;
-                break;
-            }
-        }
-        this.id = (string)this.tweenArguments["id"];
-        this.type = (string)this.tweenArguments["type"];
-        this._name = (string)this.tweenArguments["name"];
-        this.method = (string)this.tweenArguments["method"];
-        if (this.tweenArguments.Contains("time"))
-        {
-            this.time = (float)this.tweenArguments["time"];
-        }
-        else
-        {
-            this.time = Defaults.time;
-        }
-        if (base.rigidbody != null)
-        {
-            this.physics = true;
-        }
-        if (this.tweenArguments.Contains("delay"))
-        {
-            this.delay = (float)this.tweenArguments["delay"];
-        }
-        else
-        {
-            this.delay = Defaults.delay;
-        }
-        if (this.tweenArguments.Contains("namedcolorvalue"))
-        {
-            if (this.tweenArguments["namedcolorvalue"].GetType() == typeof(NamedValueColor))
-            {
-                this.namedcolorvalue = (NamedValueColor)((int)this.tweenArguments["namedcolorvalue"]);
-            }
-            else
-            {
-                try
-                {
-                    this.namedcolorvalue = (NamedValueColor)((int)Enum.Parse(typeof(NamedValueColor), (string)this.tweenArguments["namedcolorvalue"], true));
-                }
-                catch
-                {
-                    UnityEngine.Debug.LogWarning("iTween: Unsupported namedcolorvalue supplied! Default will be used.");
-                    this.namedcolorvalue = NamedValueColor._Color;
-                }
-            }
-        }
-        else
-        {
-            this.namedcolorvalue = Defaults.namedColorValue;
-        }
-        if (this.tweenArguments.Contains("looptype"))
-        {
-            if (this.tweenArguments["looptype"].GetType() == typeof(LoopType))
-            {
-                this.loopType = (LoopType)((int)this.tweenArguments["looptype"]);
-            }
-            else
-            {
-                try
-                {
-                    this.loopType = (LoopType)((int)Enum.Parse(typeof(LoopType), (string)this.tweenArguments["looptype"], true));
-                }
-                catch
-                {
-                    UnityEngine.Debug.LogWarning("iTween: Unsupported loopType supplied! Default will be used.");
-                    this.loopType = LoopType.none;
-                }
-            }
-        }
-        else
-        {
-            this.loopType = LoopType.none;
-        }
-        if (this.tweenArguments.Contains("easetype"))
-        {
-            if (this.tweenArguments["easetype"].GetType() == typeof(EaseType))
-            {
-                this.easeType = (EaseType)((int)this.tweenArguments["easetype"]);
-            }
-            else
-            {
-                try
-                {
-                    this.easeType = (EaseType)((int)Enum.Parse(typeof(EaseType), (string)this.tweenArguments["easetype"], true));
-                }
-                catch
-                {
-                    UnityEngine.Debug.LogWarning("iTween: Unsupported easeType supplied! Default will be used.");
-                    this.easeType = Defaults.easeType;
-                }
-            }
-        }
-        else
-        {
-            this.easeType = Defaults.easeType;
-        }
-        if (this.tweenArguments.Contains("space"))
-        {
-            if (this.tweenArguments["space"].GetType() == typeof(Space))
-            {
-                this.space = (Space)((int)this.tweenArguments["space"]);
-            }
-            else
-            {
-                try
-                {
-                    this.space = (Space)((int)Enum.Parse(typeof(Space), (string)this.tweenArguments["space"], true));
-                }
-                catch
-                {
-                    UnityEngine.Debug.LogWarning("iTween: Unsupported space supplied! Default will be used.");
-                    this.space = Defaults.space;
-                }
-            }
-        }
-        else
-        {
-            this.space = Defaults.space;
-        }
-        if (this.tweenArguments.Contains("islocal"))
-        {
-            this.isLocal = (bool)this.tweenArguments["islocal"];
-        }
-        else
-        {
-            this.isLocal = Defaults.isLocal;
-        }
-        if (this.tweenArguments.Contains("ignoretimescale"))
-        {
-            this.useRealTime = (bool)this.tweenArguments["ignoretimescale"];
-        }
-        else
-        {
-            this.useRealTime = Defaults.useRealTime;
-        }
-        this.GetEasingFunction();
-    }
-
-    private float spring(float start, float end, float value)
-    {
-        value = Mathf.Clamp01(value);
-        value = ((Mathf.Sin((value * 3.141593f) * (0.2f + (((2.5f * value) * value) * value))) * Mathf.Pow(1f - value, 2.2f)) + value) * (1f + (1.2f * (1f - value)));
-        return (start + ((end - start) * value));
-    }
-
-    private IEnumerator Start()
-    {
-        return new Startc__IteratorE { f__this = this };
-    }
-
-    private void TweenComplete()
-    {
-        this.isRunning = false;
-        if (this.percentage > 0.5f)
-        {
-            this.percentage = 1f;
-        }
-        else
-        {
-            this.percentage = 0f;
-        }
-        this.apply();
-        if (this.type == "value")
-        {
-            this.CallBack("onupdate");
-        }
-        if (this.loopType == LoopType.none)
-        {
-            this.Dispose();
-        }
-        else
-        {
-            this.TweenLoop();
-        }
-        this.CallBack("oncomplete");
-    }
-
-    private IEnumerator TweenDelay()
-    {
-        return new TweenDelayc__IteratorC { f__this = this };
-    }
-
-    private void TweenLoop()
-    {
-        this.DisableKinematic();
-        switch (this.loopType)
-        {
-            case LoopType.loop:
-                this.percentage = 0f;
-                this.runningTime = 0f;
-                this.apply();
-                base.StartCoroutine("TweenRestart");
-                break;
-
-            case LoopType.pingPong:
-                this.reverse = !this.reverse;
-                this.runningTime = 0f;
-                base.StartCoroutine("TweenRestart");
-                break;
-        }
-    }
-
-    private IEnumerator TweenRestart()
-    {
-        return new TweenRestartc__IteratorD { f__this = this };
-    }
-
-    private void TweenStart()
-    {
-        this.CallBack("onstart");
-        if (!this.loop)
-        {
-            this.ConflictCheck();
-            this.GenerateTargets();
-        }
-        if (this.type == "stab")
-        {
-            this.audioSource.PlayOneShot(this.audioSource.clip);
-        }
-        if ((((this.type == "move") || (this.type == "scale")) || ((this.type == "rotate") || (this.type == "punch"))) || (((this.type == "shake") || (this.type == "curve")) || (this.type == "look")))
-        {
-            this.EnableKinematic();
-        }
-        this.isRunning = true;
-    }
-
-    private void TweenUpdate()
-    {
-        this.apply();
-        this.CallBack("onupdate");
-        this.UpdatePercentage();
-    }
-
-    private void Update()
-    {
-        if (this.isRunning && !this.physics)
-        {
-            if (!this.reverse)
-            {
-                if (this.percentage < 1f)
-                {
-                    this.TweenUpdate();
-                }
-                else
-                {
-                    this.TweenComplete();
-                }
-            }
-            else if (this.percentage > 0f)
-            {
-                this.TweenUpdate();
-            }
-            else
-            {
-                this.TweenComplete();
-            }
-        }
-    }
-
-    private void UpdatePercentage()
-    {
-        if (this.useRealTime)
-        {
-            this.runningTime += Time.realtimeSinceStartup - this.lastRealTime;
-        }
-        else
-        {
-            this.runningTime += Time.deltaTime;
-        }
-        if (this.reverse)
-        {
-            this.percentage = 1f - (this.runningTime / this.time);
-        }
-        else
-        {
-            this.percentage = this.runningTime / this.time;
-        }
-        this.lastRealTime = Time.realtimeSinceStartup;
-    }
-
-    public static void AudioFrom(GameObject target, Hashtable args)
-    {
-        AudioSource audio;
-        Vector2 vector;
-        Vector2 vector2;
-        args = CleanArgs(args);
-        if (args.Contains("audiosource"))
-        {
-            audio = (AudioSource)args["audiosource"];
-        }
-        else if (target.GetComponent<AudioSource>() != null)
-        {
-            audio = target.audio;
-        }
-        else
-        {
-            UnityEngine.Debug.LogError("iTween Error: AudioFrom requires an AudioSource.");
-            return;
-        }
-        vector.x = vector2.x = audio.volume;
-        vector.y = vector2.y = audio.pitch;
-        if (args.Contains("volume"))
-        {
-            vector2.x = (float)args["volume"];
-        }
-        if (args.Contains("pitch"))
-        {
-            vector2.y = (float)args["pitch"];
-        }
-        audio.volume = vector2.x;
-        audio.pitch = vector2.y;
-        args["volume"] = vector.x;
-        args["pitch"] = vector.y;
-        if (!args.Contains("easetype"))
-        {
-            args.Add("easetype", EaseType.linear);
-        }
-        args["type"] = "audio";
-        args["method"] = "to";
-        Launch(target, args);
-    }
-
-    public static void AudioFrom(GameObject target, float volume, float pitch, float time)
-    {
-        object[] args = new object[] { "volume", volume, "pitch", pitch, "time", time };
-        AudioFrom(target, Hash(args));
-    }
-
-    public static void AudioTo(GameObject target, Hashtable args)
-    {
-        args = CleanArgs(args);
-        if (!args.Contains("easetype"))
-        {
-            args.Add("easetype", EaseType.linear);
-        }
-        args["type"] = "audio";
-        args["method"] = "to";
-        Launch(target, args);
-    }
-
-    public static void AudioTo(GameObject target, float volume, float pitch, float time)
-    {
-        object[] args = new object[] { "volume", volume, "pitch", pitch, "time", time };
-        AudioTo(target, Hash(args));
-    }
-
-    public static void AudioUpdate(GameObject target, Hashtable args)
-    {
-        float updateTime;
-        AudioSource audio;
-        CleanArgs(args);
-        Vector2[] vectorArray = new Vector2[4];
-        if (args.Contains("time"))
-        {
-            updateTime = (float)args["time"];
-            updateTime *= Defaults.updateTimePercentage;
-        }
-        else
-        {
-            updateTime = Defaults.updateTime;
-        }
-        if (args.Contains("audiosource"))
-        {
-            audio = (AudioSource)args["audiosource"];
-        }
-        else if (target.GetComponent<AudioSource>() != null)
-        {
-            audio = target.audio;
-        }
-        else
-        {
-            UnityEngine.Debug.LogError("iTween Error: AudioUpdate requires an AudioSource.");
-            return;
-        }
-        vectorArray[0] = vectorArray[1] = new Vector2(audio.volume, audio.pitch);
-        if (args.Contains("volume"))
-        {
-            vectorArray[1].x = (float)args["volume"];
-        }
-        if (args.Contains("pitch"))
-        {
-            vectorArray[1].y = (float)args["pitch"];
-        }
-        vectorArray[3].x = Mathf.SmoothDampAngle(vectorArray[0].x, vectorArray[1].x, ref vectorArray[2].x, updateTime);
-        vectorArray[3].y = Mathf.SmoothDampAngle(vectorArray[0].y, vectorArray[1].y, ref vectorArray[2].y, updateTime);
-        audio.volume = vectorArray[3].x;
-        audio.pitch = vectorArray[3].y;
-    }
-
-    public static void AudioUpdate(GameObject target, float volume, float pitch, float time)
-    {
-        object[] args = new object[] { "volume", volume, "pitch", pitch, "time", time };
-        AudioUpdate(target, Hash(args));
-    }
-
-    public static GameObject CameraFadeAdd()
-    {
-        if (cameraFade != null)
-        {
-            return null;
-        }
-        cameraFade = new GameObject("iTween Camera Fade");
-        cameraFade.transform.position = new Vector3(0.5f, 0.5f, (float)Defaults.cameraFadeDepth);
-        cameraFade.AddComponent<GUITexture>();
-        cameraFade.guiTexture.texture = CameraTexture(Color.black);
-        cameraFade.guiTexture.color = new Color(0.5f, 0.5f, 0.5f, 0f);
-        return cameraFade;
-    }
-
-    public static GameObject CameraFadeAdd(Texture2D texture)
-    {
-        if (cameraFade != null)
-        {
-            return null;
-        }
-        cameraFade = new GameObject("iTween Camera Fade");
-        cameraFade.transform.position = new Vector3(0.5f, 0.5f, (float)Defaults.cameraFadeDepth);
-        cameraFade.AddComponent<GUITexture>();
-        cameraFade.guiTexture.texture = texture;
-        cameraFade.guiTexture.color = new Color(0.5f, 0.5f, 0.5f, 0f);
-        return cameraFade;
-    }
-
-    public static GameObject CameraFadeAdd(Texture2D texture, int depth)
-    {
-        if (cameraFade != null)
-        {
-            return null;
-        }
-        cameraFade = new GameObject("iTween Camera Fade");
-        cameraFade.transform.position = new Vector3(0.5f, 0.5f, (float)depth);
-        cameraFade.AddComponent<GUITexture>();
-        cameraFade.guiTexture.texture = texture;
-        cameraFade.guiTexture.color = new Color(0.5f, 0.5f, 0.5f, 0f);
-        return cameraFade;
-    }
-
-    public static void CameraFadeDepth(int depth)
-    {
-        if (cameraFade != null)
-        {
-            cameraFade.transform.position = new Vector3(cameraFade.transform.position.x, cameraFade.transform.position.y, (float)depth);
-        }
-    }
-
-    public static void CameraFadeDestroy()
-    {
-        if (cameraFade != null)
-        {
-            UnityEngine.Object.Destroy(cameraFade);
-        }
-    }
-
-    public static void CameraFadeFrom(Hashtable args)
-    {
-        if (cameraFade != null)
-        {
-            ColorFrom(cameraFade, args);
-        }
-        else
-        {
-            UnityEngine.Debug.LogError("iTween Error: You must first add a camera fade object with CameraFadeAdd() before atttempting to use camera fading.");
-        }
-    }
-
-    public static void CameraFadeFrom(float amount, float time)
-    {
-        if (cameraFade != null)
-        {
-            object[] args = new object[] { "amount", amount, "time", time };
-            CameraFadeFrom(Hash(args));
-        }
-        else
-        {
-            UnityEngine.Debug.LogError("iTween Error: You must first add a camera fade object with CameraFadeAdd() before atttempting to use camera fading.");
-        }
-    }
-
-    public static void CameraFadeSwap(Texture2D texture)
-    {
-        if (cameraFade != null)
-        {
-            cameraFade.guiTexture.texture = texture;
-        }
-    }
-
-    public static void CameraFadeTo(Hashtable args)
-    {
-        if (cameraFade != null)
-        {
-            ColorTo(cameraFade, args);
-        }
-        else
-        {
-            UnityEngine.Debug.LogError("iTween Error: You must first add a camera fade object with CameraFadeAdd() before atttempting to use camera fading.");
-        }
-    }
-
-    public static void CameraFadeTo(float amount, float time)
-    {
-        if (cameraFade != null)
-        {
-            object[] args = new object[] { "amount", amount, "time", time };
-            CameraFadeTo(Hash(args));
-        }
-        else
-        {
-            UnityEngine.Debug.LogError("iTween Error: You must first add a camera fade object with CameraFadeAdd() before atttempting to use camera fading.");
-        }
-    }
-
-    public static Texture2D CameraTexture(Color color)
-    {
-        Texture2D textured = new Texture2D(Screen.width, Screen.height, TextureFormat.ARGB32, false);
-        Color[] colors = new Color[Screen.width * Screen.height];
-        for (int i = 0; i < colors.Length; i++)
-        {
-            colors[i] = color;
-        }
-        textured.SetPixels(colors);
-        textured.Apply();
-        return textured;
-    }
-
-    public static void ColorFrom(GameObject target, Hashtable args)
-    {
-        Color color = default(Color);
-        Color color2 = default(Color);
-        args = iTween.CleanArgs(args);
-        if (!args.Contains("includechildren") || (bool)args["includechildren"])
-        {
-            foreach (Transform transform in target.transform)
-            {
-                Hashtable hashtable = (Hashtable)args.Clone();
-                hashtable["ischild"] = true;
-                iTween.ColorFrom(transform.gameObject, hashtable);
-            }
-        }
-        if (!args.Contains("easetype"))
-        {
-            args.Add("easetype", iTween.EaseType.linear);
-        }
-        if (target.GetComponent<GUITexture>())
-        {
-            color = (color2 = target.guiTexture.color);
-        }
-        else if (target.GetComponent<GUIText>())
-        {
-            color = (color2 = target.guiText.material.color);
-        }
-        else if (target.renderer)
-        {
-            color = (color2 = target.renderer.material.color);
-        }
-        else if (target.light)
-        {
-            color = (color2 = target.light.color);
-        }
-        if (args.Contains("color"))
-        {
-            color = (Color)args["color"];
-        }
-        else
-        {
-            if (args.Contains("r"))
-            {
-                color.r = (float)args["r"];
-            }
-            if (args.Contains("g"))
-            {
-                color.g = (float)args["g"];
-            }
-            if (args.Contains("b"))
-            {
-                color.b = (float)args["b"];
-            }
-            if (args.Contains("a"))
-            {
-                color.a = (float)args["a"];
-            }
-        }
-        if (args.Contains("amount"))
-        {
-            color.a = (float)args["amount"];
-            args.Remove("amount");
-        }
-        else if (args.Contains("alpha"))
-        {
-            color.a = (float)args["alpha"];
-            args.Remove("alpha");
-        }
-        if (target.GetComponent<GUITexture>())
-        {
-            target.guiTexture.color = color;
-        }
-        else if (target.GetComponent<GUIText>())
-        {
-            target.guiText.material.color = color;
-        }
-        else if (target.renderer)
-        {
-            target.renderer.material.color = color;
-        }
-        else if (target.light)
-        {
-            target.light.color = color;
-        }
-        args["color"] = color2;
-        args["type"] = "color";
-        args["method"] = "to";
-        iTween.Launch(target, args);
-    }
-
-    public static void ColorFrom(GameObject target, Color color, float time)
-    {
-        object[] args = new object[] { "color", color, "time", time };
-        ColorFrom(target, Hash(args));
-    }
-
-    public static void ColorTo(GameObject target, Hashtable args)
-    {
-        args = iTween.CleanArgs(args);
-        if (!args.Contains("includechildren") || (bool)args["includechildren"])
-        {
-            foreach (Transform transform in target.transform)
-            {
-                Hashtable hashtable = (Hashtable)args.Clone();
-                hashtable["ischild"] = true;
-                iTween.ColorTo(transform.gameObject, hashtable);
-            }
-        }
-        if (!args.Contains("easetype"))
-        {
-            args.Add("easetype", iTween.EaseType.linear);
-        }
-        args["type"] = "color";
-        args["method"] = "to";
-        iTween.Launch(target, args);
-    }
-
-    public static void ColorTo(GameObject target, Color color, float time)
-    {
-        object[] args = new object[] { "color", color, "time", time };
-        ColorTo(target, Hash(args));
-    }
-
-    public static void ColorUpdate(GameObject target, Hashtable args)
-    {
-        iTween.CleanArgs(args);
-        Color[] array = new Color[4];
-        if (!args.Contains("includechildren") || (bool)args["includechildren"])
-        {
-            foreach (Transform transform in target.transform)
-            {
-                iTween.ColorUpdate(transform.gameObject, args);
-            }
-        }
-        float num;
-        if (args.Contains("time"))
-        {
-            num = (float)args["time"];
-            num *= iTween.Defaults.updateTimePercentage;
-        }
-        else
-        {
-            num = iTween.Defaults.updateTime;
-        }
-        if (target.GetComponent<GUITexture>())
-        {
-            array[0] = (array[1] = target.guiTexture.color);
-        }
-        else if (target.GetComponent<GUIText>())
-        {
-            array[0] = (array[1] = target.guiText.material.color);
-        }
-        else if (target.renderer)
-        {
-            array[0] = (array[1] = target.renderer.material.color);
-        }
-        else if (target.light)
-        {
-            array[0] = (array[1] = target.light.color);
-        }
-        if (args.Contains("color"))
-        {
-            array[1] = (Color)args["color"];
-        }
-        else
-        {
-            if (args.Contains("r"))
-            {
-                array[1].r = (float)args["r"];
-            }
-            if (args.Contains("g"))
-            {
-                array[1].g = (float)args["g"];
-            }
-            if (args.Contains("b"))
-            {
-                array[1].b = (float)args["b"];
-            }
-            if (args.Contains("a"))
-            {
-                array[1].a = (float)args["a"];
-            }
-        }
-        array[3].r = Mathf.SmoothDamp(array[0].r, array[1].r, ref array[2].r, num);
-        array[3].g = Mathf.SmoothDamp(array[0].g, array[1].g, ref array[2].g, num);
-        array[3].b = Mathf.SmoothDamp(array[0].b, array[1].b, ref array[2].b, num);
-        array[3].a = Mathf.SmoothDamp(array[0].a, array[1].a, ref array[2].a, num);
-        if (target.GetComponent<GUITexture>())
-        {
-            target.guiTexture.color = array[3];
-        }
-        else if (target.GetComponent<GUIText>())
-        {
-            target.guiText.material.color = array[3];
-        }
-        else if (target.renderer)
-        {
-            target.renderer.material.color = array[3];
-        }
-        else if (target.light)
-        {
-            target.light.color = array[3];
-        }
-    }
-
-    public static void ColorUpdate(GameObject target, Color color, float time)
-    {
-        object[] args = new object[] { "color", color, "time", time };
-        ColorUpdate(target, Hash(args));
-    }
-
-    public static int Count()
-    {
-        return tweens.Count;
-    }
-
-    public static int Count(string type)
-    {
-        int num = 0;
-        for (int i = 0; i < tweens.Count; i++)
-        {
-            Hashtable hashtable = tweens[i];
-            if ((((string)hashtable["type"]) + ((string)hashtable["method"])).Substring(0, type.Length).ToLower() == type.ToLower())
-            {
-                num++;
-            }
-        }
-        return num;
-    }
-
-    public static int Count(GameObject target)
-    {
-        return target.GetComponents<iTween>().Length;
-    }
-
-    public static int Count(GameObject target, string type)
-    {
-        int num = 0;
-        foreach (iTween tween in target.GetComponents<iTween>())
-        {
-            if ((tween.type + tween.method).Substring(0, type.Length).ToLower() == type.ToLower())
-            {
-                num++;
-            }
-        }
-        return num;
-    }
-
-    public static void DrawLine(Transform[] line)
-    {
-        if (line.Length > 0)
-        {
-            Vector3[] vectorArray = new Vector3[line.Length];
-            for (int i = 0; i < line.Length; i++)
-            {
-                vectorArray[i] = line[i].position;
-            }
-            DrawLineHelper(vectorArray, Defaults.color, "gizmos");
-        }
-    }
-
-    public static void DrawLine(Vector3[] line)
-    {
-        if (line.Length > 0)
-        {
-            DrawLineHelper(line, Defaults.color, "gizmos");
-        }
-    }
-
-    public static void DrawLine(Transform[] line, Color color)
-    {
-        if (line.Length > 0)
-        {
-            Vector3[] vectorArray = new Vector3[line.Length];
-            for (int i = 0; i < line.Length; i++)
-            {
-                vectorArray[i] = line[i].position;
-            }
-            DrawLineHelper(vectorArray, color, "gizmos");
-        }
-    }
-
-    public static void DrawLine(Vector3[] line, Color color)
-    {
-        if (line.Length > 0)
-        {
-            DrawLineHelper(line, color, "gizmos");
-        }
-    }
-
-    public static void DrawLineGizmos(Transform[] line)
-    {
-        if (line.Length > 0)
-        {
-            Vector3[] vectorArray = new Vector3[line.Length];
-            for (int i = 0; i < line.Length; i++)
-            {
-                vectorArray[i] = line[i].position;
-            }
-            DrawLineHelper(vectorArray, Defaults.color, "gizmos");
-        }
-    }
-
-    public static void DrawLineGizmos(Vector3[] line)
-    {
-        if (line.Length > 0)
-        {
-            DrawLineHelper(line, Defaults.color, "gizmos");
-        }
-    }
-
-    public static void DrawLineGizmos(Transform[] line, Color color)
-    {
-        if (line.Length > 0)
-        {
-            Vector3[] vectorArray = new Vector3[line.Length];
-            for (int i = 0; i < line.Length; i++)
-            {
-                vectorArray[i] = line[i].position;
-            }
-            DrawLineHelper(vectorArray, color, "gizmos");
-        }
-    }
-
-    public static void DrawLineGizmos(Vector3[] line, Color color)
-    {
-        if (line.Length > 0)
-        {
-            DrawLineHelper(line, color, "gizmos");
-        }
-    }
-
-    public static void DrawLineHandles(Transform[] line)
-    {
-        if (line.Length > 0)
-        {
-            Vector3[] vectorArray = new Vector3[line.Length];
-            for (int i = 0; i < line.Length; i++)
-            {
-                vectorArray[i] = line[i].position;
-            }
-            DrawLineHelper(vectorArray, Defaults.color, "handles");
-        }
-    }
-
-    public static void DrawLineHandles(Vector3[] line)
-    {
-        if (line.Length > 0)
-        {
-            DrawLineHelper(line, Defaults.color, "handles");
-        }
-    }
-
-    public static void DrawLineHandles(Transform[] line, Color color)
-    {
-        if (line.Length > 0)
-        {
-            Vector3[] vectorArray = new Vector3[line.Length];
-            for (int i = 0; i < line.Length; i++)
-            {
-                vectorArray[i] = line[i].position;
-            }
-            DrawLineHelper(vectorArray, color, "handles");
-        }
-    }
-
-    public static void DrawLineHandles(Vector3[] line, Color color)
-    {
-        if (line.Length > 0)
-        {
-            DrawLineHelper(line, color, "handles");
-        }
-    }
-
-    public static void DrawPath(Transform[] path)
-    {
-        if (path.Length > 0)
-        {
-            Vector3[] vectorArray = new Vector3[path.Length];
-            for (int i = 0; i < path.Length; i++)
-            {
-                vectorArray[i] = path[i].position;
-            }
-            DrawPathHelper(vectorArray, Defaults.color, "gizmos");
-        }
-    }
-
-    public static void DrawPath(Vector3[] path)
-    {
-        if (path.Length > 0)
-        {
-            DrawPathHelper(path, Defaults.color, "gizmos");
-        }
-    }
-
-    public static void DrawPath(Transform[] path, Color color)
-    {
-        if (path.Length > 0)
-        {
-            Vector3[] vectorArray = new Vector3[path.Length];
-            for (int i = 0; i < path.Length; i++)
-            {
-                vectorArray[i] = path[i].position;
-            }
-            DrawPathHelper(vectorArray, color, "gizmos");
-        }
-    }
-
-    public static void DrawPath(Vector3[] path, Color color)
-    {
-        if (path.Length > 0)
-        {
-            DrawPathHelper(path, color, "gizmos");
-        }
-    }
-
-    public static void DrawPathGizmos(Transform[] path)
-    {
-        if (path.Length > 0)
-        {
-            Vector3[] vectorArray = new Vector3[path.Length];
-            for (int i = 0; i < path.Length; i++)
-            {
-                vectorArray[i] = path[i].position;
-            }
-            DrawPathHelper(vectorArray, Defaults.color, "gizmos");
-        }
-    }
-
-    public static void DrawPathGizmos(Vector3[] path)
-    {
-        if (path.Length > 0)
-        {
-            DrawPathHelper(path, Defaults.color, "gizmos");
-        }
-    }
-
-    public static void DrawPathGizmos(Transform[] path, Color color)
-    {
-        if (path.Length > 0)
-        {
-            Vector3[] vectorArray = new Vector3[path.Length];
-            for (int i = 0; i < path.Length; i++)
-            {
-                vectorArray[i] = path[i].position;
-            }
-            DrawPathHelper(vectorArray, color, "gizmos");
-        }
-    }
-
-    public static void DrawPathGizmos(Vector3[] path, Color color)
-    {
-        if (path.Length > 0)
-        {
-            DrawPathHelper(path, color, "gizmos");
-        }
-    }
-
-    public static void DrawPathHandles(Transform[] path)
-    {
-        if (path.Length > 0)
-        {
-            Vector3[] vectorArray = new Vector3[path.Length];
-            for (int i = 0; i < path.Length; i++)
-            {
-                vectorArray[i] = path[i].position;
-            }
-            DrawPathHelper(vectorArray, Defaults.color, "handles");
-        }
-    }
-
-    public static void DrawPathHandles(Vector3[] path)
-    {
-        if (path.Length > 0)
-        {
-            DrawPathHelper(path, Defaults.color, "handles");
-        }
-    }
-
-    public static void DrawPathHandles(Transform[] path, Color color)
-    {
-        if (path.Length > 0)
-        {
-            Vector3[] vectorArray = new Vector3[path.Length];
-            for (int i = 0; i < path.Length; i++)
-            {
-                vectorArray[i] = path[i].position;
-            }
-            DrawPathHelper(vectorArray, color, "handles");
-        }
-    }
-
-    public static void DrawPathHandles(Vector3[] path, Color color)
-    {
-        if (path.Length > 0)
-        {
-            DrawPathHelper(path, color, "handles");
-        }
-    }
-
-    public static void FadeFrom(GameObject target, Hashtable args)
-    {
-        ColorFrom(target, args);
-    }
-
-    public static void FadeFrom(GameObject target, float alpha, float time)
-    {
-        object[] args = new object[] { "alpha", alpha, "time", time };
-        FadeFrom(target, Hash(args));
-    }
-
-    public static void FadeTo(GameObject target, Hashtable args)
-    {
-        ColorTo(target, args);
-    }
-
-    public static void FadeTo(GameObject target, float alpha, float time)
-    {
-        object[] args = new object[] { "alpha", alpha, "time", time };
-        FadeTo(target, Hash(args));
-    }
-
-    public static void FadeUpdate(GameObject target, Hashtable args)
-    {
-        args["a"] = args["alpha"];
-        ColorUpdate(target, args);
-    }
-
-    public static void FadeUpdate(GameObject target, float alpha, float time)
-    {
-        object[] args = new object[] { "alpha", alpha, "time", time };
-        FadeUpdate(target, Hash(args));
-    }
-
-    public static float FloatUpdate(float currentValue, float targetValue, float speed)
-    {
-        float num = targetValue - currentValue;
-        currentValue += (num * speed) * Time.deltaTime;
-        return currentValue;
-    }
-
-    public static Hashtable Hash(params object[] args)
-    {
-        Hashtable hashtable = new Hashtable(args.Length / 2);
-        if ((args.Length % 2) != 0)
-        {
-            UnityEngine.Debug.LogError("Tween Error: Hash requires an even number of arguments!");
-            return null;
-        }
-        for (int i = 0; i < (args.Length - 1); i += 2)
-        {
-            hashtable.Add(args[i], args[i + 1]);
-        }
-        return hashtable;
-    }
-
-    public static void Init(GameObject target)
-    {
-        MoveBy(target, Vectors.zero, 0f);
-    }
-
-    public static void LookFrom(GameObject target, Hashtable args)
-    {
-        args = CleanArgs(args);
-        Vector3 eulerAngles = target.transform.eulerAngles;
-        if (args["looktarget"].GetType() == typeof(Transform))
-        {
-            Vector3? nullable = (Vector3?)args["up"];
-            target.transform.LookAt((Transform)args["looktarget"], !nullable.HasValue ? Defaults.up : nullable.Value);
-        }
-        else if (args["looktarget"].GetType() == typeof(Vector3))
-        {
-            Vector3? nullable2 = (Vector3?)args["up"];
-            target.transform.LookAt((Vector3)args["looktarget"], !nullable2.HasValue ? Defaults.up : nullable2.Value);
-        }
-        if (args.Contains("axis"))
-        {
-            Vector3 vector2 = target.transform.eulerAngles;
-            string key = (string)args["axis"];
-            if (key != null)
-            {
-                int num;
-                if (f__switchmap8 == null)
-                {
-                    Dictionary<string, int> dictionary = new Dictionary<string, int>(3);
-                    dictionary.Add("x", 0);
-                    dictionary.Add("y", 1);
-                    dictionary.Add("z", 2);
-                    f__switchmap8 = dictionary;
-                }
-                if (f__switchmap8.TryGetValue(key, out num))
-                {
-                    switch (num)
-                    {
-                        case 0:
-                            vector2.y = eulerAngles.y;
-                            vector2.z = eulerAngles.z;
-                            break;
-
-                        case 1:
-                            vector2.x = eulerAngles.x;
-                            vector2.z = eulerAngles.z;
-                            break;
-
-                        case 2:
-                            vector2.x = eulerAngles.x;
-                            vector2.y = eulerAngles.y;
-                            break;
-                    }
-                }
-            }
-            target.transform.eulerAngles = vector2;
-        }
-        args["rotation"] = eulerAngles;
-        args["type"] = "rotate";
-        args["method"] = "to";
-        Launch(target, args);
-    }
-
-    public static void LookFrom(GameObject target, Vector3 looktarget, float time)
-    {
-        object[] args = new object[] { "looktarget", looktarget, "time", time };
-        LookFrom(target, Hash(args));
-    }
-
-    public static void LookTo(GameObject target, Hashtable args)
-    {
-        args = CleanArgs(args);
-        if (args.Contains("looktarget") && (args["looktarget"].GetType() == typeof(Transform)))
-        {
-            Transform transform = (Transform)args["looktarget"];
-            args["position"] = new Vector3(transform.position.x, transform.position.y, transform.position.z);
-            args["rotation"] = new Vector3(transform.eulerAngles.x, transform.eulerAngles.y, transform.eulerAngles.z);
-        }
-        args["type"] = "look";
-        args["method"] = "to";
-        Launch(target, args);
-    }
-
-    public static void LookTo(GameObject target, Vector3 looktarget, float time)
-    {
-        object[] args = new object[] { "looktarget", looktarget, "time", time };
-        LookTo(target, Hash(args));
-    }
-
-    public static void LookUpdate(GameObject target, Hashtable args)
-    {
-        float updateTime;
-        CleanArgs(args);
-        Vector3[] vectorArray = new Vector3[5];
-        if (args.Contains("looktime"))
-        {
-            updateTime = (float)args["looktime"];
-            updateTime *= Defaults.updateTimePercentage;
-        }
-        else if (args.Contains("time"))
-        {
-            updateTime = ((float)args["time"]) * 0.15f;
-            updateTime *= Defaults.updateTimePercentage;
-        }
-        else
-        {
-            updateTime = Defaults.updateTime;
-        }
-        vectorArray[0] = target.transform.eulerAngles;
-        if (args.Contains("looktarget"))
-        {
-            if (args["looktarget"].GetType() == typeof(Transform))
-            {
-                Vector3? nullable = (Vector3?)args["up"];
-                target.transform.LookAt((Transform)args["looktarget"], !nullable.HasValue ? Defaults.up : nullable.Value);
-            }
-            else if (args["looktarget"].GetType() == typeof(Vector3))
-            {
-                Vector3? nullable2 = (Vector3?)args["up"];
-                target.transform.LookAt((Vector3)args["looktarget"], !nullable2.HasValue ? Defaults.up : nullable2.Value);
-            }
-        }
-        else
-        {
-            UnityEngine.Debug.LogError("iTween Error: LookUpdate needs a 'looktarget' property!");
-            return;
-        }
-        vectorArray[1] = target.transform.eulerAngles;
-        target.transform.eulerAngles = vectorArray[0];
-        vectorArray[3].x = Mathf.SmoothDampAngle(vectorArray[0].x, vectorArray[1].x, ref vectorArray[2].x, updateTime);
-        vectorArray[3].y = Mathf.SmoothDampAngle(vectorArray[0].y, vectorArray[1].y, ref vectorArray[2].y, updateTime);
-        vectorArray[3].z = Mathf.SmoothDampAngle(vectorArray[0].z, vectorArray[1].z, ref vectorArray[2].z, updateTime);
-        target.transform.eulerAngles = vectorArray[3];
-        if (args.Contains("axis"))
-        {
-            vectorArray[4] = target.transform.eulerAngles;
-            string key = (string)args["axis"];
-            if (key != null)
-            {
-                int num2;
-                if (f__switchmap14 == null)
-                {
-                    Dictionary<string, int> dictionary = new Dictionary<string, int>(3);
-                    dictionary.Add("x", 0);
-                    dictionary.Add("y", 1);
-                    dictionary.Add("z", 2);
-                    f__switchmap14 = dictionary;
-                }
-                if (f__switchmap14.TryGetValue(key, out num2))
-                {
-                    switch (num2)
-                    {
-                        case 0:
-                            vectorArray[4].y = vectorArray[0].y;
-                            vectorArray[4].z = vectorArray[0].z;
-                            break;
-
-                        case 1:
-                            vectorArray[4].x = vectorArray[0].x;
-                            vectorArray[4].z = vectorArray[0].z;
-                            break;
-
-                        case 2:
-                            vectorArray[4].x = vectorArray[0].x;
-                            vectorArray[4].y = vectorArray[0].y;
-                            break;
-                    }
-                }
-            }
-            target.transform.eulerAngles = vectorArray[4];
-        }
-    }
-
-    public static void LookUpdate(GameObject target, Vector3 looktarget, float time)
-    {
-        object[] args = new object[] { "looktarget", looktarget, "time", time };
-        LookUpdate(target, Hash(args));
-    }
-
-    public static void MoveAdd(GameObject target, Hashtable args)
-    {
-        args = CleanArgs(args);
-        args["type"] = "move";
-        args["method"] = "add";
-        Launch(target, args);
-    }
-
-    public static void MoveAdd(GameObject target, Vector3 amount, float time)
-    {
-        object[] args = new object[] { "amount", amount, "time", time };
-        MoveAdd(target, Hash(args));
-    }
-
-    public static void MoveBy(GameObject target, Hashtable args)
-    {
-        args = CleanArgs(args);
-        args["type"] = "move";
-        args["method"] = "by";
-        Launch(target, args);
-    }
-
-    public static void MoveBy(GameObject target, Vector3 amount, float time)
-    {
-        object[] args = new object[] { "amount", amount, "time", time };
-        MoveBy(target, Hash(args));
-    }
-
-    public static void MoveFrom(GameObject target, Hashtable args)
-    {
-        bool isLocal;
-        args = CleanArgs(args);
-        if (args.Contains("islocal"))
-        {
-            isLocal = (bool)args["islocal"];
-        }
-        else
-        {
-            isLocal = Defaults.isLocal;
-        }
-        if (args.Contains("path"))
-        {
-            Vector3[] vectorArray2;
-            if (args["path"].GetType() == typeof(Vector3[]))
-            {
-                Vector3[] sourceArray = (Vector3[])args["path"];
-                vectorArray2 = new Vector3[sourceArray.Length];
-                Array.Copy(sourceArray, vectorArray2, sourceArray.Length);
-            }
-            else
-            {
-                Transform[] transformArray = (Transform[])args["path"];
-                vectorArray2 = new Vector3[transformArray.Length];
-                for (int i = 0; i < transformArray.Length; i++)
-                {
-                    vectorArray2[i] = transformArray[i].position;
-                }
-            }
-            if (vectorArray2[vectorArray2.Length - 1] != target.transform.position)
-            {
-                Vector3[] destinationArray = new Vector3[vectorArray2.Length + 1];
-                Array.Copy(vectorArray2, destinationArray, vectorArray2.Length);
-                if (isLocal)
-                {
-                    destinationArray[destinationArray.Length - 1] = target.transform.localPosition;
-                    target.transform.localPosition = destinationArray[0];
-                }
-                else
-                {
-                    destinationArray[destinationArray.Length - 1] = target.transform.position;
-                    target.transform.position = destinationArray[0];
-                }
-                args["path"] = destinationArray;
-            }
-            else
-            {
-                if (isLocal)
-                {
-                    target.transform.localPosition = vectorArray2[0];
-                }
-                else
-                {
-                    target.transform.position = vectorArray2[0];
-                }
-                args["path"] = vectorArray2;
-            }
-        }
-        else
-        {
-            Vector3 position;
-            Vector3 vector2;
-            if (isLocal)
-            {
-                vector2 = position = target.transform.localPosition;
-            }
-            else
-            {
-                vector2 = position = target.transform.position;
-            }
-            if (args.Contains("position"))
-            {
-                if (args["position"].GetType() == typeof(Transform))
-                {
-                    Transform transform = (Transform)args["position"];
-                    position = transform.position;
-                }
-                else if (args["position"].GetType() == typeof(Vector3))
-                {
-                    position = (Vector3)args["position"];
-                }
-            }
-            else
-            {
-                if (args.Contains("x"))
-                {
-                    position.x = (float)args["x"];
-                }
-                if (args.Contains("y"))
-                {
-                    position.y = (float)args["y"];
-                }
-                if (args.Contains("z"))
-                {
-                    position.z = (float)args["z"];
-                }
-            }
-            if (isLocal)
-            {
-                target.transform.localPosition = position;
-            }
-            else
-            {
-                target.transform.position = position;
-            }
-            args["position"] = vector2;
-        }
-        args["type"] = "move";
-        args["method"] = "to";
-        Launch(target, args);
-    }
-
-    public static void MoveFrom(GameObject target, Vector3 position, float time)
-    {
-        object[] args = new object[] { "position", position, "time", time };
-        MoveFrom(target, Hash(args));
-    }
-
-    public static void MoveTo(GameObject target, Hashtable args)
-    {
-        args = CleanArgs(args);
-        if (args.Contains("position") && (args["position"].GetType() == typeof(Transform)))
-        {
-            Transform transform = (Transform)args["position"];
-            args["position"] = new Vector3(transform.position.x, transform.position.y, transform.position.z);
-            args["rotation"] = new Vector3(transform.eulerAngles.x, transform.eulerAngles.y, transform.eulerAngles.z);
-            args["scale"] = new Vector3(transform.localScale.x, transform.localScale.y, transform.localScale.z);
-        }
-        args["type"] = "move";
-        args["method"] = "to";
-        Launch(target, args);
-    }
-
-    public static void MoveTo(GameObject target, Vector3 position, float time)
-    {
-        object[] args = new object[] { "position", position, "time", time };
-        MoveTo(target, Hash(args));
-    }
-
-    public static void MoveUpdate(GameObject target, Hashtable args)
-    {
-        float updateTime;
-        bool isLocal;
-        CleanArgs(args);
-        Vector3[] vectorArray = new Vector3[4];
-        Vector3 position = target.transform.position;
-        if (args.Contains("time"))
-        {
-            updateTime = (float)args["time"];
-            updateTime *= Defaults.updateTimePercentage;
-        }
-        else
-        {
-            updateTime = Defaults.updateTime;
-        }
-        if (args.Contains("islocal"))
-        {
-            isLocal = (bool)args["islocal"];
-        }
-        else
-        {
-            isLocal = Defaults.isLocal;
-        }
-        if (isLocal)
-        {
-            vectorArray[0] = vectorArray[1] = target.transform.localPosition;
-        }
-        else
-        {
-            vectorArray[0] = vectorArray[1] = target.transform.position;
-        }
-        if (args.Contains("position"))
-        {
-            if (args["position"].GetType() == typeof(Transform))
-            {
-                Transform transform = (Transform)args["position"];
-                vectorArray[1] = transform.position;
-            }
-            else if (args["position"].GetType() == typeof(Vector3))
-            {
-                vectorArray[1] = (Vector3)args["position"];
-            }
-        }
-        else
-        {
-            if (args.Contains("x"))
-            {
-                vectorArray[1].x = (float)args["x"];
-            }
-            if (args.Contains("y"))
-            {
-                vectorArray[1].y = (float)args["y"];
-            }
-            if (args.Contains("z"))
-            {
-                vectorArray[1].z = (float)args["z"];
-            }
-        }
-        vectorArray[3].x = Mathf.SmoothDamp(vectorArray[0].x, vectorArray[1].x, ref vectorArray[2].x, updateTime);
-        vectorArray[3].y = Mathf.SmoothDamp(vectorArray[0].y, vectorArray[1].y, ref vectorArray[2].y, updateTime);
-        vectorArray[3].z = Mathf.SmoothDamp(vectorArray[0].z, vectorArray[1].z, ref vectorArray[2].z, updateTime);
-        if (args.Contains("orienttopath") && ((bool)args["orienttopath"]))
-        {
-            args["looktarget"] = vectorArray[3];
-        }
-        if (args.Contains("looktarget"))
-        {
-            LookUpdate(target, args);
-        }
-        if (isLocal)
-        {
-            target.transform.localPosition = vectorArray[3];
-        }
-        else
-        {
-            target.transform.position = vectorArray[3];
-        }
-        if (target.rigidbody != null)
-        {
-            Vector3 vector3 = target.transform.position;
-            target.transform.position = position;
-            target.rigidbody.MovePosition(vector3);
-        }
-    }
-
-    public static void MoveUpdate(GameObject target, Vector3 position, float time)
-    {
-        object[] args = new object[] { "position", position, "time", time };
-        MoveUpdate(target, Hash(args));
-    }
-
-    public static float PathLength(Transform[] path)
-    {
-        Vector3[] vectorArray = new Vector3[path.Length];
-        float num = 0f;
-        for (int i = 0; i < path.Length; i++)
-        {
-            vectorArray[i] = path[i].position;
-        }
-        Vector3[] pts = PathControlPointGenerator(vectorArray);
-        Vector3 a = Interp(pts, 0f);
-        int num3 = path.Length * 20;
-        for (int j = 1; j <= num3; j++)
-        {
-            float t = ((float)j) / ((float)num3);
-            Vector3 b = Interp(pts, t);
-            num += Vector3.Distance(a, b);
-            a = b;
-        }
-        return num;
-    }
-
-    public static float PathLength(Vector3[] path)
-    {
-        float num = 0f;
-        Vector3[] pts = PathControlPointGenerator(path);
-        Vector3 a = Interp(pts, 0f);
-        int num2 = path.Length * 20;
-        for (int i = 1; i <= num2; i++)
-        {
-            float t = ((float)i) / ((float)num2);
-            Vector3 b = Interp(pts, t);
-            num += Vector3.Distance(a, b);
-            a = b;
-        }
-        return num;
-    }
-
-    public static void Pause()
-    {
-        for (int i = 0; i < tweens.Count; i++)
-        {
-            Hashtable hashtable = tweens[i];
-            GameObject target = (GameObject)hashtable["target"];
-            Pause(target);
-        }
-    }
-
-    public static void Pause(string type)
-    {
-        ArrayList list = new ArrayList();
-        for (int i = 0; i < tweens.Count; i++)
-        {
-            Hashtable hashtable = tweens[i];
-            GameObject obj2 = (GameObject)hashtable["target"];
-            list.Insert(list.Count, obj2);
-        }
-        for (int j = 0; j < list.Count; j++)
-        {
-            Pause((GameObject)list[j], type);
-        }
-    }
-
-    public static void Pause(GameObject target)
-    {
-        foreach (iTween tween in target.GetComponents<iTween>())
-        {
-            if (tween.delay > 0f)
-            {
-                tween.delay -= Time.time - tween.delayStarted;
-                tween.StopCoroutine("TweenDelay");
-            }
-            tween.isPaused = true;
-            tween.enabled = false;
-        }
-    }
-
-    // iTween
-    public static void Pause(GameObject target, bool includechildren)
-    {
-        iTween.Pause(target);
-        if (includechildren)
-        {
-            foreach (Transform transform in target.transform)
-            {
-                iTween.Pause(transform.gameObject, true);
-            }
-        }
-    }
-
-    public static void Pause(GameObject target, string type)
-    {
-        foreach (iTween tween in target.GetComponents<iTween>())
-        {
-            if ((tween.type + tween.method).Substring(0, type.Length).ToLower() == type.ToLower())
-            {
-                if (tween.delay > 0f)
-                {
-                    tween.delay -= Time.time - tween.delayStarted;
-                    tween.StopCoroutine("TweenDelay");
-                }
-                tween.isPaused = true;
-                tween.enabled = false;
-            }
-        }
-    }
-
-    // iTween
-    public static void Pause(GameObject target, string type, bool includechildren)
-    {
-        Component[] components = target.GetComponents<iTween>();
-        Component[] array = components;
-        for (int i = 0; i < array.Length; i++)
-        {
-            iTween iTween = (iTween)array[i];
-            string text = iTween.type + iTween.method;
-            text = text.Substring(0, type.Length);
-            if (text.ToLower() == type.ToLower())
-            {
-                if (iTween.delay > 0f)
-                {
-                    iTween.delay -= Time.time - iTween.delayStarted;
-                    iTween.StopCoroutine("TweenDelay");
-                }
-                iTween.isPaused = true;
-                iTween.enabled = false;
-            }
-        }
-        if (includechildren)
-        {
-            foreach (Transform transform in target.transform)
-            {
-                iTween.Pause(transform.gameObject, type, true);
-            }
-        }
-    }
-
-    public static Vector3 PointOnPath(Transform[] path, float percent)
-    {
-        Vector3[] vectorArray = new Vector3[path.Length];
-        for (int i = 0; i < path.Length; i++)
-        {
-            vectorArray[i] = path[i].position;
-        }
-        return Interp(PathControlPointGenerator(vectorArray), percent);
-    }
-
-    public static Vector3 PointOnPath(Vector3[] path, float percent)
-    {
-        return Interp(PathControlPointGenerator(path), percent);
-    }
-
-    public static void PunchPosition(GameObject target, Hashtable args)
-    {
-        args = CleanArgs(args);
-        args["type"] = "punch";
-        args["method"] = "position";
-        args["easetype"] = EaseType.punch;
-        Launch(target, args);
-    }
-
-    public static void PunchPosition(GameObject target, Vector3 amount, float time)
-    {
-        object[] args = new object[] { "amount", amount, "time", time };
-        PunchPosition(target, Hash(args));
-    }
-
-    public static void PunchRotation(GameObject target, Hashtable args)
-    {
-        args = CleanArgs(args);
-        args["type"] = "punch";
-        args["method"] = "rotation";
-        args["easetype"] = EaseType.punch;
-        Launch(target, args);
-    }
-
-    public static void PunchRotation(GameObject target, Vector3 amount, float time)
-    {
-        object[] args = new object[] { "amount", amount, "time", time };
-        PunchRotation(target, Hash(args));
-    }
-
-    public static void PunchScale(GameObject target, Hashtable args)
-    {
-        args = CleanArgs(args);
-        args["type"] = "punch";
-        args["method"] = "scale";
-        args["easetype"] = EaseType.punch;
-        Launch(target, args);
-    }
-
-    public static void PunchScale(GameObject target, Vector3 amount, float time)
-    {
-        object[] args = new object[] { "amount", amount, "time", time };
-        PunchScale(target, Hash(args));
-    }
-
-    public static void PutOnPath(GameObject target, Transform[] path, float percent)
-    {
-        Vector3[] vectorArray = new Vector3[path.Length];
-        for (int i = 0; i < path.Length; i++)
-        {
-            vectorArray[i] = path[i].position;
-        }
-        target.transform.position = Interp(PathControlPointGenerator(vectorArray), percent);
-    }
-
-    public static void PutOnPath(GameObject target, Vector3[] path, float percent)
-    {
-        target.transform.position = Interp(PathControlPointGenerator(path), percent);
-    }
-
-    public static void PutOnPath(Transform target, Transform[] path, float percent)
-    {
-        Vector3[] vectorArray = new Vector3[path.Length];
-        for (int i = 0; i < path.Length; i++)
-        {
-            vectorArray[i] = path[i].position;
-        }
-        target.position = Interp(PathControlPointGenerator(vectorArray), percent);
-    }
-
-    public static void PutOnPath(Transform target, Vector3[] path, float percent)
-    {
-        target.position = Interp(PathControlPointGenerator(path), percent);
-    }
-
-    public static Rect RectUpdate(Rect currentValue, Rect targetValue, float speed)
-    {
-        return new Rect(FloatUpdate(currentValue.x, targetValue.x, speed), FloatUpdate(currentValue.y, targetValue.y, speed), FloatUpdate(currentValue.width, targetValue.width, speed), FloatUpdate(currentValue.height, targetValue.height, speed));
-    }
-
-    public static void Resume()
-    {
-        for (int i = 0; i < tweens.Count; i++)
-        {
-            Hashtable hashtable = tweens[i];
-            GameObject target = (GameObject)hashtable["target"];
-            Resume(target);
-        }
-    }
-
-    public static void Resume(string type)
-    {
-        ArrayList list = new ArrayList();
-        for (int i = 0; i < tweens.Count; i++)
-        {
-            Hashtable hashtable = tweens[i];
-            GameObject obj2 = (GameObject)hashtable["target"];
-            list.Insert(list.Count, obj2);
-        }
-        for (int j = 0; j < list.Count; j++)
-        {
-            Resume((GameObject)list[j], type);
-        }
-    }
-
-    public static void Resume(GameObject target)
-    {
-        foreach (iTween tween in target.GetComponents<iTween>())
-        {
-            tween.enabled = true;
-        }
-    }
-
-    public static void Resume(GameObject target, bool includechildren)
-    {
-        iTween.Resume(target);
-        if (includechildren)
-        {
-            foreach (Transform transform in target.transform)
-            {
-                iTween.Resume(transform.gameObject, true);
-            }
-        }
-    }
-
-    public static void Resume(GameObject target, string type)
-    {
-        foreach (iTween tween in target.GetComponents<iTween>())
-        {
-            if ((tween.type + tween.method).Substring(0, type.Length).ToLower() == type.ToLower())
-            {
-                tween.enabled = true;
-            }
-        }
-    }
-
-    public static void Resume(GameObject target, string type, bool includechildren)
-    {
-        Component[] components = target.GetComponents<iTween>();
-        Component[] array = components;
-        for (int i = 0; i < array.Length; i++)
-        {
-            iTween iTween = (iTween)array[i];
-            string text = iTween.type + iTween.method;
-            text = text.Substring(0, type.Length);
-            if (text.ToLower() == type.ToLower())
-            {
-                iTween.enabled = true;
-            }
-        }
-        if (includechildren)
-        {
-            foreach (Transform transform in target.transform)
-            {
-                iTween.Resume(transform.gameObject, type, true);
-            }
-        }
-    }
-
-    public static void RotateAdd(GameObject target, Hashtable args)
-    {
-        args = CleanArgs(args);
-        args["type"] = "rotate";
-        args["method"] = "add";
-        Launch(target, args);
-    }
-
-    public static void RotateAdd(GameObject target, Vector3 amount, float time)
-    {
-        object[] args = new object[] { "amount", amount, "time", time };
-        RotateAdd(target, Hash(args));
-    }
-
-    public static void RotateBy(GameObject target, Hashtable args)
-    {
-        args = CleanArgs(args);
-        args["type"] = "rotate";
-        args["method"] = "by";
-        Launch(target, args);
-    }
-
-    public static void RotateBy(GameObject target, Vector3 amount, float time)
-    {
-        object[] args = new object[] { "amount", amount, "time", time };
-        RotateBy(target, Hash(args));
-    }
-
-    public static void RotateFrom(GameObject target, Hashtable args)
-    {
-        bool isLocal;
-        Vector3 eulerAngles;
-        Vector3 vector2;
-        args = CleanArgs(args);
-        if (args.Contains("islocal"))
-        {
-            isLocal = (bool)args["islocal"];
-        }
-        else
-        {
-            isLocal = Defaults.isLocal;
-        }
-        if (isLocal)
-        {
-            vector2 = eulerAngles = target.transform.localEulerAngles;
-        }
-        else
-        {
-            vector2 = eulerAngles = target.transform.eulerAngles;
-        }
-        if (args.Contains("rotation"))
-        {
-            if (args["rotation"].GetType() == typeof(Transform))
-            {
-                Transform transform = (Transform)args["rotation"];
-                eulerAngles = transform.eulerAngles;
-            }
-            else if (args["rotation"].GetType() == typeof(Vector3))
-            {
-                eulerAngles = (Vector3)args["rotation"];
-            }
-        }
-        else
-        {
-            if (args.Contains("x"))
-            {
-                eulerAngles.x = (float)args["x"];
-            }
-            if (args.Contains("y"))
-            {
-                eulerAngles.y = (float)args["y"];
-            }
-            if (args.Contains("z"))
-            {
-                eulerAngles.z = (float)args["z"];
-            }
-        }
-        if (isLocal)
-        {
-            target.transform.localEulerAngles = eulerAngles;
-        }
-        else
-        {
-            target.transform.eulerAngles = eulerAngles;
-        }
-        args["rotation"] = vector2;
-        args["type"] = "rotate";
-        args["method"] = "to";
-        Launch(target, args);
-    }
-
-    public static void RotateFrom(GameObject target, Vector3 rotation, float time)
-    {
-        object[] args = new object[] { "rotation", rotation, "time", time };
-        RotateFrom(target, Hash(args));
-    }
-
-    public static void RotateTo(GameObject target, Hashtable args)
-    {
-        args = CleanArgs(args);
-        if (args.Contains("rotation") && (args["rotation"].GetType() == typeof(Transform)))
-        {
-            Transform transform = (Transform)args["rotation"];
-            args["position"] = new Vector3(transform.position.x, transform.position.y, transform.position.z);
-            args["rotation"] = new Vector3(transform.eulerAngles.x, transform.eulerAngles.y, transform.eulerAngles.z);
-            args["scale"] = new Vector3(transform.localScale.x, transform.localScale.y, transform.localScale.z);
-        }
-        args["type"] = "rotate";
-        args["method"] = "to";
-        Launch(target, args);
-    }
-
-    public static void RotateTo(GameObject target, Vector3 rotation, float time)
-    {
-        object[] args = new object[] { "rotation", rotation, "time", time };
-        RotateTo(target, Hash(args));
-    }
-
-    public static void RotateUpdate(GameObject target, Hashtable args)
-    {
-        float updateTime;
-        bool isLocal;
-        CleanArgs(args);
-        Vector3[] vectorArray = new Vector3[4];
-        Vector3 eulerAngles = target.transform.eulerAngles;
-        if (args.Contains("time"))
-        {
-            updateTime = (float)args["time"];
-            updateTime *= Defaults.updateTimePercentage;
-        }
-        else
-        {
-            updateTime = Defaults.updateTime;
-        }
-        if (args.Contains("islocal"))
-        {
-            isLocal = (bool)args["islocal"];
-        }
-        else
-        {
-            isLocal = Defaults.isLocal;
-        }
-        if (isLocal)
-        {
-            vectorArray[0] = target.transform.localEulerAngles;
-        }
-        else
-        {
-            vectorArray[0] = target.transform.eulerAngles;
-        }
-        if (args.Contains("rotation"))
-        {
-            if (args["rotation"].GetType() == typeof(Transform))
-            {
-                Transform transform = (Transform)args["rotation"];
-                vectorArray[1] = transform.eulerAngles;
-            }
-            else if (args["rotation"].GetType() == typeof(Vector3))
-            {
-                vectorArray[1] = (Vector3)args["rotation"];
-            }
-        }
-        vectorArray[3].x = Mathf.SmoothDampAngle(vectorArray[0].x, vectorArray[1].x, ref vectorArray[2].x, updateTime);
-        vectorArray[3].y = Mathf.SmoothDampAngle(vectorArray[0].y, vectorArray[1].y, ref vectorArray[2].y, updateTime);
-        vectorArray[3].z = Mathf.SmoothDampAngle(vectorArray[0].z, vectorArray[1].z, ref vectorArray[2].z, updateTime);
-        if (isLocal)
-        {
-            target.transform.localEulerAngles = vectorArray[3];
-        }
-        else
-        {
-            target.transform.eulerAngles = vectorArray[3];
-        }
-        if (target.rigidbody != null)
-        {
-            Vector3 euler = target.transform.eulerAngles;
-            target.transform.eulerAngles = eulerAngles;
-            target.rigidbody.MoveRotation(Quaternion.Euler(euler));
-        }
-    }
-
-    public static void RotateUpdate(GameObject target, Vector3 rotation, float time)
-    {
-        object[] args = new object[] { "rotation", rotation, "time", time };
-        RotateUpdate(target, Hash(args));
-    }
-
-    public static void ScaleAdd(GameObject target, Hashtable args)
-    {
-        args = CleanArgs(args);
-        args["type"] = "scale";
-        args["method"] = "add";
-        Launch(target, args);
-    }
-
-    public static void ScaleAdd(GameObject target, Vector3 amount, float time)
-    {
-        object[] args = new object[] { "amount", amount, "time", time };
-        ScaleAdd(target, Hash(args));
-    }
-
-    public static void ScaleBy(GameObject target, Hashtable args)
-    {
-        args = CleanArgs(args);
-        args["type"] = "scale";
-        args["method"] = "by";
-        Launch(target, args);
-    }
-
-    public static void ScaleBy(GameObject target, Vector3 amount, float time)
-    {
-        object[] args = new object[] { "amount", amount, "time", time };
-        ScaleBy(target, Hash(args));
-    }
-
-    public static void ScaleFrom(GameObject target, Hashtable args)
-    {
-        Vector3 localScale;
-        args = CleanArgs(args);
-        Vector3 vector2 = localScale = target.transform.localScale;
-        if (args.Contains("scale"))
-        {
-            if (args["scale"].GetType() == typeof(Transform))
-            {
-                Transform transform = (Transform)args["scale"];
-                localScale = transform.localScale;
-            }
-            else if (args["scale"].GetType() == typeof(Vector3))
-            {
-                localScale = (Vector3)args["scale"];
-            }
-        }
-        else
-        {
-            if (args.Contains("x"))
-            {
-                localScale.x = (float)args["x"];
-            }
-            if (args.Contains("y"))
-            {
-                localScale.y = (float)args["y"];
-            }
-            if (args.Contains("z"))
-            {
-                localScale.z = (float)args["z"];
-            }
-        }
-        target.transform.localScale = localScale;
-        args["scale"] = vector2;
-        args["type"] = "scale";
-        args["method"] = "to";
-        Launch(target, args);
-    }
-
-    public static void ScaleFrom(GameObject target, Vector3 scale, float time)
-    {
-        object[] args = new object[] { "scale", scale, "time", time };
-        ScaleFrom(target, Hash(args));
-    }
-
-    public static void ScaleTo(GameObject target, Hashtable args)
-    {
-        args = CleanArgs(args);
-        if (args.Contains("scale") && (args["scale"].GetType() == typeof(Transform)))
-        {
-            Transform transform = (Transform)args["scale"];
-            args["position"] = new Vector3(transform.position.x, transform.position.y, transform.position.z);
-            args["rotation"] = new Vector3(transform.eulerAngles.x, transform.eulerAngles.y, transform.eulerAngles.z);
-            args["scale"] = new Vector3(transform.localScale.x, transform.localScale.y, transform.localScale.z);
-        }
-        args["type"] = "scale";
-        args["method"] = "to";
-        Launch(target, args);
-    }
-
-    public static void ScaleTo(GameObject target, Vector3 scale, float time)
-    {
-        object[] args = new object[] { "scale", scale, "time", time };
-        ScaleTo(target, Hash(args));
-    }
-
-    public static void ScaleUpdate(GameObject target, Hashtable args)
-    {
-        float updateTime;
-        CleanArgs(args);
-        Vector3[] vectorArray = new Vector3[4];
-        if (args.Contains("time"))
-        {
-            updateTime = (float)args["time"];
-            updateTime *= Defaults.updateTimePercentage;
-        }
-        else
-        {
-            updateTime = Defaults.updateTime;
-        }
-        vectorArray[0] = vectorArray[1] = target.transform.localScale;
-        if (args.Contains("scale"))
-        {
-            if (args["scale"].GetType() == typeof(Transform))
-            {
-                Transform transform = (Transform)args["scale"];
-                vectorArray[1] = transform.localScale;
-            }
-            else if (args["scale"].GetType() == typeof(Vector3))
-            {
-                vectorArray[1] = (Vector3)args["scale"];
-            }
-        }
-        else
-        {
-            if (args.Contains("x"))
-            {
-                vectorArray[1].x = (float)args["x"];
-            }
-            if (args.Contains("y"))
-            {
-                vectorArray[1].y = (float)args["y"];
-            }
-            if (args.Contains("z"))
-            {
-                vectorArray[1].z = (float)args["z"];
-            }
-        }
-        vectorArray[3].x = Mathf.SmoothDamp(vectorArray[0].x, vectorArray[1].x, ref vectorArray[2].x, updateTime);
-        vectorArray[3].y = Mathf.SmoothDamp(vectorArray[0].y, vectorArray[1].y, ref vectorArray[2].y, updateTime);
-        vectorArray[3].z = Mathf.SmoothDamp(vectorArray[0].z, vectorArray[1].z, ref vectorArray[2].z, updateTime);
-        target.transform.localScale = vectorArray[3];
-    }
-
-    public static void ScaleUpdate(GameObject target, Vector3 scale, float time)
-    {
-        object[] args = new object[] { "scale", scale, "time", time };
-        ScaleUpdate(target, Hash(args));
-    }
-
-    public static void ShakePosition(GameObject target, Hashtable args)
-    {
-        args = CleanArgs(args);
-        args["type"] = "shake";
-        args["method"] = "position";
-        Launch(target, args);
-    }
-
-    public static void ShakePosition(GameObject target, Vector3 amount, float time)
-    {
-        object[] args = new object[] { "amount", amount, "time", time };
-        ShakePosition(target, Hash(args));
-    }
-
-    public static void ShakeRotation(GameObject target, Hashtable args)
-    {
-        args = CleanArgs(args);
-        args["type"] = "shake";
-        args["method"] = "rotation";
-        Launch(target, args);
-    }
-
-    public static void ShakeRotation(GameObject target, Vector3 amount, float time)
-    {
-        object[] args = new object[] { "amount", amount, "time", time };
-        ShakeRotation(target, Hash(args));
-    }
-
-    public static void ShakeScale(GameObject target, Hashtable args)
-    {
-        args = CleanArgs(args);
-        args["type"] = "shake";
-        args["method"] = "scale";
-        Launch(target, args);
-    }
-
-    public static void ShakeScale(GameObject target, Vector3 amount, float time)
-    {
-        object[] args = new object[] { "amount", amount, "time", time };
-        ShakeScale(target, Hash(args));
-    }
-
-    public static void Stab(GameObject target, Hashtable args)
-    {
-        args = CleanArgs(args);
-        args["type"] = "stab";
-        Launch(target, args);
-    }
-
-    public static void Stab(GameObject target, AudioClip audioclip, float delay)
-    {
-        object[] args = new object[] { "audioclip", audioclip, "delay", delay };
-        Stab(target, Hash(args));
-    }
-
-    public static void Stop()
-    {
-        for (int i = 0; i < tweens.Count; i++)
-        {
-            Hashtable hashtable = tweens[i];
-            GameObject target = (GameObject)hashtable["target"];
-            Stop(target);
-        }
-        tweens.Clear();
-    }
-
-    public static void Stop(string type)
-    {
-        ArrayList list = new ArrayList();
-        for (int i = 0; i < tweens.Count; i++)
-        {
-            Hashtable hashtable = tweens[i];
-            GameObject obj2 = (GameObject)hashtable["target"];
-            list.Insert(list.Count, obj2);
-        }
-        for (int j = 0; j < list.Count; j++)
-        {
-            Stop((GameObject)list[j], type);
-        }
-    }
-
-    public static void Stop(GameObject target)
-    {
-        foreach (iTween tween in target.GetComponents<iTween>())
-        {
-            tween.Dispose();
-        }
-    }
-
-    public static void Stop(GameObject target, bool includechildren)
-    {
-        iTween.Stop(target);
-        if (includechildren)
-        {
-            foreach (Transform transform in target.transform)
-            {
-                iTween.Stop(transform.gameObject, true);
-            }
-        }
-    }
-
-    public static void Stop(GameObject target, string type)
-    {
-        foreach (iTween tween in target.GetComponents<iTween>())
-        {
-            if ((tween.type + tween.method).Substring(0, type.Length).ToLower() == type.ToLower())
-            {
-                tween.Dispose();
-            }
-        }
-    }
-
-    public static void Stop(GameObject target, string type, bool includechildren)
-    {
-        Component[] components = target.GetComponents<iTween>();
-        Component[] array = components;
-        for (int i = 0; i < array.Length; i++)
-        {
-            iTween iTween = (iTween)array[i];
-            string text = iTween.type + iTween.method;
-            text = text.Substring(0, type.Length);
-            if (text.ToLower() == type.ToLower())
-            {
-                iTween.Dispose();
-            }
-        }
-        if (includechildren)
-        {
-            foreach (Transform transform in target.transform)
-            {
-                iTween.Stop(transform.gameObject, type, true);
-            }
-        }
-    }
-
-    public static void StopByName(string name)
-    {
-        ArrayList list = new ArrayList();
-        for (int i = 0; i < tweens.Count; i++)
-        {
-            Hashtable hashtable = tweens[i];
-            GameObject obj2 = (GameObject)hashtable["target"];
-            list.Insert(list.Count, obj2);
-        }
-        for (int j = 0; j < list.Count; j++)
-        {
-            StopByName((GameObject)list[j], name);
-        }
-    }
-
-    public static void StopByName(GameObject target, string name)
-    {
-        foreach (iTween tween in target.GetComponents<iTween>())
-        {
-            if (tween._name == name)
-            {
-                tween.Dispose();
-            }
-        }
-    }
-
-    public static void StopByName(GameObject target, string name, bool includechildren)
-    {
-        Component[] components = target.GetComponents<iTween>();
-        Component[] array = components;
-        for (int i = 0; i < array.Length; i++)
-        {
-            iTween iTween = (iTween)array[i];
-            if (iTween._name == name)
-            {
-                iTween.Dispose();
-            }
-        }
-        if (includechildren)
-        {
-            foreach (Transform transform in target.transform)
-            {
-                iTween.StopByName(transform.gameObject, name, true);
-            }
-        }
-    }
-
-    public static void ValueTo(GameObject target, Hashtable args)
-    {
-        args = CleanArgs(args);
-        if ((!args.Contains("onupdate") || !args.Contains("from")) || !args.Contains("to"))
-        {
-            UnityEngine.Debug.LogError("iTween Error: ValueTo() requires an 'onupdate' callback function and a 'from' and 'to' property.  The supplied 'onupdate' callback must accept a single argument that is the same type as the supplied 'from' and 'to' properties!");
-        }
-        else
-        {
-            args["type"] = "value";
-            if (args["from"].GetType() == typeof(Vector2))
-            {
-                args["method"] = "vector2";
-            }
-            else if (args["from"].GetType() == typeof(Vector3))
-            {
-                args["method"] = "vector3";
-            }
-            else if (args["from"].GetType() == typeof(Rect))
-            {
-                args["method"] = "rect";
-            }
-            else if (args["from"].GetType() == typeof(float))
-            {
-                args["method"] = "float";
-            }
-            else if (args["from"].GetType() == typeof(Color))
-            {
-                args["method"] = "color";
-            }
-            else
-            {
-                UnityEngine.Debug.LogError("iTween Error: ValueTo() only works with interpolating Vector3s, Vector2s, floats, ints, Rects and Colors!");
-                return;
-            }
-            if (!args.Contains("easetype"))
-            {
-                args.Add("easetype", EaseType.linear);
-            }
-            Launch(target, args);
-        }
-    }
-
-    public static Vector2 Vector2Update(Vector2 currentValue, Vector2 targetValue, float speed)
-    {
-        Vector2 vector = targetValue - currentValue;
-        currentValue += (Vector2)((vector * speed) * Time.deltaTime);
-        return currentValue;
-    }
-
-    public static Vector3 Vector3Update(Vector3 currentValue, Vector3 targetValue, float speed)
-    {
-        Vector3 vector = targetValue - currentValue;
-        currentValue += (Vector3)((vector * speed) * Time.deltaTime);
-        return currentValue;
-    }
-
-    private class CRSpline
-    {
-        public Vector3[] pts;
-
-        public CRSpline(params Vector3[] pts)
-        {
-            this.pts = new Vector3[pts.Length];
-            Array.Copy(pts, this.pts, pts.Length);
-        }
-
-        public Vector3 Interp(float t)
-        {
-            int num = this.pts.Length - 3;
-            int index = Mathf.Min(Mathf.FloorToInt(t * num), num - 1);
-            float num3 = (t * num) - index;
-            Vector3 vector = this.pts[index];
-            Vector3 vector2 = this.pts[index + 1];
-            Vector3 vector3 = this.pts[index + 2];
-            Vector3 vector4 = this.pts[index + 3];
-            return (Vector3)(0.5f * (((((((-vector + (3f * vector2)) - (3f * vector3)) + vector4) * ((num3 * num3) * num3)) + (((((2f * vector) - (5f * vector2)) + (4f * vector3)) - vector4) * (num3 * num3))) + ((-vector + vector3) * num3)) + (2f * vector2)));
-        }
-    }
-
-    private sealed class Startc__IteratorE : IEnumerator, IDisposable, IEnumerator<object>
-    {
-        internal object current;
-
-        internal iTween f__this;
-
-        internal int PC;
-
-        object IEnumerator<object>.Current
-        {
-            get
-            {
-                return this.current;
-            }
-        }
-
-        object IEnumerator.Current
-        {
-            get
-            {
-                return this.current;
-            }
-        }
-
-        public void Dispose()
-        {
-            this.PC = -1;
-        }
-
-        public bool MoveNext()
-        {
-            uint num = (uint)this.PC;
-            this.PC = -1;
-            switch (num)
-            {
-                case 0:
-                    if (this.f__this.delay <= 0f)
-                    {
-                        break;
-                    }
-                    this.current = this.f__this.StartCoroutine("TweenDelay");
-                    this.PC = 1;
-                    return true;
-
-                case 1:
-                    break;
-
-                default:
-                    goto Label_006A;
-            }
-            this.f__this.TweenStart();
-            this.PC = -1;
-            Label_006A:
-            return false;
-        }
-
-        public void Reset()
-        {
-            throw new NotSupportedException();
-        }
-    }
-
-    private sealed class TweenDelayc__IteratorC : IEnumerator, IDisposable, IEnumerator<object>
-    {
-        internal object current;
-
-        internal iTween f__this;
-
-        internal int PC;
-
-        object IEnumerator<object>.Current
-        {
-            get
-            {
-                return this.current;
-            }
-        }
-
-        object IEnumerator.Current
-        {
-            get
-            {
-                return this.current;
-            }
-        }
-
-        public void Dispose()
-        {
-            this.PC = -1;
-        }
-
-        public bool MoveNext()
-        {
-            uint num = (uint)this.PC;
-            this.PC = -1;
-            switch (num)
-            {
-                case 0:
-                    this.f__this.delayStarted = Time.time;
-                    this.current = new WaitForSeconds(this.f__this.delay);
-                    this.PC = 1;
-                    return true;
-
-                case 1:
-                    if (this.f__this.wasPaused)
-                    {
-                        this.f__this.wasPaused = false;
-                        this.f__this.TweenStart();
-                    }
-                    this.PC = -1;
-                    break;
-            }
-            return false;
-        }
-
-        public void Reset()
-        {
-            throw new NotSupportedException();
-        }
-    }
-
-    private sealed class TweenRestartc__IteratorD : IEnumerator, IDisposable, IEnumerator<object>
-    {
-        internal object current;
-
-        internal iTween f__this;
-
-        internal int PC;
-
-        object IEnumerator<object>.Current
-        {
-            get
-            {
-                return this.current;
-            }
-        }
-
-        object IEnumerator.Current
-        {
-            get
-            {
-                return this.current;
-            }
-        }
-
-        public void Dispose()
-        {
-            this.PC = -1;
-        }
-
-        public bool MoveNext()
-        {
-            uint num = (uint)this.PC;
-            this.PC = -1;
-            switch (num)
-            {
-                case 0:
-                    if (this.f__this.delay <= 0f)
-                    {
-                        break;
-                    }
-                    this.f__this.delayStarted = Time.time;
-                    this.current = new WaitForSeconds(this.f__this.delay);
-                    this.PC = 1;
-                    return true;
-
-                case 1:
-                    break;
-
-                default:
-                    goto Label_0086;
-            }
-            this.f__this.loop = true;
-            this.f__this.TweenStart();
-            this.PC = -1;
-            Label_0086:
-            return false;
-        }
-
-        public void Reset()
-        {
-            throw new NotSupportedException();
-        }
-    }
-
-    public static class Defaults
-    {
-        public static int cameraFadeDepth = 0xf423f;
-        public static Color color = Color.white;
-        public static float delay = 0f;
-        public static iTween.EaseType easeType = iTween.EaseType.easeOutExpo;
-        public static bool isLocal = false;
-        public static float lookAhead = 0.05f;
-        public static float lookSpeed = 3f;
-        public static iTween.LoopType loopType = iTween.LoopType.none;
-        public static iTween.NamedValueColor namedColorValue = iTween.NamedValueColor._Color;
-        public static bool orientToPath = false;
-        public static Space space = Space.Self;
-        public static float time = 1f;
-        public static Vector3 up = Vectors.up;
-        public static float updateTime = (1f * updateTimePercentage);
-        public static float updateTimePercentage = 0.05f;
-        public static bool useRealTime = false;
-    }
+
+	#region Variables
+
+	//repository of all living iTweens:
+	public static ArrayList tweens = new ArrayList();
+
+	//camera fade object:
+	private static GameObject cameraFade;
+
+	//status members (made public for visual troubleshooting in the inspector):
+	public string id, type, method;
+	public iTween.EaseType easeType;
+	public float time, delay;
+	public LoopType loopType;
+	public bool isRunning, isPaused;
+	/* GFX47 MOD START */
+	public string _name;
+	/* GFX47 MOD END */
+
+	//private members:
+	private float runningTime, percentage;
+	private float delayStarted; //probably not neccesary that this be protected but it shuts Unity's compiler up about this being "never used"
+	private bool kinematic, isLocal, loop, reverse, wasPaused, physics;
+	private Hashtable tweenArguments;
+	private Space space;
+	private delegate float EasingFunction(float start, float end, float value);
+	private delegate void ApplyTween();
+	private EasingFunction ease;
+	private ApplyTween apply;
+	private AudioSource audioSource;
+	private Vector3[] vector3s;
+	private Vector2[] vector2s;
+	private Color[,] colors;
+	private float[] floats;
+	private Rect[] rects;
+	private CRSpline path;
+	private Vector3 preUpdate;
+	private Vector3 postUpdate;
+	private NamedValueColor namedcolorvalue;
+
+	private float lastRealTime; // Added by PressPlay
+	private bool useRealTime; // Added by PressPlay
+
+	/// <summary>
+	/// The type of easing to use based on Robert Penner's open source easing equations (http://www.robertpenner.com/easing_terms_of_use.html).
+	/// </summary>
+	public enum EaseType
+	{
+		easeInQuad,
+		easeOutQuad,
+		easeInOutQuad,
+		easeInCubic,
+		easeOutCubic,
+		easeInOutCubic,
+		easeInQuart,
+		easeOutQuart,
+		easeInOutQuart,
+		easeInQuint,
+		easeOutQuint,
+		easeInOutQuint,
+		easeInSine,
+		easeOutSine,
+		easeInOutSine,
+		easeInExpo,
+		easeOutExpo,
+		easeInOutExpo,
+		easeInCirc,
+		easeOutCirc,
+		easeInOutCirc,
+		linear,
+		spring,
+		/* GFX47 MOD START */
+		//bounce,
+		easeInBounce,
+		easeOutBounce,
+		easeInOutBounce,
+		/* GFX47 MOD END */
+		easeInBack,
+		easeOutBack,
+		easeInOutBack,
+		/* GFX47 MOD START */
+		//elastic,
+		easeInElastic,
+		easeOutElastic,
+		easeInOutElastic,
+		/* GFX47 MOD END */
+		punch
+	}
+
+	/// <summary>
+	/// The type of loop (if any) to use.  
+	/// </summary>
+	public enum LoopType
+	{
+		/// <summary>
+		/// Do not loop.
+		/// </summary>
+		none,
+		/// <summary>
+		/// Rewind and replay.
+		/// </summary>
+		loop,
+		/// <summary>
+		/// Ping pong the animation back and forth.
+		/// </summary>
+		pingPong
+	}
+
+	/// <summary>
+	/// Many shaders use more than one color. Use can have iTween's Color methods operate on them by name.   
+	/// </summary>
+	public enum NamedValueColor
+	{
+		/// <summary>
+		/// The main color of a material. Used by default and not required for Color methods to work in iTween.
+		/// </summary>
+		_Color,
+		/// <summary>
+		/// The specular color of a material (used in specular/glossy/vertexlit shaders).
+		/// </summary>
+		_SpecColor,
+		/// <summary>
+		/// The emissive color of a material (used in vertexlit shaders).
+		/// </summary>
+		_Emission,
+		/// <summary>
+		/// The reflection color of the material (used in reflective shaders).
+		/// </summary>
+		_ReflectColor
+	}
+
+	#endregion
+
+	#region Defaults
+
+	/// <summary>
+	/// A collection of baseline presets that iTween needs and utilizes if certain parameters are not provided. 
+	/// </summary>
+	public static class Defaults
+	{
+		//general defaults:
+		public static float time = 1f;
+		public static float delay = 0f;
+		public static NamedValueColor namedColorValue = NamedValueColor._Color;
+		public static LoopType loopType = LoopType.none;
+		public static EaseType easeType = iTween.EaseType.easeOutExpo;
+		public static float lookSpeed = 3f;
+		public static bool isLocal = false;
+		public static Space space = Space.Self;
+		public static bool orientToPath = false;
+		public static Color color = Color.white;
+		//update defaults:
+		public static float updateTimePercentage = .05f;
+		public static float updateTime = 1f * updateTimePercentage;
+		//cameraFade defaults:
+		public static int cameraFadeDepth = 999999;
+		//path look ahead amount:
+		public static float lookAhead = .05f;
+		public static bool useRealTime = false; // Added by PressPlay
+		//look direction:
+		public static Vector3 up = Vector3.up;
+	}
+
+	#endregion
+
+	#region #1 Static Registers
+
+	/// <summary>
+	/// Sets up a GameObject to avoid hiccups when an initial iTween is added. It's advisable to run this on every object you intend to run iTween on in its Start or Awake.
+	/// </summary>
+	/// <param name="target">
+	/// A <see cref="GameObject"/> to be the target to be initialized for iTween.
+	/// </param>
+	public static void Init(GameObject target)
+	{
+		MoveBy(target, Vector3.zero, 0);
+	}
+
+	/// <summary>
+	/// Instantly changes the amount(transparency) of a camera fade and then returns it back over time with MINIMUM customization options.
+	/// </summary>
+	/// <param name="amount">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for how transparent the Texture2D that the camera fade uses is.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	public static void CameraFadeFrom(float amount, float time)
+	{
+		if (cameraFade)
+		{
+			CameraFadeFrom(Hash("amount", amount, "time", time));
+		}
+		else
+		{
+			Debug.LogError("iTween Error: You must first add a camera fade object with CameraFadeAdd() before atttempting to use camera fading.");
+		}
+	}
+
+	/// <summary>
+	/// Instantly changes the amount(transparency) of a camera fade and then returns it back over time with FULL customization options.
+	/// </summary>
+	/// <param name="amount">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for how transparent the Texture2D that the camera fade uses is.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	/// <param name="delay">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will wait before beginning.
+	/// </param>
+	/// <param name="easetype">
+	/// A <see cref="EaseType"/> or <see cref="System.String"/> for the shape of the easing curve applied to the animation.
+	/// </param>   
+	/// <param name="looptype">
+	/// A <see cref="LoopType"/> or <see cref="System.String"/> for the type of loop to apply once the animation has completed.
+	/// </param>
+	/// <param name="onstart">
+	/// A <see cref="System.String"/> for the name of a function to launch at the beginning of the animation.
+	/// </param>
+	/// <param name="onstarttarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onstart" method.
+	/// </param>
+	/// <param name="onstartparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onstart" method.
+	/// </param>
+	/// <param name="onupdate"> 
+	/// A <see cref="System.String"/> for the name of a function to launch on every step of the animation.
+	/// </param>
+	/// <param name="onupdatetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onupdate" method.
+	/// </param>
+	/// <param name="onupdateparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onupdate" method.
+	/// </param> 
+	/// <param name="oncomplete">
+	/// A <see cref="System.String"/> for the name of a function to launch at the end of the animation.
+	/// </param>
+	/// <param name="oncompletetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "oncomplete" method.
+	/// </param>
+	/// <param name="oncompleteparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "oncomplete" method.
+	/// </param>
+	public static void CameraFadeFrom(Hashtable args)
+	{
+		//establish iTween:
+		if (cameraFade)
+		{
+			ColorFrom(cameraFade, args);
+		}
+		else
+		{
+			Debug.LogError("iTween Error: You must first add a camera fade object with CameraFadeAdd() before atttempting to use camera fading.");
+		}
+	}
+
+	/// <summary>
+	/// Changes the amount(transparency) of a camera fade over time with MINIMUM customization options.
+	/// </summary>
+	/// <param name="amount">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for how transparent the Texture2D that the camera fade uses is.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	public static void CameraFadeTo(float amount, float time)
+	{
+		if (cameraFade)
+		{
+			CameraFadeTo(Hash("amount", amount, "time", time));
+		}
+		else
+		{
+			Debug.LogError("iTween Error: You must first add a camera fade object with CameraFadeAdd() before atttempting to use camera fading.");
+		}
+	}
+
+	/// <summary>
+	/// Changes the amount(transparency) of a camera fade over time with FULL customization options.
+	/// </summary>
+	/// <param name="amount">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for how transparent the Texture2D that the camera fade uses is.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	/// <param name="delay">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will wait before beginning.
+	/// </param>
+	/// <param name="easetype">
+	/// A <see cref="EaseType"/> or <see cref="System.String"/> for the shape of the easing curve applied to the animation.
+	/// </param>   
+	/// <param name="looptype">
+	/// A <see cref="LoopType"/> or <see cref="System.String"/> for the type of loop to apply once the animation has completed.
+	/// </param>
+	/// <param name="onstart">
+	/// A <see cref="System.String"/> for the name of a function to launch at the beginning of the animation.
+	/// </param>
+	/// <param name="onstarttarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onstart" method.
+	/// </param>
+	/// <param name="onstartparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onstart" method.
+	/// </param>
+	/// <param name="onupdate"> 
+	/// A <see cref="System.String"/> for the name of a function to launch on every step of the animation.
+	/// </param>
+	/// <param name="onupdatetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onupdate" method.
+	/// </param>
+	/// <param name="onupdateparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onupdate" method.
+	/// </param> 
+	/// <param name="oncomplete">
+	/// A <see cref="System.String"/> for the name of a function to launch at the end of the animation.
+	/// </param>
+	/// <param name="oncompletetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "oncomplete" method.
+	/// </param>
+	/// <param name="oncompleteparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "oncomplete" method.
+	/// </param>
+	public static void CameraFadeTo(Hashtable args)
+	{
+		/*
+		CameraFadeAdd(Defaults.cameraFadeDepth);
+		
+		//rescale cameraFade just in case screen size has changed to ensure it takes up the full screen:
+		cameraFade.guiTexture.pixelInset=new Rect(0,0,Screen.width,Screen.height);
+		*/
+
+		if (cameraFade)
+		{
+			//establish iTween:
+			ColorTo(cameraFade, args);
+		}
+		else
+		{
+			Debug.LogError("iTween Error: You must first add a camera fade object with CameraFadeAdd() before atttempting to use camera fading.");
+		}
+	}
+
+	/// <summary>
+	/// Returns a value to an 'oncallback' method interpolated between the supplied 'from' and 'to' values for application as desired.  Requires an 'onupdate' callback that accepts the same type as the supplied 'from' and 'to' properties.
+	/// </summary>
+	/// <param name="from">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> or <see cref="Vector3"/> or <see cref="Vector2"/> or <see cref="Color"/> or <see cref="Rect"/> for the starting value.
+	/// </param> 
+	/// <param name="to">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> or <see cref="Vector3"/> or <see cref="Vector2"/> or <see cref="Color"/> or <see cref="Rect"/> for the ending value.
+	/// </param> 
+	/// <param name="time">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	/// <param name="speed">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> can be used instead of time to allow animation based on speed (only works with Vector2, Vector3, and Floats)
+	/// </param>	
+	/// <param name="delay">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will wait before beginning.
+	/// </param>
+	/// <param name="easetype">
+	/// A <see cref="EaseType"/> or <see cref="System.String"/> for the shape of the easing curve applied to the animation.
+	/// </param>   
+	/// <param name="looptype">
+	/// A <see cref="LoopType"/> or <see cref="System.String"/> for the type of loop to apply once the animation has completed.
+	/// </param>
+	/// <param name="onstart">
+	/// A <see cref="System.String"/> for the name of a function to launch at the beginning of the animation.
+	/// </param>
+	/// <param name="onstarttarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onstart" method.
+	/// </param>
+	/// <param name="onstartparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onstart" method.
+	/// </param>
+	/// <param name="onupdate"> 
+	/// A <see cref="System.String"/> for the name of a function to launch on every step of the animation.
+	/// </param>
+	/// <param name="onupdatetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onupdate" method.
+	/// </param>
+	/// <param name="onupdateparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onupdate" method.
+	/// </param> 
+	/// <param name="oncomplete">
+	/// A <see cref="System.String"/> for the name of a function to launch at the end of the animation.
+	/// </param>
+	/// <param name="oncompletetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "oncomplete" method.
+	/// </param>
+	/// <param name="oncompleteparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "oncomplete" method.
+	/// </param>
+	public static void ValueTo(GameObject target, Hashtable args)
+	{
+		//clean args:
+		args = iTween.CleanArgs(args);
+
+		if (!args.Contains("onupdate") || !args.Contains("from") || !args.Contains("to"))
+		{
+			Debug.LogError("iTween Error: ValueTo() requires an 'onupdate' callback function and a 'from' and 'to' property.  The supplied 'onupdate' callback must accept a single argument that is the same type as the supplied 'from' and 'to' properties!");
+			return;
+		}
+		else
+		{
+			//establish iTween:
+			args["type"] = "value";
+
+			if (args["from"].GetType() == typeof(Vector2))
+			{
+				args["method"] = "vector2";
+			}
+			else if (args["from"].GetType() == typeof(Vector3))
+			{
+				args["method"] = "vector3";
+			}
+			else if (args["from"].GetType() == typeof(Rect))
+			{
+				args["method"] = "rect";
+			}
+			else if (args["from"].GetType() == typeof(Single))
+			{
+				args["method"] = "float";
+			}
+			else if (args["from"].GetType() == typeof(Color))
+			{
+				args["method"] = "color";
+			}
+			else
+			{
+				Debug.LogError("iTween Error: ValueTo() only works with interpolating Vector3s, Vector2s, floats, ints, Rects and Colors!");
+				return;
+			}
+
+			//set a default easeType of linear if none is supplied since eased color interpolation is nearly unrecognizable:
+			if (!args.Contains("easetype"))
+			{
+				args.Add("easetype", EaseType.linear);
+			}
+
+			Launch(target, args);
+		}
+	}
+
+	/// <summary>
+	/// Changes a GameObject's alpha value instantly then returns it to the provided alpha over time with MINIMUM customization options.  If a GUIText or GUITexture component is attached, it will become the target of the animation. Identical to using ColorFrom and using the "a" parameter. 
+	/// </summary>
+	/// <param name="target">
+	/// A <see cref="GameObject"/> to be the target of the animation.
+	/// </param>
+	/// <param name="alpha">
+	/// A <see cref="System.Single"/> for the final alpha value of the animation.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	public static void FadeFrom(GameObject target, float alpha, float time)
+	{
+		FadeFrom(target, Hash("alpha", alpha, "time", time));
+	}
+
+	/// <summary>
+	/// Changes a GameObject's alpha value instantly then returns it to the provided alpha over time with FULL customization options.  If a GUIText or GUITexture component is attached, it will become the target of the animation. Identical to using ColorFrom and using the "a" parameter.
+	/// </summary>
+	/// <param name="alpha">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the initial alpha value of the animation.
+	/// </param>
+	/// <param name="amount">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the initial alpha value of the animation.
+	/// </param>
+	/// <param name="includechildren">
+	/// A <see cref="System.Boolean"/> for whether or not to include children of this GameObject. True by default.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	/// <param name="delay">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will wait before beginning.
+	/// </param>
+	/// <param name="easetype">
+	/// A <see cref="EaseType"/> or <see cref="System.String"/> for the shape of the easing curve applied to the animation.
+	/// </param>   
+	/// <param name="looptype">
+	/// A <see cref="LoopType"/> or <see cref="System.String"/> for the type of loop to apply once the animation has completed.
+	/// </param>
+	/// <param name="onstart">
+	/// A <see cref="System.String"/> for the name of a function to launch at the beginning of the animation.
+	/// </param>
+	/// <param name="onstarttarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onstart" method.
+	/// </param>
+	/// <param name="onstartparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onstart" method.
+	/// </param>
+	/// <param name="onupdate"> 
+	/// A <see cref="System.String"/> for the name of a function to launch on every step of the animation.
+	/// </param>
+	/// <param name="onupdatetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onupdate" method.
+	/// </param>
+	/// <param name="onupdateparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onupdate" method.
+	/// </param> 
+	/// <param name="oncomplete">
+	/// A <see cref="System.String"/> for the name of a function to launch at the end of the animation.
+	/// </param>
+	/// <param name="oncompletetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "oncomplete" method.
+	/// </param>
+	/// <param name="oncompleteparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "oncomplete" method.
+	/// </param>
+	public static void FadeFrom(GameObject target, Hashtable args)
+	{
+		ColorFrom(target, args);
+	}
+
+	/// <summary>
+	/// Changes a GameObject's alpha value over time with MINIMUM customization options.  If a GUIText or GUITexture component is attached, it will become the target of the animation. Identical to using ColorTo and using the "a" parameter.
+	/// </summary>
+	/// <param name="target">
+	/// A <see cref="GameObject"/> to be the target of the animation.
+	/// </param>
+	/// <param name="alpha">
+	/// A <see cref="System.Single"/> for the final alpha value of the animation.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	public static void FadeTo(GameObject target, float alpha, float time)
+	{
+		FadeTo(target, Hash("alpha", alpha, "time", time));
+	}
+
+	/// <summary>
+	/// Changes a GameObject's alpha value over time with FULL customization options.  If a GUIText or GUITexture component is attached, it will become the target of the animation. Identical to using ColorTo and using the "a" parameter.
+	/// </summary>
+	/// <param name="alpha">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the final alpha value of the animation.
+	/// </param>
+	/// <param name="amount">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the final alpha value of the animation.
+	/// </param>
+	/// <param name="includechildren">
+	/// A <see cref="System.Boolean"/> for whether or not to include children of this GameObject. True by default.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	/// <param name="delay">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will wait before beginning.
+	/// </param>
+	/// <param name="easetype">
+	/// A <see cref="EaseType"/> or <see cref="System.String"/> for the shape of the easing curve applied to the animation.
+	/// </param>   
+	/// <param name="looptype">
+	/// A <see cref="LoopType"/> or <see cref="System.String"/> for the type of loop to apply once the animation has completed.
+	/// </param>
+	/// <param name="onstart">
+	/// A <see cref="System.String"/> for the name of a function to launch at the beginning of the animation.
+	/// </param>
+	/// <param name="onstarttarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onstart" method.
+	/// </param>
+	/// <param name="onstartparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onstart" method.
+	/// </param>
+	/// <param name="onupdate"> 
+	/// A <see cref="System.String"/> for the name of a function to launch on every step of the animation.
+	/// </param>
+	/// <param name="onupdatetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onupdate" method.
+	/// </param>
+	/// <param name="onupdateparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onupdate" method.
+	/// </param> 
+	/// <param name="oncomplete">
+	/// A <see cref="System.String"/> for the name of a function to launch at the end of the animation.
+	/// </param>
+	/// <param name="oncompletetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "oncomplete" method.
+	/// </param>
+	/// <param name="oncompleteparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "oncomplete" method.
+	/// </param>
+	public static void FadeTo(GameObject target, Hashtable args)
+	{
+		ColorTo(target, args);
+	}
+
+	/// <summary>
+	/// Changes a GameObject's color values instantly then returns them to the provided properties over time with MINIMUM customization options.  If a GUIText or GUITexture component is attached, it will become the target of the animation.
+	/// </summary>
+	/// <param name="target">
+	/// A <see cref="GameObject"/> to be the target of the animation.
+	/// </param>
+	/// <param name="color">
+	/// A <see cref="Color"/> to change the GameObject's color to.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	public static void ColorFrom(GameObject target, Color color, float time)
+	{
+		ColorFrom(target, Hash("color", color, "time", time));
+	}
+
+	/// <summary>
+	/// Changes a GameObject's color values instantly then returns them to the provided properties over time with FULL customization options.  If a GUIText or GUITexture component is attached, it will become the target of the animation.
+	/// </summary>
+	/// <param name="color">
+	/// A <see cref="Color"/> to change the GameObject's color to.
+	/// </param>
+	/// <param name="r">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the color red.
+	/// </param>
+	/// <param name="g">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the color green.
+	/// </param>
+	/// <param name="b">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the color green.
+	/// </param>
+	/// <param name="a">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the alpha.
+	/// </param> 
+	/// <param name="namedcolorvalue">
+	/// A <see cref="NamedColorValue"/> or <see cref="System.String"/> for the individual setting of the alpha.
+	/// </param> 
+	/// <param name="includechildren">
+	/// A <see cref="System.Boolean"/> for whether or not to include children of this GameObject. True by default.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	/// <param name="delay">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will wait before beginning.
+	/// </param>
+	/// <param name="easetype">
+	/// A <see cref="EaseType"/> or <see cref="System.String"/> for the shape of the easing curve applied to the animation.
+	/// </param>   
+	/// <param name="looptype">
+	/// A <see cref="LoopType"/> or <see cref="System.String"/> for the type of loop to apply once the animation has completed.
+	/// </param>
+	/// <param name="onstart">
+	/// A <see cref="System.String"/> for the name of a function to launch at the beginning of the animation.
+	/// </param>
+	/// <param name="onstarttarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onstart" method.
+	/// </param>
+	/// <param name="onstartparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onstart" method.
+	/// </param>
+	/// <param name="onupdate"> 
+	/// A <see cref="System.String"/> for the name of a function to launch on every step of the animation.
+	/// </param>
+	/// <param name="onupdatetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onupdate" method.
+	/// </param>
+	/// <param name="onupdateparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onupdate" method.
+	/// </param> 
+	/// <param name="oncomplete">
+	/// A <see cref="System.String"/> for the name of a function to launch at the end of the animation.
+	/// </param>
+	/// <param name="oncompletetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "oncomplete" method.
+	/// </param>
+	/// <param name="oncompleteparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "oncomplete" method.
+	/// </param>
+	public static void ColorFrom(GameObject target, Hashtable args)
+	{
+		Color fromColor = new Color();
+		Color tempColor = new Color();
+
+		//clean args:
+		args = iTween.CleanArgs(args);
+
+		//handle children:
+		if (!args.Contains("includechildren") || (bool)args["includechildren"])
+		{
+			foreach (Transform child in target.transform)
+			{
+				Hashtable argsCopy = (Hashtable)args.Clone();
+				argsCopy["ischild"] = true;
+				ColorFrom(child.gameObject, argsCopy);
+			}
+		}
+
+		//set a default easeType of linear if none is supplied since eased color interpolation is nearly unrecognizable:
+		if (!args.Contains("easetype"))
+		{
+			args.Add("easetype", EaseType.linear);
+		}
+
+		//set tempColor and base fromColor:
+		if (target.GetComponent(typeof(GUITexture)))
+		{
+			tempColor = fromColor = target.guiTexture.color;
+		}
+		else if (target.GetComponent(typeof(GUIText)))
+		{
+			tempColor = fromColor = target.guiText.material.color;
+		}
+		else if (target.renderer)
+		{
+			tempColor = fromColor = target.renderer.material.color;
+		}
+		else if (target.light)
+		{
+			tempColor = fromColor = target.light.color;
+		}
+
+		//set augmented fromColor:
+		if (args.Contains("color"))
+		{
+			fromColor = (Color)args["color"];
+		}
+		else
+		{
+			if (args.Contains("r"))
+			{
+				fromColor.r = (float)args["r"];
+			}
+			if (args.Contains("g"))
+			{
+				fromColor.g = (float)args["g"];
+			}
+			if (args.Contains("b"))
+			{
+				fromColor.b = (float)args["b"];
+			}
+			if (args.Contains("a"))
+			{
+				fromColor.a = (float)args["a"];
+			}
+		}
+
+		//alpha or amount?
+		if (args.Contains("amount"))
+		{
+			fromColor.a = (float)args["amount"];
+			args.Remove("amount");
+		}
+		else if (args.Contains("alpha"))
+		{
+			fromColor.a = (float)args["alpha"];
+			args.Remove("alpha");
+		}
+
+		//apply fromColor:
+		if (target.GetComponent(typeof(GUITexture)))
+		{
+			target.guiTexture.color = fromColor;
+		}
+		else if (target.GetComponent(typeof(GUIText)))
+		{
+			target.guiText.material.color = fromColor;
+		}
+		else if (target.renderer)
+		{
+			target.renderer.material.color = fromColor;
+		}
+		else if (target.light)
+		{
+			target.light.color = fromColor;
+		}
+
+		//set new color arg:
+		args["color"] = tempColor;
+
+		//establish iTween:
+		args["type"] = "color";
+		args["method"] = "to";
+		Launch(target, args);
+	}
+
+	/// <summary>
+	/// Changes a GameObject's color values over time with MINIMUM customization options.  If a GUIText or GUITexture component is attached, they will become the target of the animation.
+	/// </summary>
+	/// <param name="target">
+	/// A <see cref="GameObject"/> to be the target of the animation.
+	/// </param>
+	/// <param name="color">
+	/// A <see cref="Color"/> to change the GameObject's color to.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	public static void ColorTo(GameObject target, Color color, float time)
+	{
+		ColorTo(target, Hash("color", color, "time", time));
+	}
+
+	/// <summary>
+	/// Changes a GameObject's color values over time with FULL customization options.  If a GUIText or GUITexture component is attached, they will become the target of the animation.
+	/// </summary>
+	/// <param name="color">
+	/// A <see cref="Color"/> to change the GameObject's color to.
+	/// </param>
+	/// <param name="r">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the color red.
+	/// </param>
+	/// <param name="g">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the color green.
+	/// </param>
+	/// <param name="b">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the color green.
+	/// </param>
+	/// <param name="a">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the alpha.
+	/// </param> 
+	/// <param name="namedcolorvalue">
+	/// A <see cref="NamedColorValue"/> or <see cref="System.String"/> for the individual setting of the alpha.
+	/// </param> 
+	/// <param name="includechildren">
+	/// A <see cref="System.Boolean"/> for whether or not to include children of this GameObject. True by default.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	/// <param name="delay">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will wait before beginning.
+	/// </param>
+	/// <param name="easetype">
+	/// A <see cref="EaseType"/> or <see cref="System.String"/> for the shape of the easing curve applied to the animation.
+	/// </param>   
+	/// <param name="looptype">
+	/// A <see cref="LoopType"/> or <see cref="System.String"/> for the type of loop to apply once the animation has completed.
+	/// </param>
+	/// <param name="onstart">
+	/// A <see cref="System.String"/> for the name of a function to launch at the beginning of the animation.
+	/// </param>
+	/// <param name="onstarttarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onstart" method.
+	/// </param>
+	/// <param name="onstartparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onstart" method.
+	/// </param>
+	/// <param name="onupdate"> 
+	/// A <see cref="System.String"/> for the name of a function to launch on every step of the animation.
+	/// </param>
+	/// <param name="onupdatetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onupdate" method.
+	/// </param>
+	/// <param name="onupdateparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onupdate" method.
+	/// </param> 
+	/// <param name="oncomplete">
+	/// A <see cref="System.String"/> for the name of a function to launch at the end of the animation.
+	/// </param>
+	/// <param name="oncompletetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "oncomplete" method.
+	/// </param>
+	/// <param name="oncompleteparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "oncomplete" method.
+	/// </param>
+	public static void ColorTo(GameObject target, Hashtable args)
+	{
+		//clean args:
+		args = iTween.CleanArgs(args);
+
+		//handle children:
+		if (!args.Contains("includechildren") || (bool)args["includechildren"])
+		{
+			foreach (Transform child in target.transform)
+			{
+				Hashtable argsCopy = (Hashtable)args.Clone();
+				argsCopy["ischild"] = true;
+				ColorTo(child.gameObject, argsCopy);
+			}
+		}
+
+		//set a default easeType of linear if none is supplied since eased color interpolation is nearly unrecognizable:
+		if (!args.Contains("easetype"))
+		{
+			args.Add("easetype", EaseType.linear);
+		}
+
+		//establish iTween:
+		args["type"] = "color";
+		args["method"] = "to";
+		Launch(target, args);
+	}
+
+	/// <summary>
+	/// Instantly changes an AudioSource's volume and pitch then returns it to it's starting volume and pitch over time with MINIMUM customization options. Default AudioSource attached to GameObject will be used (if one exists) if not supplied.
+	/// </summary>
+	/// <param name="target"> 
+	/// A <see cref="GameObject"/> to be the target of the animation which holds the AudioSource to be changed.
+	/// </param>
+	/// <param name="volume"> for the target level of volume.
+	/// A <see cref="System.Single"/>
+	/// </param>
+	/// <param name="pitch"> for the target pitch.
+	/// A <see cref="System.Single"/>
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	public static void AudioFrom(GameObject target, float volume, float pitch, float time)
+	{
+		AudioFrom(target, Hash("volume", volume, "pitch", pitch, "time", time));
+	}
+
+	/// <summary>
+	/// Instantly changes an AudioSource's volume and pitch then returns it to it's starting volume and pitch over time with FULL customization options. Default AudioSource attached to GameObject will be used (if one exists) if not supplied. 
+	/// </summary>
+	/// <param name="audiosource">
+	/// A <see cref="AudioSource"/> for which AudioSource to use.
+	/// </param> 
+	/// <param name="volume">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the target level of volume.
+	/// </param>
+	/// <param name="pitch">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the target pitch.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	/// <param name="delay">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will wait before beginning.
+	/// </param>
+	/// <param name="easetype">
+	/// A <see cref="EaseType"/> or <see cref="System.String"/> for the shape of the easing curve applied to the animation.
+	/// </param>   
+	/// <param name="looptype">
+	/// A <see cref="LoopType"/> or <see cref="System.String"/> for the type of loop to apply once the animation has completed.
+	/// </param>
+	/// <param name="onstart">
+	/// A <see cref="System.String"/> for the name of a function to launch at the beginning of the animation.
+	/// </param>
+	/// <param name="onstarttarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onstart" method.
+	/// </param>
+	/// <param name="onstartparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onstart" method.
+	/// </param>
+	/// <param name="onupdate"> 
+	/// A <see cref="System.String"/> for the name of a function to launch on every step of the animation.
+	/// </param>
+	/// <param name="onupdatetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onupdate" method.
+	/// </param>
+	/// <param name="onupdateparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onupdate" method.
+	/// </param> 
+	/// <param name="oncomplete">
+	/// A <see cref="System.String"/> for the name of a function to launch at the end of the animation.
+	/// </param>
+	/// <param name="oncompletetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "oncomplete" method.
+	/// </param>
+	/// <param name="oncompleteparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "oncomplete" method.
+	/// </param>
+	public static void AudioFrom(GameObject target, Hashtable args)
+	{
+		Vector2 tempAudioProperties;
+		Vector2 fromAudioProperties;
+		AudioSource tempAudioSource;
+
+		//clean args:
+		args = iTween.CleanArgs(args);
+
+		//set tempAudioSource:
+		if (args.Contains("audiosource"))
+		{
+			tempAudioSource = (AudioSource)args["audiosource"];
+		}
+		else
+		{
+			if (target.GetComponent(typeof(AudioSource)))
+			{
+				tempAudioSource = target.audio;
+			}
+			else
+			{
+				//throw error if no AudioSource is available:
+				Debug.LogError("iTween Error: AudioFrom requires an AudioSource.");
+				return;
+			}
+		}
+
+		//set tempAudioProperties:
+		tempAudioProperties.x = fromAudioProperties.x = tempAudioSource.volume;
+		tempAudioProperties.y = fromAudioProperties.y = tempAudioSource.pitch;
+
+		//set augmented fromAudioProperties:
+		if (args.Contains("volume"))
+		{
+			fromAudioProperties.x = (float)args["volume"];
+		}
+		if (args.Contains("pitch"))
+		{
+			fromAudioProperties.y = (float)args["pitch"];
+		}
+
+		//apply fromAudioProperties:
+		tempAudioSource.volume = fromAudioProperties.x;
+		tempAudioSource.pitch = fromAudioProperties.y;
+
+		//set new volume and pitch args:
+		args["volume"] = tempAudioProperties.x;
+		args["pitch"] = tempAudioProperties.y;
+
+		//set a default easeType of linear if none is supplied since eased audio interpolation is nearly unrecognizable:
+		if (!args.Contains("easetype"))
+		{
+			args.Add("easetype", EaseType.linear);
+		}
+
+		//establish iTween:
+		args["type"] = "audio";
+		args["method"] = "to";
+		Launch(target, args);
+	}
+
+	/// <summary>
+	/// Fades volume and pitch of an AudioSource with MINIMUM customization options.  Default AudioSource attached to GameObject will be used (if one exists) if not supplied. 
+	/// </summary>
+	/// <param name="target"> 
+	/// A <see cref="GameObject"/> to be the target of the animation which holds the AudioSource to be changed.
+	/// </param>
+	/// <param name="volume"> for the target level of volume.
+	/// A <see cref="System.Single"/>
+	/// </param>
+	/// <param name="pitch"> for the target pitch.
+	/// A <see cref="System.Single"/>
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	public static void AudioTo(GameObject target, float volume, float pitch, float time)
+	{
+		AudioTo(target, Hash("volume", volume, "pitch", pitch, "time", time));
+	}
+
+	/// <summary>
+	/// Fades volume and pitch of an AudioSource with FULL customization options.  Default AudioSource attached to GameObject will be used (if one exists) if not supplied. 
+	/// </summary>
+	/// <param name="audiosource">
+	/// A <see cref="AudioSource"/> for which AudioSource to use.
+	/// </param> 
+	/// <param name="volume">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the target level of volume.
+	/// </param>
+	/// <param name="pitch">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the target pitch.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	/// <param name="delay">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will wait before beginning.
+	/// </param>
+	/// <param name="easetype">
+	/// A <see cref="EaseType"/> or <see cref="System.String"/> for the shape of the easing curve applied to the animation.
+	/// </param>   
+	/// <param name="looptype">
+	/// A <see cref="LoopType"/> or <see cref="System.String"/> for the type of loop to apply once the animation has completed.
+	/// </param>
+	/// <param name="onstart">
+	/// A <see cref="System.String"/> for the name of a function to launch at the beginning of the animation.
+	/// </param>
+	/// <param name="onstarttarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onstart" method.
+	/// </param>
+	/// <param name="onstartparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onstart" method.
+	/// </param>
+	/// <param name="onupdate"> 
+	/// A <see cref="System.String"/> for the name of a function to launch on every step of the animation.
+	/// </param>
+	/// <param name="onupdatetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onupdate" method.
+	/// </param>
+	/// <param name="onupdateparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onupdate" method.
+	/// </param> 
+	/// <param name="oncomplete">
+	/// A <see cref="System.String"/> for the name of a function to launch at the end of the animation.
+	/// </param>
+	/// <param name="oncompletetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "oncomplete" method.
+	/// </param>
+	/// <param name="oncompleteparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "oncomplete" method.
+	/// </param>
+	public static void AudioTo(GameObject target, Hashtable args)
+	{
+		//clean args:
+		args = iTween.CleanArgs(args);
+
+		//set a default easeType of linear if none is supplied since eased audio interpolation is nearly unrecognizable:
+		if (!args.Contains("easetype"))
+		{
+			args.Add("easetype", EaseType.linear);
+		}
+
+		//establish iTween:
+		args["type"] = "audio";
+		args["method"] = "to";
+		Launch(target, args);
+	}
+
+	/// <summary>
+	/// Plays an AudioClip once based on supplied volume and pitch and following any delay with MINIMUM customization options. AudioSource is optional as iTween will provide one.
+	/// </summary>
+	/// <param name="target">
+	/// A <see cref="GameObject"/> to be the target of the animation which holds the AudioSource to be utilized.
+	/// </param>
+	/// <param name="audioclip">
+	/// A <see cref="AudioClip"/> for a reference to the AudioClip to be played.
+	/// </param>
+	/// <param name="delay">
+	/// A <see cref="System.Single"/> for the time in seconds the action will wait before beginning.
+	/// </param>
+	public static void Stab(GameObject target, AudioClip audioclip, float delay)
+	{
+		Stab(target, Hash("audioclip", audioclip, "delay", delay));
+	}
+
+	/// <summary>
+	/// Plays an AudioClip once based on supplied volume and pitch and following any delay with FULL customization options. AudioSource is optional as iTween will provide one.
+	/// </summary>
+	/// <param name="audioclip">
+	/// A <see cref="AudioClip"/> for a reference to the AudioClip to be played.
+	/// </param> 
+	/// <param name="audiosource">
+	/// A <see cref="AudioSource"/> for which AudioSource to use
+	/// </param> 
+	/// <param name="volume">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the target level of volume.
+	/// </param>
+	/// <param name="pitch">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the target pitch.
+	/// </param>
+	/// <param name="delay">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the action will wait before beginning.
+	/// </param>
+	/// <param name="onstart">
+	/// A <see cref="System.String"/> for the name of a function to launch at the beginning of the animation.
+	/// </param>
+	/// <param name="onstarttarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onstart" method.
+	/// </param>
+	/// <param name="onstartparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onstart" method.
+	/// </param>
+	/// <param name="onupdate"> 
+	/// A <see cref="System.String"/> for the name of a function to launch on every step of the animation.
+	/// </param>
+	/// <param name="onupdatetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onupdate" method.
+	/// </param>
+	/// <param name="onupdateparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onupdate" method.
+	/// </param> 
+	/// <param name="oncomplete">
+	/// A <see cref="System.String"/> for the name of a function to launch at the end of the animation.
+	/// </param>
+	/// <param name="oncompletetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "oncomplete" method.
+	/// </param>
+	/// <param name="oncompleteparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "oncomplete" method.
+	/// </param>
+	public static void Stab(GameObject target, Hashtable args)
+	{
+		//clean args:
+		args = iTween.CleanArgs(args);
+
+		//establish iTween:
+		args["type"] = "stab";
+		Launch(target, args);
+	}
+
+	/// <summary>
+	/// Instantly rotates a GameObject to look at the supplied Vector3 then returns it to it's starting rotation over time with MINIMUM customization options. 
+	/// </summary>
+	/// <param name="target">
+	/// A <see cref="GameObject"/> to be the target of the animation.
+	/// </param>
+	/// <param name="looktarget">
+	/// A <see cref="Vector3"/> to be the Vector3 that the target will look towards.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	public static void LookFrom(GameObject target, Vector3 looktarget, float time)
+	{
+		LookFrom(target, Hash("looktarget", looktarget, "time", time));
+	}
+
+	/// <summary>
+	/// Instantly rotates a GameObject to look at a supplied Transform or Vector3 then returns it to it's starting rotation over time with FULL customization options. 
+	/// </summary>
+	/// <param name="looktarget">
+	/// A <see cref="Transform"/> or <see cref="Vector3"/> for a target the GameObject will look at.
+	/// </param>
+	/// <param name="axis">
+	/// A <see cref="System.String"/>. Restricts rotation to the supplied axis only.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	/// <param name="speed">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> can be used instead of time to allow animation based on speed
+	/// </param>
+	/// <param name="delay">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will wait before beginning.
+	/// </param>
+	/// <param name="easetype">
+	/// A <see cref="EaseType"/> or <see cref="System.String"/> for the shape of the easing curve applied to the animation.
+	/// </param>   
+	/// <param name="looptype">
+	/// A <see cref="LoopType"/> or <see cref="System.String"/> for the type of loop to apply once the animation has completed.
+	/// </param>
+	/// <param name="onstart">
+	/// A <see cref="System.String"/> for the name of a function to launch at the beginning of the animation.
+	/// </param>
+	/// <param name="onstarttarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onstart" method.
+	/// </param>
+	/// <param name="onstartparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onstart" method.
+	/// </param>
+	/// <param name="onupdate"> 
+	/// A <see cref="System.String"/> for the name of a function to launch on every step of the animation.
+	/// </param>
+	/// <param name="onupdatetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onupdate" method.
+	/// </param>
+	/// <param name="onupdateparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onupdate" method.
+	/// </param> 
+	/// <param name="oncomplete">
+	/// A <see cref="System.String"/> for the name of a function to launch at the end of the animation.
+	/// </param>
+	/// <param name="oncompletetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "oncomplete" method.
+	/// </param>
+	/// <param name="oncompleteparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "oncomplete" method.
+	/// </param>
+	public static void LookFrom(GameObject target, Hashtable args)
+	{
+		Vector3 tempRotation;
+		Vector3 tempRestriction;
+
+		//clean args:
+		args = iTween.CleanArgs(args);
+
+		//set look:
+		tempRotation = target.transform.eulerAngles;
+		if (args["looktarget"].GetType() == typeof(Transform))
+		{
+			//target.Transform.LookAt((Transform)args["looktarget"]);
+			target.transform.LookAt((Transform)args["looktarget"], (Vector3?)args["up"] ?? Defaults.up);
+		}
+		else if (args["looktarget"].GetType() == typeof(Vector3))
+		{
+			//target.Transform.LookAt((Vector3)args["looktarget"]);
+			target.transform.LookAt((Vector3)args["looktarget"], (Vector3?)args["up"] ?? Defaults.up);
+		}
+
+		//axis restriction:
+		if (args.Contains("axis"))
+		{
+			tempRestriction = target.transform.eulerAngles;
+			switch ((string)args["axis"])
+			{
+				case "x":
+					tempRestriction.y = tempRotation.y;
+					tempRestriction.z = tempRotation.z;
+					break;
+				case "y":
+					tempRestriction.x = tempRotation.x;
+					tempRestriction.z = tempRotation.z;
+					break;
+				case "z":
+					tempRestriction.x = tempRotation.x;
+					tempRestriction.y = tempRotation.y;
+					break;
+			}
+			target.transform.eulerAngles = tempRestriction;
+		}
+
+		//set new rotation:
+		args["rotation"] = tempRotation;
+
+		//establish iTween
+		args["type"] = "rotate";
+		args["method"] = "to";
+		Launch(target, args);
+	}
+
+	/// <summary>
+	/// Rotates a GameObject to look at the supplied Vector3 over time with MINIMUM customization options.
+	/// </summary>
+	/// <param name="target">
+	/// A <see cref="GameObject"/> to be the target of the animation.
+	/// </param>
+	/// <param name="looktarget">
+	/// A <see cref="Vector3"/> to be the Vector3 that the target will look towards.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	public static void LookTo(GameObject target, Vector3 looktarget, float time)
+	{
+		LookTo(target, Hash("looktarget", looktarget, "time", time));
+	}
+
+	/// <summary>
+	/// Rotates a GameObject to look at a supplied Transform or Vector3 over time with FULL customization options.
+	/// </summary>
+	/// <param name="looktarget">
+	/// A <see cref="Transform"/> or <see cref="Vector3"/> for a target the GameObject will look at.
+	/// </param>
+	/// <param name="axis">
+	/// A <see cref="System.String"/>. Restricts rotation to the supplied axis only.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	/// <param name="speed">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> can be used instead of time to allow animation based on speed
+	/// </param>
+	/// <param name="delay">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will wait before beginning.
+	/// </param>
+	/// <param name="easetype">
+	/// A <see cref="EaseType"/> or <see cref="System.String"/> for the shape of the easing curve applied to the animation.
+	/// </param>   
+	/// <param name="looptype">
+	/// A <see cref="LoopType"/> or <see cref="System.String"/> for the type of loop to apply once the animation has completed.
+	/// </param>
+	/// <param name="onstart">
+	/// A <see cref="System.String"/> for the name of a function to launch at the beginning of the animation.
+	/// </param>
+	/// <param name="onstarttarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onstart" method.
+	/// </param>
+	/// <param name="onstartparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onstart" method.
+	/// </param>
+	/// <param name="onupdate"> 
+	/// A <see cref="System.String"/> for the name of a function to launch on every step of the animation.
+	/// </param>
+	/// <param name="onupdatetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onupdate" method.
+	/// </param>
+	/// <param name="onupdateparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onupdate" method.
+	/// </param> 
+	/// <param name="oncomplete">
+	/// A <see cref="System.String"/> for the name of a function to launch at the end of the animation.
+	/// </param>
+	/// <param name="oncompletetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "oncomplete" method.
+	/// </param>
+	/// <param name="oncompleteparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "oncomplete" method.
+	/// </param>
+	public static void LookTo(GameObject target, Hashtable args)
+	{
+		//clean args:
+		args = iTween.CleanArgs(args);
+
+		//additional property to ensure ConflictCheck can work correctly since Transforms are refrences:		
+		if (args.Contains("looktarget"))
+		{
+			if (args["looktarget"].GetType() == typeof(Transform))
+			{
+				Transform transform = (Transform)args["looktarget"];
+				args["position"] = new Vector3(transform.position.x, transform.position.y, transform.position.z);
+				args["rotation"] = new Vector3(transform.eulerAngles.x, transform.eulerAngles.y, transform.eulerAngles.z);
+			}
+		}
+
+		//establish iTween
+		args["type"] = "look";
+		args["method"] = "to";
+		Launch(target, args);
+	}
+
+	/// <summary>
+	/// Changes a GameObject's position over time to a supplied destination with MINIMUM customization options.
+	/// </summary>
+	/// <param name="target">
+	/// A <see cref="GameObject"/> to be the target of the animation.
+	/// </param>
+	/// <param name="position">
+	/// A <see cref="Vector3"/> for the destination Vector3.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	public static void MoveTo(GameObject target, Vector3 position, float time)
+	{
+		MoveTo(target, Hash("position", position, "time", time));
+	}
+
+	/// <summary>
+	/// Changes a GameObject's position over time to a supplied destination with FULL customization options.
+	/// </summary>
+	/// <param name="position">
+	/// A <see cref="Transform"/> or <see cref="Vector3"/> for a point in space the GameObject will animate to.
+	/// </param>
+	/// <param name="path">
+	/// A <see cref="Transform[]"/> or <see cref="Vector3[]"/> for a list of points to draw a Catmull-Rom through for a curved animation path.
+	/// </param>
+	/// <param name="movetopath">
+	/// A <see cref="System.Boolean"/> for whether to automatically generate a curve from the GameObject's current position to the beginning of the path. True by default.
+	/// </param>
+	/// <param name="x">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the x axis.
+	/// </param>
+	/// <param name="y">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the y axis.
+	/// </param>
+	/// <param name="z">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the z axis.
+	/// </param>
+	/// <param name="orienttopath">
+	/// A <see cref="System.Boolean"/> for whether or not the GameObject will orient to its direction of travel.  False by default.
+	/// </param>
+	/// <param name="looktarget">
+	/// A <see cref="Vector3"/> or A <see cref="Transform"/> for a target the GameObject will look at.
+	/// </param>
+	/// <param name="looktime">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the object will take to look at either the "looktarget" or "orienttopath".
+	/// </param>
+	/// <param name="lookahead">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for how much of a percentage to look ahead on a path to influence how strict "orientopath" is.
+	/// </param>
+	/// <param name="axis">
+	/// A <see cref="System.String"/>. Restricts rotation to the supplied axis only.
+	/// </param>
+	/// <param name="islocal">
+	/// A <see cref="System.Boolean"/> for whether to animate in world space or relative to the parent. False by default.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	/// <param name="speed">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> can be used instead of time to allow animation based on speed
+	/// </param>
+	/// <param name="delay">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will wait before beginning.
+	/// </param>
+	/// <param name="easetype">
+	/// A <see cref="EaseType"/> or <see cref="System.String"/> for the shape of the easing curve applied to the animation.
+	/// </param>   
+	/// <param name="looptype">
+	/// A <see cref="LoopType"/> or <see cref="System.String"/> for the type of loop to apply once the animation has completed.
+	/// </param>
+	/// <param name="onstart">
+	/// A <see cref="System.String"/> for the name of a function to launch at the beginning of the animation.
+	/// </param>
+	/// <param name="onstarttarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onstart" method.
+	/// </param>
+	/// <param name="onstartparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onstart" method.
+	/// </param>
+	/// <param name="onupdate"> 
+	/// A <see cref="System.String"/> for the name of a function to launch on every step of the animation.
+	/// </param>
+	/// <param name="onupdatetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onupdate" method.
+	/// </param>
+	/// <param name="onupdateparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onupdate" method.
+	/// </param> 
+	/// <param name="oncomplete">
+	/// A <see cref="System.String"/> for the name of a function to launch at the end of the animation.
+	/// </param>
+	/// <param name="oncompletetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "oncomplete" method.
+	/// </param>
+	/// <param name="oncompleteparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "oncomplete" method.
+	/// </param>
+	public static void MoveTo(GameObject target, Hashtable args)
+	{
+		//clean args:
+		args = iTween.CleanArgs(args);
+
+		//additional property to ensure ConflictCheck can work correctly since Transforms are refrences:		
+		if (args.Contains("position"))
+		{
+			if (args["position"].GetType() == typeof(Transform))
+			{
+				Transform transform = (Transform)args["position"];
+				args["position"] = new Vector3(transform.position.x, transform.position.y, transform.position.z);
+				args["rotation"] = new Vector3(transform.eulerAngles.x, transform.eulerAngles.y, transform.eulerAngles.z);
+				args["scale"] = new Vector3(transform.localScale.x, transform.localScale.y, transform.localScale.z);
+			}
+		}
+
+		//establish iTween:
+		args["type"] = "move";
+		args["method"] = "to";
+		Launch(target, args);
+	}
+
+	/// <summary>
+	/// Instantly changes a GameObject's position to a supplied destination then returns it to it's starting position over time with MINIMUM customization options.
+	/// </summary>
+	/// <param name="target">
+	/// A <see cref="GameObject"/> to be the target of the animation.
+	/// </param>
+	/// <param name="position">
+	/// A <see cref="Vector3"/> for the destination Vector3.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	public static void MoveFrom(GameObject target, Vector3 position, float time)
+	{
+		MoveFrom(target, Hash("position", position, "time", time));
+	}
+
+	/// <summary>
+	/// Instantly changes a GameObject's position to a supplied destination then returns it to it's starting position over time with FULL customization options.
+	/// </summary>
+	/// <param name="position">
+	/// A <see cref="Transform"/> or <see cref="Vector3"/> for a point in space the GameObject will animate to.
+	/// </param>
+	/// <param name="path">
+	/// A <see cref="Transform[]"/> or <see cref="Vector3[]"/> for a list of points to draw a Catmull-Rom through for a curved animation path.
+	/// </param>
+	/// <param name="movetopath">
+	/// A <see cref="System.Boolean"/> for whether to automatically generate a curve from the GameObject's current position to the beginning of the path. True by default.
+	/// </param>
+	/// <param name="x">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the x axis.
+	/// </param>
+	/// <param name="y">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the y axis.
+	/// </param>
+	/// <param name="z">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the z axis.
+	/// </param>
+	/// <param name="orienttopath">
+	/// A <see cref="System.Boolean"/> for whether or not the GameObject will orient to its direction of travel.  False by default.
+	/// </param>
+	/// <param name="looktarget">
+	/// A <see cref="Vector3"/> or A <see cref="Transform"/> for a target the GameObject will look at.
+	/// </param>
+	/// <param name="looktime">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the object will take to look at either the "looktarget" or "orienttopath".
+	/// </param>
+	/// <param name="lookahead">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for how much of a percentage to look ahead on a path to influence how strict "orientopath" is.
+	/// </param>
+	/// <param name="islocal">
+	/// A <see cref="System.Boolean"/> for whether to animate in world space or relative to the parent. False by default.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	/// <param name="speed">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> can be used instead of time to allow animation based on speed
+	/// </param>
+	/// <param name="delay">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will wait before beginning.
+	/// </param>
+	/// <param name="easetype">
+	/// A <see cref="EaseType"/> or <see cref="System.String"/> for the shape of the easing curve applied to the animation.
+	/// </param>   
+	/// <param name="looptype">
+	/// A <see cref="LoopType"/> or <see cref="System.String"/> for the type of loop to apply once the animation has completed.
+	/// </param>
+	/// <param name="onstart">
+	/// A <see cref="System.String"/> for the name of a function to launch at the beginning of the animation.
+	/// </param>
+	/// <param name="onstarttarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onstart" method.
+	/// </param>
+	/// <param name="onstartparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onstart" method.
+	/// </param>
+	/// <param name="onupdate"> 
+	/// A <see cref="System.String"/> for the name of a function to launch on every step of the animation.
+	/// </param>
+	/// <param name="onupdatetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onupdate" method.
+	/// </param>
+	/// <param name="onupdateparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onupdate" method.
+	/// </param> 
+	/// <param name="oncomplete">
+	/// A <see cref="System.String"/> for the name of a function to launch at the end of the animation.
+	/// </param>
+	/// <param name="oncompletetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "oncomplete" method.
+	/// </param>
+	/// <param name="oncompleteparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "oncomplete" method.
+	/// </param>
+	public static void MoveFrom(GameObject target, Hashtable args)
+	{
+		//clean args:
+		args = iTween.CleanArgs(args);
+
+		bool tempIsLocal;
+
+		//set tempIsLocal:
+		if (args.Contains("islocal"))
+		{
+			tempIsLocal = (bool)args["islocal"];
+		}
+		else
+		{
+			tempIsLocal = Defaults.isLocal;
+		}
+
+		if (args.Contains("path"))
+		{
+			Vector3[] fromPath;
+			Vector3[] suppliedPath;
+			if (args["path"].GetType() == typeof(Vector3[]))
+			{
+				Vector3[] temp = (Vector3[])args["path"];
+				suppliedPath = new Vector3[temp.Length];
+				Array.Copy(temp, suppliedPath, temp.Length);
+			}
+			else
+			{
+				Transform[] temp = (Transform[])args["path"];
+				suppliedPath = new Vector3[temp.Length];
+				for (int i = 0; i < temp.Length; i++)
+				{
+					suppliedPath[i] = temp[i].position;
+				}
+			}
+			if (suppliedPath[suppliedPath.Length - 1] != target.transform.position)
+			{
+				fromPath = new Vector3[suppliedPath.Length + 1];
+				Array.Copy(suppliedPath, fromPath, suppliedPath.Length);
+				if (tempIsLocal)
+				{
+					fromPath[fromPath.Length - 1] = target.transform.localPosition;
+					target.transform.localPosition = fromPath[0];
+				}
+				else
+				{
+					fromPath[fromPath.Length - 1] = target.transform.position;
+					target.transform.position = fromPath[0];
+				}
+				args["path"] = fromPath;
+			}
+			else
+			{
+				if (tempIsLocal)
+				{
+					target.transform.localPosition = suppliedPath[0];
+				}
+				else
+				{
+					target.transform.position = suppliedPath[0];
+				}
+				args["path"] = suppliedPath;
+			}
+		}
+		else
+		{
+			Vector3 tempPosition;
+			Vector3 fromPosition;
+
+			//set tempPosition and base fromPosition:
+			if (tempIsLocal)
+			{
+				tempPosition = fromPosition = target.transform.localPosition;
+			}
+			else
+			{
+				tempPosition = fromPosition = target.transform.position;
+			}
+
+			//set augmented fromPosition:
+			if (args.Contains("position"))
+			{
+				if (args["position"].GetType() == typeof(Transform))
+				{
+					Transform trans = (Transform)args["position"];
+					fromPosition = trans.position;
+				}
+				else if (args["position"].GetType() == typeof(Vector3))
+				{
+					fromPosition = (Vector3)args["position"];
+				}
+			}
+			else
+			{
+				if (args.Contains("x"))
+				{
+					fromPosition.x = (float)args["x"];
+				}
+				if (args.Contains("y"))
+				{
+					fromPosition.y = (float)args["y"];
+				}
+				if (args.Contains("z"))
+				{
+					fromPosition.z = (float)args["z"];
+				}
+			}
+
+			//apply fromPosition:
+			if (tempIsLocal)
+			{
+				target.transform.localPosition = fromPosition;
+			}
+			else
+			{
+				target.transform.position = fromPosition;
+			}
+
+			//set new position arg:
+			args["position"] = tempPosition;
+		}
+
+		//establish iTween:
+		args["type"] = "move";
+		args["method"] = "to";
+		Launch(target, args);
+	}
+
+	/// <summary>
+	/// Translates a GameObject's position over time with MINIMUM customization options.
+	/// </summary>
+	/// <param name="target">
+	/// A <see cref="GameObject"/> to be the target of the animation.
+	/// </param>
+	/// <param name="amount">
+	/// A <see cref="Vector3"/> for the amount of change in position to move the GameObject.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	public static void MoveAdd(GameObject target, Vector3 amount, float time)
+	{
+		MoveAdd(target, Hash("amount", amount, "time", time));
+	}
+
+	/// <summary>
+	/// Translates a GameObject's position over time with FULL customization options.
+	/// </summary>
+	/// <param name="amount">
+	/// A <see cref="Vector3"/> for the amount of change in position to move the GameObject.
+	/// </param>
+	/// <param name="x">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the x axis.
+	/// </param>
+	/// <param name="y">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the y axis.
+	/// </param>
+	/// <param name="z">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the z axis.
+	/// </param>
+	/// <param name="orienttopath">
+	/// A <see cref="System.Boolean"/> for whether or not the GameObject will orient to its direction of travel.  False by default.
+	/// </param>
+	/// <param name="looktarget">
+	/// A <see cref="Vector3"/> or A <see cref="Transform"/> for a target the GameObject will look at.
+	/// </param>
+	/// <param name="looktime">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the object will take to look at either the "looktarget" or "orienttopath".
+	/// </param>
+	/// <param name="axis">
+	/// A <see cref="System.String"/>. Restricts rotation to the supplied axis only.
+	/// </param>
+	/// <param name="space">
+	/// A <see cref="Space"/> or <see cref="System.String"/> for applying the transformation in either the world coordinate or local cordinate system. Defaults to local space.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	/// <param name="speed">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> can be used instead of time to allow animation based on speed
+	/// </param>
+	/// <param name="delay">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will wait before beginning.
+	/// </param>
+	/// <param name="easetype">
+	/// A <see cref="EaseType"/> or <see cref="System.String"/> for the shape of the easing curve applied to the animation.
+	/// </param>   
+	/// <param name="looptype">
+	/// A <see cref="LoopType"/> or <see cref="System.String"/> for the type of loop to apply once the animation has completed.
+	/// </param>
+	/// <param name="onstart">
+	/// A <see cref="System.String"/> for the name of a function to launch at the beginning of the animation.
+	/// </param>
+	/// <param name="onstarttarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onstart" method.
+	/// </param>
+	/// <param name="onstartparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onstart" method.
+	/// </param>
+	/// <param name="onupdate"> 
+	/// A <see cref="System.String"/> for the name of a function to launch on every step of the animation.
+	/// </param>
+	/// <param name="onupdatetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onupdate" method.
+	/// </param>
+	/// <param name="onupdateparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onupdate" method.
+	/// </param> 
+	/// <param name="oncomplete">
+	/// A <see cref="System.String"/> for the name of a function to launch at the end of the animation.
+	/// </param>
+	/// <param name="oncompletetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "oncomplete" method.
+	/// </param>
+	/// <param name="oncompleteparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "oncomplete" method.
+	/// </param>
+	public static void MoveAdd(GameObject target, Hashtable args)
+	{
+		//clean args:
+		args = iTween.CleanArgs(args);
+
+		//establish iTween:
+		args["type"] = "move";
+		args["method"] = "add";
+		Launch(target, args);
+	}
+
+	/// <summary>
+	/// Adds the supplied coordinates to a GameObject's postion with MINIMUM customization options.
+	/// </summary>
+	/// <param name="target">
+	/// A <see cref="GameObject"/> to be the target of the animation.
+	/// </param>
+	/// <param name="amount">
+	/// A <see cref="Vector3"/> for the amount of change in position to move the GameObject.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	public static void MoveBy(GameObject target, Vector3 amount, float time)
+	{
+		MoveBy(target, Hash("amount", amount, "time", time));
+	}
+
+	/// <summary>
+	/// Adds the supplied coordinates to a GameObject's position with FULL customization options.
+	/// </summary>
+	/// <param name="amount">
+	/// A <see cref="Vector3"/> for the amount of change in position to move the GameObject.
+	/// </param>
+	/// <param name="x">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the x axis.
+	/// </param>
+	/// <param name="y">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the y axis.
+	/// </param>
+	/// <param name="z">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the z axis.
+	/// </param>
+	/// <param name="orienttopath">
+	/// A <see cref="System.Boolean"/> for whether or not the GameObject will orient to its direction of travel.  False by default.
+	/// </param>
+	/// <param name="looktarget">
+	/// A <see cref="Vector3"/> or A <see cref="Transform"/> for a target the GameObject will look at.
+	/// </param>
+	/// <param name="looktime">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the object will take to look at either the "looktarget" or "orienttopath".
+	/// </param>
+	/// <param name="axis">
+	/// A <see cref="System.String"/>. Restricts rotation to the supplied axis only.
+	/// </param>
+	/// <param name="space">
+	/// A <see cref="Space"/> or <see cref="System.String"/> for applying the transformation in either the world coordinate or local cordinate system. Defaults to local space.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	/// <param name="speed">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> can be used instead of time to allow animation based on speed
+	/// </param>
+	/// <param name="delay">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will wait before beginning.
+	/// </param>
+	/// <param name="easetype">
+	/// A <see cref="EaseType"/> or <see cref="System.String"/> for the shape of the easing curve applied to the animation.
+	/// </param>   
+	/// <param name="looptype">
+	/// A <see cref="LoopType"/> or <see cref="System.String"/> for the type of loop to apply once the animation has completed.
+	/// </param>
+	/// <param name="onstart">
+	/// A <see cref="System.String"/> for the name of a function to launch at the beginning of the animation.
+	/// </param>
+	/// <param name="onstarttarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onstart" method.
+	/// </param>
+	/// <param name="onstartparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onstart" method.
+	/// </param>
+	/// <param name="onupdate"> 
+	/// A <see cref="System.String"/> for the name of a function to launch on every step of the animation.
+	/// </param>
+	/// <param name="onupdatetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onupdate" method.
+	/// </param>
+	/// <param name="onupdateparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onupdate" method.
+	/// </param> 
+	/// <param name="oncomplete">
+	/// A <see cref="System.String"/> for the name of a function to launch at the end of the animation.
+	/// </param>
+	/// <param name="oncompletetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "oncomplete" method.
+	/// </param>
+	/// <param name="oncompleteparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "oncomplete" method.
+	/// </param>
+	public static void MoveBy(GameObject target, Hashtable args)
+	{
+		//clean args:
+		args = iTween.CleanArgs(args);
+
+		//establish iTween:
+		args["type"] = "move";
+		args["method"] = "by";
+		Launch(target, args);
+	}
+
+	/// <summary>
+	/// Changes a GameObject's scale over time with MINIMUM customization options.
+	/// </summary>
+	/// <param name="target">
+	/// A <see cref="GameObject"/> to be the target of the animation.
+	/// </param>
+	/// <param name="scale">
+	/// A <see cref="Vector3"/> for the final scale.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	public static void ScaleTo(GameObject target, Vector3 scale, float time)
+	{
+		ScaleTo(target, Hash("scale", scale, "time", time));
+	}
+
+	/// <summary>
+	/// Changes a GameObject's scale over time with FULL customization options.
+	/// </summary>
+	/// <param name="scale">
+	/// A <see cref="Transform"/> or <see cref="Vector3"/> for the final scale.
+	/// </param>
+	/// <param name="x">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the x axis.
+	/// </param>
+	/// <param name="y">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the y axis.
+	/// </param>
+	/// <param name="z">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the z axis.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	/// <param name="speed">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> can be used instead of time to allow animation based on speed
+	/// </param>
+	/// <param name="delay">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will wait before beginning.
+	/// </param>
+	/// <param name="easetype">
+	/// A <see cref="EaseType"/> or <see cref="System.String"/> for the shape of the easing curve applied to the animation.
+	/// </param>   
+	/// <param name="looptype">
+	/// A <see cref="LoopType"/> or <see cref="System.String"/> for the type of loop to apply once the animation has completed.
+	/// </param>
+	/// <param name="onstart">
+	/// A <see cref="System.String"/> for the name of a function to launch at the beginning of the animation.
+	/// </param>
+	/// <param name="onstarttarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onstart" method.
+	/// </param>
+	/// <param name="onstartparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onstart" method.
+	/// </param>
+	/// <param name="onupdate"> 
+	/// A <see cref="System.String"/> for the name of a function to launch on every step of the animation.
+	/// </param>
+	/// <param name="onupdatetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onupdate" method.
+	/// </param>
+	/// <param name="onupdateparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onupdate" method.
+	/// </param> 
+	/// <param name="oncomplete">
+	/// A <see cref="System.String"/> for the name of a function to launch at the end of the animation.
+	/// </param>
+	/// <param name="oncompletetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "oncomplete" method.
+	/// </param>
+	/// <param name="oncompleteparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "oncomplete" method.
+	/// </param>
+	public static void ScaleTo(GameObject target, Hashtable args)
+	{
+		//clean args:
+		args = iTween.CleanArgs(args);
+
+		//additional property to ensure ConflictCheck can work correctly since Transforms are refrences:		
+		if (args.Contains("scale"))
+		{
+			if (args["scale"].GetType() == typeof(Transform))
+			{
+				Transform transform = (Transform)args["scale"];
+				args["position"] = new Vector3(transform.position.x, transform.position.y, transform.position.z);
+				args["rotation"] = new Vector3(transform.eulerAngles.x, transform.eulerAngles.y, transform.eulerAngles.z);
+				args["scale"] = new Vector3(transform.localScale.x, transform.localScale.y, transform.localScale.z);
+			}
+		}
+
+		//establish iTween:
+		args["type"] = "scale";
+		args["method"] = "to";
+		Launch(target, args);
+	}
+
+	/// <summary>
+	/// Instantly changes a GameObject's scale then returns it to it's starting scale over time with MINIMUM customization options.
+	/// </summary>
+	/// <param name="target">
+	/// A <see cref="GameObject"/> to be the target of the animation.
+	/// </param>
+	/// <param name="scale">
+	/// A <see cref="Vector3"/> for the final scale.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	public static void ScaleFrom(GameObject target, Vector3 scale, float time)
+	{
+		ScaleFrom(target, Hash("scale", scale, "time", time));
+	}
+
+	/// <summary>
+	/// Instantly changes a GameObject's scale then returns it to it's starting scale over time with FULL customization options.
+	/// </summary>
+	/// <param name="scale">
+	/// A <see cref="Transform"/> or <see cref="Vector3"/> for the final scale.
+	/// </param>
+	/// <param name="x">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the x axis.
+	/// </param>
+	/// <param name="y">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the y axis.
+	/// </param>
+	/// <param name="z">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the z axis.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	/// <param name="speed">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> can be used instead of time to allow animation based on speed
+	/// </param>
+	/// <param name="delay">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will wait before beginning.
+	/// </param>
+	/// <param name="easetype">
+	/// A <see cref="EaseType"/> or <see cref="System.String"/> for the shape of the easing curve applied to the animation.
+	/// </param>   
+	/// <param name="looptype">
+	/// A <see cref="LoopType"/> or <see cref="System.String"/> for the type of loop to apply once the animation has completed.
+	/// </param>
+	/// <param name="onstart">
+	/// A <see cref="System.String"/> for the name of a function to launch at the beginning of the animation.
+	/// </param>
+	/// <param name="onstarttarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onstart" method.
+	/// </param>
+	/// <param name="onstartparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onstart" method.
+	/// </param>
+	/// <param name="onupdate"> 
+	/// A <see cref="System.String"/> for the name of a function to launch on every step of the animation.
+	/// </param>
+	/// <param name="onupdatetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onupdate" method.
+	/// </param>
+	/// <param name="onupdateparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onupdate" method.
+	/// </param> 
+	/// <param name="oncomplete">
+	/// A <see cref="System.String"/> for the name of a function to launch at the end of the animation.
+	/// </param>
+	/// <param name="oncompletetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "oncomplete" method.
+	/// </param>
+	/// <param name="oncompleteparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "oncomplete" method.
+	/// </param>
+	public static void ScaleFrom(GameObject target, Hashtable args)
+	{
+		Vector3 tempScale;
+		Vector3 fromScale;
+
+		//clean args:
+		args = iTween.CleanArgs(args);
+
+		//set base fromScale:
+		tempScale = fromScale = target.transform.localScale;
+
+		//set augmented fromScale:
+		if (args.Contains("scale"))
+		{
+			if (args["scale"].GetType() == typeof(Transform))
+			{
+				Transform trans = (Transform)args["scale"];
+				fromScale = trans.localScale;
+			}
+			else if (args["scale"].GetType() == typeof(Vector3))
+			{
+				fromScale = (Vector3)args["scale"];
+			}
+		}
+		else
+		{
+			if (args.Contains("x"))
+			{
+				fromScale.x = (float)args["x"];
+			}
+			if (args.Contains("y"))
+			{
+				fromScale.y = (float)args["y"];
+			}
+			if (args.Contains("z"))
+			{
+				fromScale.z = (float)args["z"];
+			}
+		}
+
+		//apply fromScale:
+		target.transform.localScale = fromScale;
+
+		//set new scale arg:
+		args["scale"] = tempScale;
+
+		//establish iTween:
+		args["type"] = "scale";
+		args["method"] = "to";
+		Launch(target, args);
+	}
+
+	/// <summary>
+	/// Adds to a GameObject's scale over time with FULL customization options.
+	/// </summary>
+	/// <param name="target">
+	/// A <see cref="GameObject"/> to be the target of the animation.
+	/// </param>
+	/// <param name="amount">
+	/// A <see cref="Vector3"/> for the amount of scale to be added to the GameObject's current scale.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	public static void ScaleAdd(GameObject target, Vector3 amount, float time)
+	{
+		ScaleAdd(target, Hash("amount", amount, "time", time));
+	}
+
+	/// <summary>
+	/// Adds to a GameObject's scale over time with FULL customization options.
+	/// </summary>
+	/// <param name="amount">
+	/// A <see cref="Vector3"/> for the amount to be added to the GameObject's current scale.
+	/// </param>
+	/// <param name="x">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the x axis.
+	/// </param>
+	/// <param name="y">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the y axis.
+	/// </param>
+	/// <param name="z">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the z axis.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	/// <param name="speed">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> can be used instead of time to allow animation based on speed
+	/// </param>
+	/// <param name="delay">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will wait before beginning.
+	/// </param>
+	/// <param name="easetype">
+	/// A <see cref="EaseType"/> or <see cref="System.String"/> for the shape of the easing curve applied to the animation.
+	/// </param>   
+	/// <param name="looptype">
+	/// A <see cref="LoopType"/> or <see cref="System.String"/> for the type of loop to apply once the animation has completed.
+	/// </param>
+	/// <param name="onstart">
+	/// A <see cref="System.String"/> for the name of a function to launch at the beginning of the animation.
+	/// </param>
+	/// <param name="onstarttarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onstart" method.
+	/// </param>
+	/// <param name="onstartparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onstart" method.
+	/// </param>
+	/// <param name="onupdate"> 
+	/// A <see cref="System.String"/> for the name of a function to launch on every step of the animation.
+	/// </param>
+	/// <param name="onupdatetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onupdate" method.
+	/// </param>
+	/// <param name="onupdateparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onupdate" method.
+	/// </param> 
+	/// <param name="oncomplete">
+	/// A <see cref="System.String"/> for the name of a function to launch at the end of the animation.
+	/// </param>
+	/// <param name="oncompletetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "oncomplete" method.
+	/// </param>
+	/// <param name="oncompleteparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "oncomplete" method.
+	/// </param>
+	public static void ScaleAdd(GameObject target, Hashtable args)
+	{
+		//clean args:
+		args = iTween.CleanArgs(args);
+
+		//establish iTween:
+		args["type"] = "scale";
+		args["method"] = "add";
+		Launch(target, args);
+	}
+
+	/// <summary>
+	/// Multiplies a GameObject's scale over time with MINIMUM customization options.
+	/// </summary>
+	/// <param name="target">
+	/// A <see cref="GameObject"/> to be the target of the animation.
+	/// </param>
+	/// <param name="amount">
+	/// A <see cref="Vector3"/> for the amount of scale to be multiplied by the GameObject's current scale.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	public static void ScaleBy(GameObject target, Vector3 amount, float time)
+	{
+		ScaleBy(target, Hash("amount", amount, "time", time));
+	}
+
+	/// <summary>
+	/// Multiplies a GameObject's scale over time with FULL customization options.
+	/// </summary>
+	/// <param name="amount">
+	/// A <see cref="Vector3"/> for the amount to be multiplied to the GameObject's current scale.
+	/// </param>
+	/// <param name="x">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the x axis.
+	/// </param>
+	/// <param name="y">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the y axis.
+	/// </param>
+	/// <param name="z">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the z axis.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	/// <param name="speed">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> can be used instead of time to allow animation based on speed
+	/// </param>
+	/// <param name="delay">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will wait before beginning.
+	/// </param>
+	/// <param name="easetype">
+	/// A <see cref="EaseType"/> or <see cref="System.String"/> for the shape of the easing curve applied to the animation.
+	/// </param>   
+	/// <param name="looptype">
+	/// A <see cref="LoopType"/> or <see cref="System.String"/> for the type of loop to apply once the animation has completed.
+	/// </param>
+	/// <param name="onstart">
+	/// A <see cref="System.String"/> for the name of a function to launch at the beginning of the animation.
+	/// </param>
+	/// <param name="onstarttarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onstart" method.
+	/// </param>
+	/// <param name="onstartparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onstart" method.
+	/// </param>
+	/// <param name="onupdate"> 
+	/// A <see cref="System.String"/> for the name of a function to launch on every step of the animation.
+	/// </param>
+	/// <param name="onupdatetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onupdate" method.
+	/// </param>
+	/// <param name="onupdateparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onupdate" method.
+	/// </param> 
+	/// <param name="oncomplete">
+	/// A <see cref="System.String"/> for the name of a function to launch at the end of the animation.
+	/// </param>
+	/// <param name="oncompletetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "oncomplete" method.
+	/// </param>
+	/// <param name="oncompleteparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "oncomplete" method.
+	/// </param>
+	public static void ScaleBy(GameObject target, Hashtable args)
+	{
+		//clean args:
+		args = iTween.CleanArgs(args);
+
+		//establish iTween:
+		args["type"] = "scale";
+		args["method"] = "by";
+		Launch(target, args);
+	}
+
+	/// <summary>
+	/// Rotates a GameObject to the supplied Euler angles in degrees over time with MINIMUM customization options.
+	/// </summary>
+	/// <param name="target">
+	/// A <see cref="GameObject"/> to be the target of the animation.
+	/// </param>
+	/// <param name="rotation">
+	/// A <see cref="Vector3"/> for the target Euler angles in degrees to rotate to.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	public static void RotateTo(GameObject target, Vector3 rotation, float time)
+	{
+		RotateTo(target, Hash("rotation", rotation, "time", time));
+	}
+
+	/// <summary>
+	/// Rotates a GameObject to the supplied Euler angles in degrees over time with FULL customization options.
+	/// </summary>
+	/// <param name="rotation">
+	/// A <see cref="Transform"/> or <see cref="Vector3"/> for the target Euler angles in degrees to rotate to.
+	/// </param>
+	/// <param name="x">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the x axis.
+	/// </param>
+	/// <param name="y">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the y axis.
+	/// </param>
+	/// <param name="z">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the z axis.
+	/// </param>
+	/// <param name="islocal">
+	/// A <see cref="System.Boolean"/> for whether to animate in world space or relative to the parent. False by default.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	/// <param name="speed">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> can be used instead of time to allow animation based on speed
+	/// </param>
+	/// <param name="delay">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will wait before beginning.
+	/// </param>
+	/// <param name="easetype">
+	/// A <see cref="EaseType"/> or <see cref="System.String"/> for the shape of the easing curve applied to the animation.
+	/// </param>   
+	/// <param name="looptype">
+	/// A <see cref="LoopType"/> or <see cref="System.String"/> for the type of loop to apply once the animation has completed.
+	/// </param>
+	/// <param name="onstart">
+	/// A <see cref="System.String"/> for the name of a function to launch at the beginning of the animation.
+	/// </param>
+	/// <param name="onstarttarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onstart" method.
+	/// </param>
+	/// <param name="onstartparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onstart" method.
+	/// </param>
+	/// <param name="onupdate"> 
+	/// A <see cref="System.String"/> for the name of a function to launch on every step of the animation.
+	/// </param>
+	/// <param name="onupdatetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onupdate" method.
+	/// </param>
+	/// <param name="onupdateparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onupdate" method.
+	/// </param> 
+	/// <param name="oncomplete">
+	/// A <see cref="System.String"/> for the name of a function to launch at the end of the animation.
+	/// </param>
+	/// <param name="oncompletetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "oncomplete" method.
+	/// </param>
+	/// <param name="oncompleteparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "oncomplete" method.
+	/// </param>
+	public static void RotateTo(GameObject target, Hashtable args)
+	{
+		//clean args:
+		args = iTween.CleanArgs(args);
+
+		//additional property to ensure ConflictCheck can work correctly since Transforms are refrences:		
+		if (args.Contains("rotation"))
+		{
+			if (args["rotation"].GetType() == typeof(Transform))
+			{
+				Transform transform = (Transform)args["rotation"];
+				args["position"] = new Vector3(transform.position.x, transform.position.y, transform.position.z);
+				args["rotation"] = new Vector3(transform.eulerAngles.x, transform.eulerAngles.y, transform.eulerAngles.z);
+				args["scale"] = new Vector3(transform.localScale.x, transform.localScale.y, transform.localScale.z);
+			}
+		}
+
+		//establish iTween
+		args["type"] = "rotate";
+		args["method"] = "to";
+		Launch(target, args);
+	}
+
+	/// <summary>
+	/// Instantly changes a GameObject's Euler angles in degrees then returns it to it's starting rotation over time (if allowed) with MINIMUM customization options.
+	/// </summary>
+	/// <param name="target">
+	/// A <see cref="GameObject"/> to be the target of the animation.
+	/// </param>
+	/// <param name="rotation">
+	/// A <see cref="Vector3"/> for the target Euler angles in degrees to rotate from.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	public static void RotateFrom(GameObject target, Vector3 rotation, float time)
+	{
+		RotateFrom(target, Hash("rotation", rotation, "time", time));
+	}
+
+	/// <summary>
+	/// Instantly changes a GameObject's Euler angles in degrees then returns it to it's starting rotation over time (if allowed) with FULL customization options.
+	/// </summary>
+	/// <param name="rotation">
+	/// A <see cref="Transform"/> or <see cref="Vector3"/> for the target Euler angles in degrees to rotate to.
+	/// </param>
+	/// <param name="x">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the x axis.
+	/// </param>
+	/// <param name="y">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the y axis.
+	/// </param>
+	/// <param name="z">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the z axis.
+	/// </param>
+	/// <param name="islocal">
+	/// A <see cref="System.Boolean"/> for whether to animate in world space or relative to the parent. False by default.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	/// <param name="speed">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> can be used instead of time to allow animation based on speed
+	/// </param>
+	/// <param name="delay">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will wait before beginning.
+	/// </param>
+	/// <param name="easetype">
+	/// A <see cref="EaseType"/> or <see cref="System.String"/> for the shape of the easing curve applied to the animation.
+	/// </param>   
+	/// <param name="looptype">
+	/// A <see cref="LoopType"/> or <see cref="System.String"/> for the type of loop to apply once the animation has completed.
+	/// </param>
+	/// <param name="onstart">
+	/// A <see cref="System.String"/> for the name of a function to launch at the beginning of the animation.
+	/// </param>
+	/// <param name="onstarttarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onstart" method.
+	/// </param>
+	/// <param name="onstartparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onstart" method.
+	/// </param>
+	/// <param name="onupdate"> 
+	/// A <see cref="System.String"/> for the name of a function to launch on every step of the animation.
+	/// </param>
+	/// <param name="onupdatetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onupdate" method.
+	/// </param>
+	/// <param name="onupdateparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onupdate" method.
+	/// </param> 
+	/// <param name="oncomplete">
+	/// A <see cref="System.String"/> for the name of a function to launch at the end of the animation.
+	/// </param>
+	/// <param name="oncompletetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "oncomplete" method.
+	/// </param>
+	/// <param name="oncompleteparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "oncomplete" method.
+	/// </param>
+	public static void RotateFrom(GameObject target, Hashtable args)
+	{
+		Vector3 tempRotation;
+		Vector3 fromRotation;
+		bool tempIsLocal;
+
+		//clean args:
+		args = iTween.CleanArgs(args);
+
+		//set tempIsLocal:
+		if (args.Contains("islocal"))
+		{
+			tempIsLocal = (bool)args["islocal"];
+		}
+		else
+		{
+			tempIsLocal = Defaults.isLocal;
+		}
+
+		//set tempRotation and base fromRotation:
+		if (tempIsLocal)
+		{
+			tempRotation = fromRotation = target.transform.localEulerAngles;
+		}
+		else
+		{
+			tempRotation = fromRotation = target.transform.eulerAngles;
+		}
+
+		//set augmented fromRotation:
+		if (args.Contains("rotation"))
+		{
+			if (args["rotation"].GetType() == typeof(Transform))
+			{
+				Transform trans = (Transform)args["rotation"];
+				fromRotation = trans.eulerAngles;
+			}
+			else if (args["rotation"].GetType() == typeof(Vector3))
+			{
+				fromRotation = (Vector3)args["rotation"];
+			}
+		}
+		else
+		{
+			if (args.Contains("x"))
+			{
+				fromRotation.x = (float)args["x"];
+			}
+			if (args.Contains("y"))
+			{
+				fromRotation.y = (float)args["y"];
+			}
+			if (args.Contains("z"))
+			{
+				fromRotation.z = (float)args["z"];
+			}
+		}
+
+		//apply fromRotation:
+		if (tempIsLocal)
+		{
+			target.transform.localEulerAngles = fromRotation;
+		}
+		else
+		{
+			target.transform.eulerAngles = fromRotation;
+		}
+
+		//set new rotation arg:
+		args["rotation"] = tempRotation;
+
+		//establish iTween:
+		args["type"] = "rotate";
+		args["method"] = "to";
+		Launch(target, args);
+	}
+
+	/// <summary>
+	/// Adds supplied Euler angles in degrees to a GameObject's rotation over time with MINIMUM customization options.
+	/// </summary>
+	/// <param name="target">
+	/// A <see cref="GameObject"/> to be the target of the animation.
+	/// </param>
+	/// <param name="amount">
+	/// A <see cref="Vector3"/> for the amount of Euler angles in degrees to add to the current rotation of the GameObject.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	public static void RotateAdd(GameObject target, Vector3 amount, float time)
+	{
+		RotateAdd(target, Hash("amount", amount, "time", time));
+	}
+
+	/// <summary>
+	/// Adds supplied Euler angles in degrees to a GameObject's rotation over time with FULL customization options.
+	/// </summary>
+	/// <param name="amount">
+	/// A <see cref="Vector3"/> for the amount of Euler angles in degrees to add to the current rotation of the GameObject.
+	/// </param>
+	/// <param name="x">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the x axis.
+	/// </param>
+	/// <param name="y">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the y axis.
+	/// </param>
+	/// <param name="z">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the z axis.
+	/// </param>
+	/// <param name="space">
+	/// A <see cref="Space"/> or <see cref="System.String"/> for applying the transformation in either the world coordinate or local cordinate system. Defaults to local space.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	/// <param name="speed">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> can be used instead of time to allow animation based on speed
+	/// </param>
+	/// <param name="delay">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will wait before beginning.
+	/// </param>
+	/// <param name="easetype">
+	/// A <see cref="EaseType"/> or <see cref="System.String"/> for the shape of the easing curve applied to the animation.
+	/// </param>   
+	/// <param name="looptype">
+	/// A <see cref="LoopType"/> or <see cref="System.String"/> for the type of loop to apply once the animation has completed.
+	/// </param>
+	/// <param name="onstart">
+	/// A <see cref="System.String"/> for the name of a function to launch at the beginning of the animation.
+	/// </param>
+	/// <param name="onstarttarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onstart" method.
+	/// </param>
+	/// <param name="onstartparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onstart" method.
+	/// </param>
+	/// <param name="onupdate"> 
+	/// A <see cref="System.String"/> for the name of a function to launch on every step of the animation.
+	/// </param>
+	/// <param name="onupdatetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onupdate" method.
+	/// </param>
+	/// <param name="onupdateparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onupdate" method.
+	/// </param> 
+	/// <param name="oncomplete">
+	/// A <see cref="System.String"/> for the name of a function to launch at the end of the animation.
+	/// </param>
+	/// <param name="oncompletetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "oncomplete" method.
+	/// </param>
+	/// <param name="oncompleteparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "oncomplete" method.
+	/// </param>
+	public static void RotateAdd(GameObject target, Hashtable args)
+	{
+		//clean args:
+		args = iTween.CleanArgs(args);
+
+		//establish iTween:
+		args["type"] = "rotate";
+		args["method"] = "add";
+		Launch(target, args);
+	}
+
+	/// <summary>
+	/// Multiplies supplied values by 360 and rotates a GameObject by calculated amount over time with MINIMUM customization options.
+	/// </summary>
+	/// <param name="target">
+	/// A <see cref="GameObject"/> to be the target of the animation.
+	/// </param>
+	/// <param name="amount">
+	/// A <see cref="Vector3"/> for the amount to be multiplied by 360 to rotate the GameObject.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	public static void RotateBy(GameObject target, Vector3 amount, float time)
+	{
+		RotateBy(target, Hash("amount", amount, "time", time));
+	}
+
+	/// <summary>
+	/// Multiplies supplied values by 360 and rotates a GameObject by calculated amount over time with FULL customization options.
+	/// </summary>
+	/// <param name="amount">
+	/// A <see cref="Vector3"/> for the amount to be multiplied by 360 to rotate the GameObject.
+	/// </param>
+	/// <param name="x">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the x axis.
+	/// </param>
+	/// <param name="y">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the y axis.
+	/// </param>
+	/// <param name="z">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the z axis.
+	/// </param>
+	/// <param name="space">
+	/// A <see cref="Space"/> or <see cref="System.String"/> for applying the transformation in either the world coordinate or local cordinate system. Defaults to local space.
+	/// </param>
+	/// <param name="islocal">
+	/// A <see cref="System.Boolean"/> for whether to animate in world space or relative to the parent. False by default.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	/// <param name="speed">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> can be used instead of time to allow animation based on speed
+	/// </param>
+	/// <param name="delay">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will wait before beginning.
+	/// </param>
+	/// <param name="easetype">
+	/// A <see cref="EaseType"/> or <see cref="System.String"/> for the shape of the easing curve applied to the animation.
+	/// </param>   
+	/// <param name="looptype">
+	/// A <see cref="LoopType"/> or <see cref="System.String"/> for the type of loop to apply once the animation has completed.
+	/// </param>
+	/// <param name="onstart">
+	/// A <see cref="System.String"/> for the name of a function to launch at the beginning of the animation.
+	/// </param>
+	/// <param name="onstarttarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onstart" method.
+	/// </param>
+	/// <param name="onstartparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onstart" method.
+	/// </param>
+	/// <param name="onupdate"> 
+	/// A <see cref="System.String"/> for the name of a function to launch on every step of the animation.
+	/// </param>
+	/// <param name="onupdatetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onupdate" method.
+	/// </param>
+	/// <param name="onupdateparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onupdate" method.
+	/// </param> 
+	/// <param name="oncomplete">
+	/// A <see cref="System.String"/> for the name of a function to launch at the end of the animation.
+	/// </param>
+	/// <param name="oncompletetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "oncomplete" method.
+	/// </param>
+	/// <param name="oncompleteparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "oncomplete" method.
+	/// </param>
+	public static void RotateBy(GameObject target, Hashtable args)
+	{
+		//clean args:
+		args = iTween.CleanArgs(args);
+
+		//establish iTween
+		args["type"] = "rotate";
+		args["method"] = "by";
+		Launch(target, args);
+	}
+
+	/// <summary>
+	/// Randomly shakes a GameObject's position by a diminishing amount over time with MINIMUM customization options.
+	/// </summary>
+	/// <param name="target">
+	/// A <see cref="GameObject"/> to be the target of the animation.
+	/// </param>
+	/// <param name="amount">
+	/// A <see cref="Vector3"/> for the magnitude of shake.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	public static void ShakePosition(GameObject target, Vector3 amount, float time)
+	{
+		ShakePosition(target, Hash("amount", amount, "time", time));
+	}
+
+	/// <summary>
+	/// Randomly shakes a GameObject's position by a diminishing amount over time with FULL customization options.
+	/// </summary>
+	/// <param name="amount">
+	/// A <see cref="Vector3"/> for the magnitude of shake.
+	/// </param>
+	/// <param name="x">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the x magnitude.
+	/// </param>
+	/// <param name="y">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the y magnitude.
+	/// </param>
+	/// <param name="z">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the z magnitude.
+	/// </param>
+	/// <param name="islocal">
+	/// A <see cref="System.Boolean"/> for whether to animate in world space or relative to the parent. False by default.
+	/// </param>
+	/// <param name="orienttopath">
+	/// A <see cref="System.Boolean"/> for whether or not the GameObject will orient to its direction of travel.  False by default.
+	/// </param>
+	/// <param name="looktarget">
+	/// A <see cref="Vector3"/> or A <see cref="Transform"/> for a target the GameObject will look at.
+	/// </param>
+	/// <param name="looktime">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the object will take to look at either the "looktarget" or "orienttopath".
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	/// <param name="delay">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will wait before beginning.
+	/// </param>  
+	/// <param name="looptype">
+	/// A <see cref="LoopType"/> or <see cref="System.String"/> for the type of loop to apply once the animation has completed. (only "loop" is allowed with shakes)
+	/// </param>
+	/// <param name="onstart">
+	/// A <see cref="System.String"/> for the name of a function to launch at the beginning of the animation.
+	/// </param>
+	/// <param name="onstarttarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onstart" method.
+	/// </param>
+	/// <param name="onstartparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onstart" method.
+	/// </param>
+	/// <param name="onupdate"> 
+	/// A <see cref="System.String"/> for the name of a function to launch on every step of the animation.
+	/// </param>
+	/// <param name="onupdatetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onupdate" method.
+	/// </param>
+	/// <param name="onupdateparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onupdate" method.
+	/// </param> 
+	/// <param name="oncomplete">
+	/// A <see cref="System.String"/> for the name of a function to launch at the end of the animation.
+	/// </param>
+	/// <param name="oncompletetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "oncomplete" method.
+	/// </param>
+	/// <param name="oncompleteparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "oncomplete" method.
+	/// </param>
+	public static void ShakePosition(GameObject target, Hashtable args)
+	{
+		//clean args:
+		args = iTween.CleanArgs(args);
+
+		//establish iTween
+		args["type"] = "shake";
+		args["method"] = "position";
+		Launch(target, args);
+	}
+
+	/// <summary>
+	/// Randomly shakes a GameObject's scale by a diminishing amount over time with MINIMUM customization options.
+	/// </summary>
+	/// <param name="target">
+	/// A <see cref="GameObject"/> to be the target of the animation.
+	/// </param>
+	/// <param name="amount">
+	/// A <see cref="Vector3"/> for the magnitude of shake.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	public static void ShakeScale(GameObject target, Vector3 amount, float time)
+	{
+		ShakeScale(target, Hash("amount", amount, "time", time));
+	}
+
+	/// <summary>
+	/// Randomly shakes a GameObject's scale by a diminishing amount over time with FULL customization options.
+	/// </summary>
+	/// <param name="amount">
+	/// A <see cref="Vector3"/> for the magnitude of shake.
+	/// </param>
+	/// <param name="x">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the x magnitude.
+	/// </param>
+	/// <param name="y">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the y magnitude.
+	/// </param>
+	/// <param name="z">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the z magnitude.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	/// <param name="delay">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will wait before beginning.
+	/// </param>
+	/// <param name="looptype">
+	/// A <see cref="LoopType"/> or <see cref="System.String"/> for the type of loop to apply once the animation has completed. (only "loop" is allowed with shakes)
+	/// </param>
+	/// <param name="onstart">
+	/// A <see cref="System.String"/> for the name of a function to launch at the beginning of the animation.
+	/// </param>
+	/// <param name="onstarttarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onstart" method.
+	/// </param>
+	/// <param name="onstartparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onstart" method.
+	/// </param>
+	/// <param name="onupdate"> 
+	/// A <see cref="System.String"/> for the name of a function to launch on every step of the animation.
+	/// </param>
+	/// <param name="onupdatetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onupdate" method.
+	/// </param>
+	/// <param name="onupdateparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onupdate" method.
+	/// </param> 
+	/// <param name="oncomplete">
+	/// A <see cref="System.String"/> for the name of a function to launch at the end of the animation.
+	/// </param>
+	/// <param name="oncompletetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "oncomplete" method.
+	/// </param>
+	/// <param name="oncompleteparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "oncomplete" method.
+	/// </param>
+	public static void ShakeScale(GameObject target, Hashtable args)
+	{
+		//clean args:
+		args = iTween.CleanArgs(args);
+
+		//establish iTween
+		args["type"] = "shake";
+		args["method"] = "scale";
+		Launch(target, args);
+	}
+
+	/// <summary>
+	/// Randomly shakes a GameObject's rotation by a diminishing amount over time with MINIMUM customization options.
+	/// </summary>
+	/// <param name="target">
+	/// A <see cref="GameObject"/> to be the target of the animation.
+	/// </param>
+	/// <param name="amount">
+	/// A <see cref="Vector3"/> for the magnitude of shake.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	public static void ShakeRotation(GameObject target, Vector3 amount, float time)
+	{
+		ShakeRotation(target, Hash("amount", amount, "time", time));
+	}
+
+	/// <summary>
+	/// Randomly shakes a GameObject's rotation by a diminishing amount over time with FULL customization options.
+	/// </summary>
+	/// <param name="amount">
+	/// A <see cref="Vector3"/> for the magnitude of shake.
+	/// </param>
+	/// <param name="x">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the x magnitude.
+	/// </param>
+	/// <param name="y">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the y magnitude.
+	/// </param>
+	/// <param name="z">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the z magnitude.
+	/// </param>
+	/// <param name="space">
+	/// A <see cref="Space"/> for applying the transformation in either the world coordinate or local cordinate system. Defaults to local space.
+	/// </param> 
+	/// <param name="time">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	/// <param name="delay">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will wait before beginning.
+	/// </param>
+	/// <param name="looptype">
+	/// A <see cref="LoopType"/> or <see cref="System.String"/> for the type of loop to apply once the animation has completed. (only "loop" is allowed with shakes)
+	/// </param>
+	/// <param name="onstart">
+	/// A <see cref="System.String"/> for the name of a function to launch at the beginning of the animation.
+	/// </param>
+	/// <param name="onstarttarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onstart" method.
+	/// </param>
+	/// <param name="onstartparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onstart" method.
+	/// </param>
+	/// <param name="onupdate"> 
+	/// A <see cref="System.String"/> for the name of a function to launch on every step of the animation.
+	/// </param>
+	/// <param name="onupdatetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onupdate" method.
+	/// </param>
+	/// <param name="onupdateparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onupdate" method.
+	/// </param> 
+	/// <param name="oncomplete">
+	/// A <see cref="System.String"/> for the name of a function to launch at the end of the animation.
+	/// </param>
+	/// <param name="oncompletetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "oncomplete" method.
+	/// </param>
+	/// <param name="oncompleteparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "oncomplete" method.
+	/// </param>
+	public static void ShakeRotation(GameObject target, Hashtable args)
+	{
+		//clean args:
+		args = iTween.CleanArgs(args);
+
+		//establish iTween
+		args["type"] = "shake";
+		args["method"] = "rotation";
+		Launch(target, args);
+	}
+
+	/// <summary>
+	/// Applies a jolt of force to a GameObject's position and wobbles it back to its initial position with MINIMUM customization options.
+	/// </summary>
+	/// <param name="target">
+	/// A <see cref="GameObject"/> to be the target of the animation.
+	/// </param>
+	/// <param name="amount">
+	/// A <see cref="Vector3"/> for the magnitude of the punch.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	public static void PunchPosition(GameObject target, Vector3 amount, float time)
+	{
+		PunchPosition(target, Hash("amount", amount, "time", time));
+	}
+
+	/// <summary>
+	/// Applies a jolt of force to a GameObject's position and wobbles it back to its initial position with FULL customization options.
+	/// </summary>
+	/// <param name="amount">
+	/// A <see cref="Vector3"/> for the magnitude of shake.
+	/// </param>
+	/// <param name="x">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the x magnitude.
+	/// </param>
+	/// <param name="y">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the y magnitude.
+	/// </param>
+	/// <param name="z">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the z magnitude.
+	/// </param>
+	/// <param name="space">
+	/// A <see cref="Space"/> for applying the transformation in either the world coordinate or local cordinate system. Defaults to local space.
+	/// </param> 
+	/// <param name="looktarget">
+	/// A <see cref="Vector3"/> or A <see cref="Transform"/> for a target the GameObject will look at.
+	/// </param>
+	/// <param name="looktime">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the object will take to look at either the "looktarget".
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	/// <param name="delay">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will wait before beginning.
+	/// </param>   
+	/// <param name="looptype">
+	/// A <see cref="LoopType"/> or <see cref="System.String"/> for the type of loop to apply once the animation has completed. (only "loop" is allowed with punches)
+	/// </param>
+	/// <param name="onstart">
+	/// A <see cref="System.String"/> for the name of a function to launch at the beginning of the animation.
+	/// </param>
+	/// <param name="onstarttarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onstart" method.
+	/// </param>
+	/// <param name="onstartparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onstart" method.
+	/// </param>
+	/// <param name="onupdate"> 
+	/// A <see cref="System.String"/> for the name of a function to launch on every step of the animation.
+	/// </param>
+	/// <param name="onupdatetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onupdate" method.
+	/// </param>
+	/// <param name="onupdateparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onupdate" method.
+	/// </param> 
+	/// <param name="oncomplete">
+	/// A <see cref="System.String"/> for the name of a function to launch at the end of the animation.
+	/// </param>
+	/// <param name="oncompletetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "oncomplete" method.
+	/// </param>
+	/// <param name="oncompleteparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "oncomplete" method.
+	/// </param>
+	public static void PunchPosition(GameObject target, Hashtable args)
+	{
+		//clean args:
+		args = iTween.CleanArgs(args);
+
+		//establish iTween
+		args["type"] = "punch";
+		args["method"] = "position";
+		args["easetype"] = EaseType.punch;
+		Launch(target, args);
+	}
+
+	/// <summary>
+	/// Applies a jolt of force to a GameObject's rotation and wobbles it back to its initial rotation with MINIMUM customization options.
+	/// </summary>
+	/// <param name="target">
+	/// A <see cref="GameObject"/> to be the target of the animation.
+	/// </param>
+	/// <param name="amount">
+	/// A <see cref="Vector3"/> for the magnitude of the punch.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	public static void PunchRotation(GameObject target, Vector3 amount, float time)
+	{
+		PunchRotation(target, Hash("amount", amount, "time", time));
+	}
+
+	/// <summary>
+	/// Applies a jolt of force to a GameObject's rotation and wobbles it back to its initial rotation with FULL customization options.
+	/// </summary>
+	/// <param name="amount">
+	/// A <see cref="Vector3"/> for the magnitude of shake.
+	/// </param>
+	/// <param name="x">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the x magnitude.
+	/// </param>
+	/// <param name="y">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the y magnitude.
+	/// </param>
+	/// <param name="z">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the z magnitude.
+	/// </param>
+	/// <param name="space">
+	/// A <see cref="Space"/> for applying the transformation in either the world coordinate or local cordinate system. Defaults to local space.
+	/// </param> 
+	/// <param name="time">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	/// <param name="delay">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will wait before beginning.
+	/// </param> 
+	/// <param name="looptype">
+	/// A <see cref="LoopType"/> or <see cref="System.String"/> for the type of loop to apply once the animation has completed. (only "loop" is allowed with punches)
+	/// </param>
+	/// <param name="onstart">
+	/// A <see cref="System.String"/> for the name of a function to launch at the beginning of the animation.
+	/// </param>
+	/// <param name="onstarttarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onstart" method.
+	/// </param>
+	/// <param name="onstartparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onstart" method.
+	/// </param>
+	/// <param name="onupdate"> 
+	/// A <see cref="System.String"/> for the name of a function to launch on every step of the animation.
+	/// </param>
+	/// <param name="onupdatetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onupdate" method.
+	/// </param>
+	/// <param name="onupdateparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onupdate" method.
+	/// </param> 
+	/// <param name="oncomplete">
+	/// A <see cref="System.String"/> for the name of a function to launch at the end of the animation.
+	/// </param>
+	/// <param name="oncompletetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "oncomplete" method.
+	/// </param>
+	/// <param name="oncompleteparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "oncomplete" method.
+	/// </param>
+	public static void PunchRotation(GameObject target, Hashtable args)
+	{
+		//clean args:
+		args = iTween.CleanArgs(args);
+
+		//establish iTween
+		args["type"] = "punch";
+		args["method"] = "rotation";
+		args["easetype"] = EaseType.punch;
+		Launch(target, args);
+	}
+
+	/// <summary>
+	/// Applies a jolt of force to a GameObject's scale and wobbles it back to its initial scale with MINIMUM customization options.
+	/// </summary>
+	/// <param name="target">
+	/// A <see cref="GameObject"/> to be the target of the animation.
+	/// </param>
+	/// <param name="amount">
+	/// A <see cref="Vector3"/> for the magnitude of the punch.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	public static void PunchScale(GameObject target, Vector3 amount, float time)
+	{
+		PunchScale(target, Hash("amount", amount, "time", time));
+	}
+
+	/// <summary>
+	/// Applies a jolt of force to a GameObject's scale and wobbles it back to its initial scale with FULL customization options.
+	/// </summary>
+	/// <param name="amount">
+	/// A <see cref="Vector3"/> for the magnitude of shake.
+	/// </param>
+	/// <param name="x">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the x magnitude.
+	/// </param>
+	/// <param name="y">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the y magnitude.
+	/// </param>
+	/// <param name="z">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the z magnitude.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	/// <param name="delay">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will wait before beginning.
+	/// </param> 
+	/// <param name="looptype">
+	/// A <see cref="LoopType"/> or <see cref="System.String"/> for the type of loop to apply once the animation has completed. (only "loop" is allowed with punches)
+	/// </param>
+	/// <param name="onstart">
+	/// A <see cref="System.String"/> for the name of a function to launch at the beginning of the animation.
+	/// </param>
+	/// <param name="onstarttarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onstart" method.
+	/// </param>
+	/// <param name="onstartparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onstart" method.
+	/// </param>
+	/// <param name="onupdate"> 
+	/// A <see cref="System.String"/> for the name of a function to launch on every step of the animation.
+	/// </param>
+	/// <param name="onupdatetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "onupdate" method.
+	/// </param>
+	/// <param name="onupdateparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "onupdate" method.
+	/// </param> 
+	/// <param name="oncomplete">
+	/// A <see cref="System.String"/> for the name of a function to launch at the end of the animation.
+	/// </param>
+	/// <param name="oncompletetarget">
+	/// A <see cref="GameObject"/> for a reference to the GameObject that holds the "oncomplete" method.
+	/// </param>
+	/// <param name="oncompleteparams">
+	/// A <see cref="System.Object"/> for arguments to be sent to the "oncomplete" method.
+	/// </param>
+	public static void PunchScale(GameObject target, Hashtable args)
+	{
+		//clean args:
+		args = iTween.CleanArgs(args);
+
+		//establish iTween
+		args["type"] = "punch";
+		args["method"] = "scale";
+		args["easetype"] = EaseType.punch;
+		Launch(target, args);
+	}
+
+	#endregion
+
+	#region #2 Generate Method Targets
+
+	//call correct set target method and set tween application delegate:
+	void GenerateTargets()
+	{
+		switch (type)
+		{
+			case "value":
+				switch (method)
+				{
+					case "float":
+						GenerateFloatTargets();
+						apply = new ApplyTween(ApplyFloatTargets);
+						break;
+					case "vector2":
+						GenerateVector2Targets();
+						apply = new ApplyTween(ApplyVector2Targets);
+						break;
+					case "vector3":
+						GenerateVector3Targets();
+						apply = new ApplyTween(ApplyVector3Targets);
+						break;
+					case "color":
+						GenerateColorTargets();
+						apply = new ApplyTween(ApplyColorTargets);
+						break;
+					case "rect":
+						GenerateRectTargets();
+						apply = new ApplyTween(ApplyRectTargets);
+						break;
+				}
+				break;
+			case "color":
+				switch (method)
+				{
+					case "to":
+						GenerateColorToTargets();
+						apply = new ApplyTween(ApplyColorToTargets);
+						break;
+				}
+				break;
+			case "audio":
+				switch (method)
+				{
+					case "to":
+						GenerateAudioToTargets();
+						apply = new ApplyTween(ApplyAudioToTargets);
+						break;
+				}
+				break;
+			case "move":
+				switch (method)
+				{
+					case "to":
+						//using a path?
+						if (tweenArguments.Contains("path"))
+						{
+							GenerateMoveToPathTargets();
+							apply = new ApplyTween(ApplyMoveToPathTargets);
+						}
+						else
+						{ //not using a path?
+							GenerateMoveToTargets();
+							apply = new ApplyTween(ApplyMoveToTargets);
+						}
+						break;
+					case "by":
+					case "add":
+						GenerateMoveByTargets();
+						apply = new ApplyTween(ApplyMoveByTargets);
+						break;
+				}
+				break;
+			case "scale":
+				switch (method)
+				{
+					case "to":
+						GenerateScaleToTargets();
+						apply = new ApplyTween(ApplyScaleToTargets);
+						break;
+					case "by":
+						GenerateScaleByTargets();
+						apply = new ApplyTween(ApplyScaleToTargets);
+						break;
+					case "add":
+						GenerateScaleAddTargets();
+						apply = new ApplyTween(ApplyScaleToTargets);
+						break;
+				}
+				break;
+			case "rotate":
+				switch (method)
+				{
+					case "to":
+						GenerateRotateToTargets();
+						apply = new ApplyTween(ApplyRotateToTargets);
+						break;
+					case "add":
+						GenerateRotateAddTargets();
+						apply = new ApplyTween(ApplyRotateAddTargets);
+						break;
+					case "by":
+						GenerateRotateByTargets();
+						apply = new ApplyTween(ApplyRotateAddTargets);
+						break;
+				}
+				break;
+			case "shake":
+				switch (method)
+				{
+					case "position":
+						GenerateShakePositionTargets();
+						apply = new ApplyTween(ApplyShakePositionTargets);
+						break;
+					case "scale":
+						GenerateShakeScaleTargets();
+						apply = new ApplyTween(ApplyShakeScaleTargets);
+						break;
+					case "rotation":
+						GenerateShakeRotationTargets();
+						apply = new ApplyTween(ApplyShakeRotationTargets);
+						break;
+				}
+				break;
+			case "punch":
+				switch (method)
+				{
+					case "position":
+						GeneratePunchPositionTargets();
+						apply = new ApplyTween(ApplyPunchPositionTargets);
+						break;
+					case "rotation":
+						GeneratePunchRotationTargets();
+						apply = new ApplyTween(ApplyPunchRotationTargets);
+						break;
+					case "scale":
+						GeneratePunchScaleTargets();
+						apply = new ApplyTween(ApplyPunchScaleTargets);
+						break;
+				}
+				break;
+			case "look":
+				switch (method)
+				{
+					case "to":
+						GenerateLookToTargets();
+						apply = new ApplyTween(ApplyLookToTargets);
+						break;
+				}
+				break;
+			case "stab":
+				GenerateStabTargets();
+				apply = new ApplyTween(ApplyStabTargets);
+				break;
+		}
+	}
+
+	#endregion
+
+	#region #3 Generate Specific Targets
+
+	void GenerateRectTargets()
+	{
+		//values holder [0] from, [1] to, [2] calculated value from ease equation:
+		rects = new Rect[3];
+
+		//from and to values:
+		rects[0] = (Rect)tweenArguments["from"];
+		rects[1] = (Rect)tweenArguments["to"];
+	}
+
+	void GenerateColorTargets()
+	{
+		//values holder [0] from, [1] to, [2] calculated value from ease equation:
+		colors = new Color[1, 3];
+
+		//from and to values:
+		colors[0, 0] = (Color)tweenArguments["from"];
+		colors[0, 1] = (Color)tweenArguments["to"];
+	}
+
+	void GenerateVector3Targets()
+	{
+		//values holder [0] from, [1] to, [2] calculated value from ease equation:
+		vector3s = new Vector3[3];
+
+		//from and to values:
+		vector3s[0] = (Vector3)tweenArguments["from"];
+		vector3s[1] = (Vector3)tweenArguments["to"];
+
+		//need for speed?
+		if (tweenArguments.Contains("speed"))
+		{
+			float distance = Math.Abs(Vector3.Distance(vector3s[0], vector3s[1]));
+			time = distance / (float)tweenArguments["speed"];
+		}
+	}
+
+	void GenerateVector2Targets()
+	{
+		//values holder [0] from, [1] to, [2] calculated value from ease equation:
+		vector2s = new Vector2[3];
+
+		//from and to values:
+		vector2s[0] = (Vector2)tweenArguments["from"];
+		vector2s[1] = (Vector2)tweenArguments["to"];
+
+		//need for speed?
+		if (tweenArguments.Contains("speed"))
+		{
+			Vector3 fromV3 = new Vector3(vector2s[0].x, vector2s[0].y, 0);
+			Vector3 toV3 = new Vector3(vector2s[1].x, vector2s[1].y, 0);
+			float distance = Math.Abs(Vector3.Distance(fromV3, toV3));
+			time = distance / (float)tweenArguments["speed"];
+		}
+	}
+
+	void GenerateFloatTargets()
+	{
+		//values holder [0] from, [1] to, [2] calculated value from ease equation:
+		floats = new float[3];
+
+		//from and to values:
+		floats[0] = (float)tweenArguments["from"];
+		floats[1] = (float)tweenArguments["to"];
+
+		//need for speed?
+		if (tweenArguments.Contains("speed"))
+		{
+			float distance = Math.Abs(floats[0] - floats[1]);
+			time = distance / (float)tweenArguments["speed"];
+		}
+	}
+
+	void GenerateColorToTargets()
+	{
+		//values holder [0] from, [1] to, [2] calculated value from ease equation:
+		//colors = new Color[3];
+
+		//from and init to values:
+		if (GetComponent(typeof(GUITexture)))
+		{
+			colors = new Color[1, 3];
+			colors[0, 0] = colors[0, 1] = guiTexture.color;
+		}
+		else if (GetComponent(typeof(GUIText)))
+		{
+			colors = new Color[1, 3];
+			colors[0, 0] = colors[0, 1] = guiText.material.color;
+		}
+		else if (renderer)
+		{
+			colors = new Color[renderer.materials.Length, 3];
+			for (int i = 0; i < renderer.materials.Length; i++)
+			{
+				colors[i, 0] = renderer.materials[i].GetColor(namedcolorvalue.ToString());
+				colors[i, 1] = renderer.materials[i].GetColor(namedcolorvalue.ToString());
+			}
+			//colors[0] = colors[1] = renderer.material.color;	
+		}
+		else if (light)
+		{
+			colors = new Color[1, 3];
+			colors[0, 0] = colors[0, 1] = light.color;
+		}
+		else
+		{
+			colors = new Color[1, 3]; //empty placeholder incase the GO is perhaps an empty holder or something similar
+		}
+
+		//to values:
+		if (tweenArguments.Contains("color"))
+		{
+			//colors[1]=(Color)tweenArguments["color"];
+			for (int i = 0; i < colors.GetLength(0); i++)
+			{
+				colors[i, 1] = (Color)tweenArguments["color"];
+			}
+		}
+		else
+		{
+			if (tweenArguments.Contains("r"))
+			{
+				//colors[1].r=(float)tweenArguments["r"];
+				for (int i = 0; i < colors.GetLength(0); i++)
+				{
+					colors[i, 1].r = (float)tweenArguments["r"];
+				}
+			}
+			if (tweenArguments.Contains("g"))
+			{
+				//colors[1].g=(float)tweenArguments["g"];
+				for (int i = 0; i < colors.GetLength(0); i++)
+				{
+					colors[i, 1].g = (float)tweenArguments["g"];
+				}
+			}
+			if (tweenArguments.Contains("b"))
+			{
+				//colors[1].b=(float)tweenArguments["b"];
+				for (int i = 0; i < colors.GetLength(0); i++)
+				{
+					colors[i, 1].b = (float)tweenArguments["b"];
+				}
+			}
+			if (tweenArguments.Contains("a"))
+			{
+				//colors[1].a=(float)tweenArguments["a"];
+				for (int i = 0; i < colors.GetLength(0); i++)
+				{
+					colors[i, 1].a = (float)tweenArguments["a"];
+				}
+			}
+		}
+
+		//alpha or amount?
+		if (tweenArguments.Contains("amount"))
+		{
+			//colors[1].a=(float)tweenArguments["amount"];
+			for (int i = 0; i < colors.GetLength(0); i++)
+			{
+				colors[i, 1].a = (float)tweenArguments["amount"];
+			}
+		}
+		else if (tweenArguments.Contains("alpha"))
+		{
+			//colors[1].a=(float)tweenArguments["alpha"];
+			for (int i = 0; i < colors.GetLength(0); i++)
+			{
+				colors[i, 1].a = (float)tweenArguments["alpha"];
+			}
+		}
+	}
+
+	void GenerateAudioToTargets()
+	{
+		//values holder [0] from, [1] to, [2] calculated value from ease equation:
+		vector2s = new Vector2[3];
+
+		//set audioSource:
+		if (tweenArguments.Contains("audiosource"))
+		{
+			audioSource = (AudioSource)tweenArguments["audiosource"];
+		}
+		else
+		{
+			if (GetComponent(typeof(AudioSource)))
+			{
+				audioSource = audio;
+			}
+			else
+			{
+				//throw error if no AudioSource is available:
+				Debug.LogError("iTween Error: AudioTo requires an AudioSource.");
+				Dispose();
+			}
+		}
+
+		//from values and default to values:
+		vector2s[0] = vector2s[1] = new Vector2(audioSource.volume, audioSource.pitch);
+
+		//to values:
+		if (tweenArguments.Contains("volume"))
+		{
+			vector2s[1].x = (float)tweenArguments["volume"];
+		}
+		if (tweenArguments.Contains("pitch"))
+		{
+			vector2s[1].y = (float)tweenArguments["pitch"];
+		}
+	}
+
+	void GenerateStabTargets()
+	{
+		//set audioSource:
+		if (tweenArguments.Contains("audiosource"))
+		{
+			audioSource = (AudioSource)tweenArguments["audiosource"];
+		}
+		else
+		{
+			if (GetComponent(typeof(AudioSource)))
+			{
+				audioSource = audio;
+			}
+			else
+			{
+				//add and populate AudioSource if one doesn't exist:
+				gameObject.AddComponent(typeof(AudioSource));
+				audioSource = audio;
+				audioSource.playOnAwake = false;
+
+			}
+		}
+
+		//populate audioSource's clip:
+		audioSource.clip = (AudioClip)tweenArguments["audioclip"];
+
+		//set audio's pitch and volume if requested:
+		if (tweenArguments.Contains("pitch"))
+		{
+			audioSource.pitch = (float)tweenArguments["pitch"];
+		}
+		if (tweenArguments.Contains("volume"))
+		{
+			audioSource.volume = (float)tweenArguments["volume"];
+		}
+
+		//set run time based on length of clip after pitch is augmented
+		time = audioSource.clip.length / audioSource.pitch;
+	}
+
+	void GenerateLookToTargets()
+	{
+		//values holder [0] from, [1] to, [2] calculated value from ease equation:
+		vector3s = new Vector3[3];
+
+		//from values:
+		vector3s[0] = transform.eulerAngles;
+
+		//set look:
+		if (tweenArguments.Contains("looktarget"))
+		{
+			if (tweenArguments["looktarget"].GetType() == typeof(Transform))
+			{
+				//Transform.LookAt((Transform)tweenArguments["looktarget"]);
+				transform.LookAt((Transform)tweenArguments["looktarget"], (Vector3?)tweenArguments["up"] ?? Defaults.up);
+			}
+			else if (tweenArguments["looktarget"].GetType() == typeof(Vector3))
+			{
+				//Transform.LookAt((Vector3)tweenArguments["looktarget"]);
+				transform.LookAt((Vector3)tweenArguments["looktarget"], (Vector3?)tweenArguments["up"] ?? Defaults.up);
+			}
+		}
+		else
+		{
+			Debug.LogError("iTween Error: LookTo needs a 'looktarget' property!");
+			Dispose();
+		}
+
+		//to values:
+		vector3s[1] = transform.eulerAngles;
+		transform.eulerAngles = vector3s[0];
+
+		//axis restriction:
+		if (tweenArguments.Contains("axis"))
+		{
+			switch ((string)tweenArguments["axis"])
+			{
+				case "x":
+					vector3s[1].y = vector3s[0].y;
+					vector3s[1].z = vector3s[0].z;
+					break;
+				case "y":
+					vector3s[1].x = vector3s[0].x;
+					vector3s[1].z = vector3s[0].z;
+					break;
+				case "z":
+					vector3s[1].x = vector3s[0].x;
+					vector3s[1].y = vector3s[0].y;
+					break;
+			}
+		}
+
+		//shortest distance:
+		vector3s[1] = new Vector3(clerp(vector3s[0].x, vector3s[1].x, 1), clerp(vector3s[0].y, vector3s[1].y, 1), clerp(vector3s[0].z, vector3s[1].z, 1));
+
+		//need for speed?
+		if (tweenArguments.Contains("speed"))
+		{
+			float distance = Math.Abs(Vector3.Distance(vector3s[0], vector3s[1]));
+			time = distance / (float)tweenArguments["speed"];
+		}
+	}
+
+	void GenerateMoveToPathTargets()
+	{
+		Vector3[] suppliedPath;
+
+		//create and store path points:
+		if (tweenArguments["path"].GetType() == typeof(Vector3[]))
+		{
+			Vector3[] temp = (Vector3[])tweenArguments["path"];
+			//if only one point is supplied fall back to MoveTo's traditional use since we can't have a curve with one value:
+			if (temp.Length == 1)
+			{
+				Debug.LogError("iTween Error: Attempting a path movement with MoveTo requires an array of more than 1 entry!");
+				Dispose();
+			}
+			suppliedPath = new Vector3[temp.Length];
+			Array.Copy(temp, suppliedPath, temp.Length);
+		}
+		else
+		{
+			Transform[] temp = (Transform[])tweenArguments["path"];
+			//if only one point is supplied fall back to MoveTo's traditional use since we can't have a curve with one value:
+			if (temp.Length == 1)
+			{
+				Debug.LogError("iTween Error: Attempting a path movement with MoveTo requires an array of more than 1 entry!");
+				Dispose();
+			}
+			suppliedPath = new Vector3[temp.Length];
+			for (int i = 0; i < temp.Length; i++)
+			{
+				suppliedPath[i] = temp[i].position;
+			}
+		}
+
+		//do we need to plot a path to get to the beginning of the supplied path?		
+		bool plotStart;
+		int offset;
+		if (transform.position != suppliedPath[0])
+		{
+			if (!tweenArguments.Contains("movetopath") || (bool)tweenArguments["movetopath"] == true)
+			{
+				plotStart = true;
+				offset = 3;
+			}
+			else
+			{
+				plotStart = false;
+				offset = 2;
+			}
+		}
+		else
+		{
+			plotStart = false;
+			offset = 2;
+		}
+
+		//build calculated path:
+		vector3s = new Vector3[suppliedPath.Length + offset];
+		if (plotStart)
+		{
+			vector3s[1] = transform.position;
+			offset = 2;
+		}
+		else
+		{
+			offset = 1;
+		}
+
+		//populate calculate path;
+		Array.Copy(suppliedPath, 0, vector3s, offset, suppliedPath.Length);
+
+		//populate start and end control points:
+		//vector3s[0] = vector3s[1] - vector3s[2];
+		vector3s[0] = vector3s[1] + (vector3s[1] - vector3s[2]);
+		vector3s[vector3s.Length - 1] = vector3s[vector3s.Length - 2] + (vector3s[vector3s.Length - 2] - vector3s[vector3s.Length - 3]);
+
+		//is this a closed, continuous loop? yes? well then so let's make a continuous Catmull-Rom spline!
+		if (vector3s[1] == vector3s[vector3s.Length - 2])
+		{
+			Vector3[] tmpLoopSpline = new Vector3[vector3s.Length];
+			Array.Copy(vector3s, tmpLoopSpline, vector3s.Length);
+			tmpLoopSpline[0] = tmpLoopSpline[tmpLoopSpline.Length - 3];
+			tmpLoopSpline[tmpLoopSpline.Length - 1] = tmpLoopSpline[2];
+			vector3s = new Vector3[tmpLoopSpline.Length];
+			Array.Copy(tmpLoopSpline, vector3s, tmpLoopSpline.Length);
+		}
+
+		//create Catmull-Rom path:
+		path = new CRSpline(vector3s);
+
+		//need for speed?
+		if (tweenArguments.Contains("speed"))
+		{
+			float distance = PathLength(vector3s);
+			time = distance / (float)tweenArguments["speed"];
+		}
+	}
+
+	void GenerateMoveToTargets()
+	{
+		//values holder [0] from, [1] to, [2] calculated value from ease equation:
+		vector3s = new Vector3[3];
+
+		//from values:
+		if (isLocal)
+		{
+			vector3s[0] = vector3s[1] = transform.localPosition;
+		}
+		else
+		{
+			vector3s[0] = vector3s[1] = transform.position;
+		}
+
+		//to values:
+		if (tweenArguments.Contains("position"))
+		{
+			if (tweenArguments["position"].GetType() == typeof(Transform))
+			{
+				Transform trans = (Transform)tweenArguments["position"];
+				vector3s[1] = trans.position;
+			}
+			else if (tweenArguments["position"].GetType() == typeof(Vector3))
+			{
+				vector3s[1] = (Vector3)tweenArguments["position"];
+			}
+		}
+		else
+		{
+			if (tweenArguments.Contains("x"))
+			{
+				vector3s[1].x = (float)tweenArguments["x"];
+			}
+			if (tweenArguments.Contains("y"))
+			{
+				vector3s[1].y = (float)tweenArguments["y"];
+			}
+			if (tweenArguments.Contains("z"))
+			{
+				vector3s[1].z = (float)tweenArguments["z"];
+			}
+		}
+
+		//handle orient to path request:
+		if (tweenArguments.Contains("orienttopath") && (bool)tweenArguments["orienttopath"])
+		{
+			tweenArguments["looktarget"] = vector3s[1];
+		}
+
+		//need for speed?
+		if (tweenArguments.Contains("speed"))
+		{
+			float distance = Math.Abs(Vector3.Distance(vector3s[0], vector3s[1]));
+			time = distance / (float)tweenArguments["speed"];
+		}
+	}
+
+	void GenerateMoveByTargets()
+	{
+		//values holder [0] from, [1] to, [2] calculated value from ease equation, [3] previous value for Translate usage to allow Space utilization, [4] original rotation to make sure look requests don't interfere with the direction object should move in, [5] for dial in location:
+		vector3s = new Vector3[6];
+
+		//grab starting rotation:
+		vector3s[4] = transform.eulerAngles;
+
+		//from values:
+		vector3s[0] = vector3s[1] = vector3s[3] = transform.position;
+
+		//to values:
+		if (tweenArguments.Contains("amount"))
+		{
+			vector3s[1] = vector3s[0] + (Vector3)tweenArguments["amount"];
+		}
+		else
+		{
+			if (tweenArguments.Contains("x"))
+			{
+				vector3s[1].x = vector3s[0].x + (float)tweenArguments["x"];
+			}
+			if (tweenArguments.Contains("y"))
+			{
+				vector3s[1].y = vector3s[0].y + (float)tweenArguments["y"];
+			}
+			if (tweenArguments.Contains("z"))
+			{
+				vector3s[1].z = vector3s[0].z + (float)tweenArguments["z"];
+			}
+		}
+
+		//calculation for dial in:
+		transform.Translate(vector3s[1], space);
+		vector3s[5] = transform.position;
+		transform.position = vector3s[0];
+
+		//handle orient to path request:
+		if (tweenArguments.Contains("orienttopath") && (bool)tweenArguments["orienttopath"])
+		{
+			tweenArguments["looktarget"] = vector3s[1];
+		}
+
+		//need for speed?
+		if (tweenArguments.Contains("speed"))
+		{
+			float distance = Math.Abs(Vector3.Distance(vector3s[0], vector3s[1]));
+			time = distance / (float)tweenArguments["speed"];
+		}
+	}
+
+	void GenerateScaleToTargets()
+	{
+		//values holder [0] from, [1] to, [2] calculated value from ease equation:
+		vector3s = new Vector3[3];
+
+		//from values:
+		vector3s[0] = vector3s[1] = transform.localScale;
+
+		//to values:
+		if (tweenArguments.Contains("scale"))
+		{
+			if (tweenArguments["scale"].GetType() == typeof(Transform))
+			{
+				Transform trans = (Transform)tweenArguments["scale"];
+				vector3s[1] = trans.localScale;
+			}
+			else if (tweenArguments["scale"].GetType() == typeof(Vector3))
+			{
+				vector3s[1] = (Vector3)tweenArguments["scale"];
+			}
+		}
+		else
+		{
+			if (tweenArguments.Contains("x"))
+			{
+				vector3s[1].x = (float)tweenArguments["x"];
+			}
+			if (tweenArguments.Contains("y"))
+			{
+				vector3s[1].y = (float)tweenArguments["y"];
+			}
+			if (tweenArguments.Contains("z"))
+			{
+				vector3s[1].z = (float)tweenArguments["z"];
+			}
+		}
+
+		//need for speed?
+		if (tweenArguments.Contains("speed"))
+		{
+			float distance = Math.Abs(Vector3.Distance(vector3s[0], vector3s[1]));
+			time = distance / (float)tweenArguments["speed"];
+		}
+	}
+
+	void GenerateScaleByTargets()
+	{
+		//values holder [0] from, [1] to, [2] calculated value from ease equation:
+		vector3s = new Vector3[3];
+
+		//from values:
+		vector3s[0] = vector3s[1] = transform.localScale;
+
+		//to values:
+		if (tweenArguments.Contains("amount"))
+		{
+			vector3s[1] = Vector3.Scale(vector3s[1], (Vector3)tweenArguments["amount"]);
+		}
+		else
+		{
+			if (tweenArguments.Contains("x"))
+			{
+				vector3s[1].x *= (float)tweenArguments["x"];
+			}
+			if (tweenArguments.Contains("y"))
+			{
+				vector3s[1].y *= (float)tweenArguments["y"];
+			}
+			if (tweenArguments.Contains("z"))
+			{
+				vector3s[1].z *= (float)tweenArguments["z"];
+			}
+		}
+
+		//need for speed?
+		if (tweenArguments.Contains("speed"))
+		{
+			float distance = Math.Abs(Vector3.Distance(vector3s[0], vector3s[1]));
+			time = distance / (float)tweenArguments["speed"];
+		}
+	}
+
+	void GenerateScaleAddTargets()
+	{
+		//values holder [0] from, [1] to, [2] calculated value from ease equation:
+		vector3s = new Vector3[3];
+
+		//from values:
+		vector3s[0] = vector3s[1] = transform.localScale;
+
+		//to values:
+		if (tweenArguments.Contains("amount"))
+		{
+			vector3s[1] += (Vector3)tweenArguments["amount"];
+		}
+		else
+		{
+			if (tweenArguments.Contains("x"))
+			{
+				vector3s[1].x += (float)tweenArguments["x"];
+			}
+			if (tweenArguments.Contains("y"))
+			{
+				vector3s[1].y += (float)tweenArguments["y"];
+			}
+			if (tweenArguments.Contains("z"))
+			{
+				vector3s[1].z += (float)tweenArguments["z"];
+			}
+		}
+
+		//need for speed?
+		if (tweenArguments.Contains("speed"))
+		{
+			float distance = Math.Abs(Vector3.Distance(vector3s[0], vector3s[1]));
+			time = distance / (float)tweenArguments["speed"];
+		}
+	}
+
+	void GenerateRotateToTargets()
+	{
+		//values holder [0] from, [1] to, [2] calculated value from ease equation:
+		vector3s = new Vector3[3];
+
+		//from values:
+		if (isLocal)
+		{
+			vector3s[0] = vector3s[1] = transform.localEulerAngles;
+		}
+		else
+		{
+			vector3s[0] = vector3s[1] = transform.eulerAngles;
+		}
+
+		//to values:
+		if (tweenArguments.Contains("rotation"))
+		{
+			if (tweenArguments["rotation"].GetType() == typeof(Transform))
+			{
+				Transform trans = (Transform)tweenArguments["rotation"];
+				vector3s[1] = trans.eulerAngles;
+			}
+			else if (tweenArguments["rotation"].GetType() == typeof(Vector3))
+			{
+				vector3s[1] = (Vector3)tweenArguments["rotation"];
+			}
+		}
+		else
+		{
+			if (tweenArguments.Contains("x"))
+			{
+				vector3s[1].x = (float)tweenArguments["x"];
+			}
+			if (tweenArguments.Contains("y"))
+			{
+				vector3s[1].y = (float)tweenArguments["y"];
+			}
+			if (tweenArguments.Contains("z"))
+			{
+				vector3s[1].z = (float)tweenArguments["z"];
+			}
+		}
+
+		//shortest distance:
+		vector3s[1] = new Vector3(clerp(vector3s[0].x, vector3s[1].x, 1), clerp(vector3s[0].y, vector3s[1].y, 1), clerp(vector3s[0].z, vector3s[1].z, 1));
+
+		//need for speed?
+		if (tweenArguments.Contains("speed"))
+		{
+			float distance = Math.Abs(Vector3.Distance(vector3s[0], vector3s[1]));
+			time = distance / (float)tweenArguments["speed"];
+		}
+	}
+
+	void GenerateRotateAddTargets()
+	{
+		//values holder [0] from, [1] to, [2] calculated value from ease equation, [3] previous value for Rotate usage to allow Space utilization:
+		vector3s = new Vector3[5];
+
+		//from values:
+		vector3s[0] = vector3s[1] = vector3s[3] = transform.eulerAngles;
+
+		//to values:
+		if (tweenArguments.Contains("amount"))
+		{
+			vector3s[1] += (Vector3)tweenArguments["amount"];
+		}
+		else
+		{
+			if (tweenArguments.Contains("x"))
+			{
+				vector3s[1].x += (float)tweenArguments["x"];
+			}
+			if (tweenArguments.Contains("y"))
+			{
+				vector3s[1].y += (float)tweenArguments["y"];
+			}
+			if (tweenArguments.Contains("z"))
+			{
+				vector3s[1].z += (float)tweenArguments["z"];
+			}
+		}
+
+		//need for speed?
+		if (tweenArguments.Contains("speed"))
+		{
+			float distance = Math.Abs(Vector3.Distance(vector3s[0], vector3s[1]));
+			time = distance / (float)tweenArguments["speed"];
+		}
+	}
+
+	void GenerateRotateByTargets()
+	{
+		//values holder [0] from, [1] to, [2] calculated value from ease equation, [3] previous value for Rotate usage to allow Space utilization:
+		vector3s = new Vector3[4];
+
+		//from values:
+		vector3s[0] = vector3s[1] = vector3s[3] = transform.eulerAngles;
+
+		//to values:
+		if (tweenArguments.Contains("amount"))
+		{
+			vector3s[1] += Vector3.Scale((Vector3)tweenArguments["amount"], new Vector3(360, 360, 360));
+		}
+		else
+		{
+			if (tweenArguments.Contains("x"))
+			{
+				vector3s[1].x += 360 * (float)tweenArguments["x"];
+			}
+			if (tweenArguments.Contains("y"))
+			{
+				vector3s[1].y += 360 * (float)tweenArguments["y"];
+			}
+			if (tweenArguments.Contains("z"))
+			{
+				vector3s[1].z += 360 * (float)tweenArguments["z"];
+			}
+		}
+
+		//need for speed?
+		if (tweenArguments.Contains("speed"))
+		{
+			float distance = Math.Abs(Vector3.Distance(vector3s[0], vector3s[1]));
+			time = distance / (float)tweenArguments["speed"];
+		}
+	}
+
+	void GenerateShakePositionTargets()
+	{
+		//values holder [0] from, [1] to, [2] calculated value from ease equation, [3] original rotation to make sure look requests don't interfere with the direction object should move in:
+		vector3s = new Vector3[4];
+
+		//grab starting rotation:
+		vector3s[3] = transform.eulerAngles;
+
+		//root:
+		vector3s[0] = transform.position;
+
+		//amount:
+		if (tweenArguments.Contains("amount"))
+		{
+			vector3s[1] = (Vector3)tweenArguments["amount"];
+		}
+		else
+		{
+			if (tweenArguments.Contains("x"))
+			{
+				vector3s[1].x = (float)tweenArguments["x"];
+			}
+			if (tweenArguments.Contains("y"))
+			{
+				vector3s[1].y = (float)tweenArguments["y"];
+			}
+			if (tweenArguments.Contains("z"))
+			{
+				vector3s[1].z = (float)tweenArguments["z"];
+			}
+		}
+	}
+
+	void GenerateShakeScaleTargets()
+	{
+		//values holder [0] root value, [1] amount, [2] generated amount:
+		vector3s = new Vector3[3];
+
+		//root:
+		vector3s[0] = transform.localScale;
+
+		//amount:
+		if (tweenArguments.Contains("amount"))
+		{
+			vector3s[1] = (Vector3)tweenArguments["amount"];
+		}
+		else
+		{
+			if (tweenArguments.Contains("x"))
+			{
+				vector3s[1].x = (float)tweenArguments["x"];
+			}
+			if (tweenArguments.Contains("y"))
+			{
+				vector3s[1].y = (float)tweenArguments["y"];
+			}
+			if (tweenArguments.Contains("z"))
+			{
+				vector3s[1].z = (float)tweenArguments["z"];
+			}
+		}
+	}
+
+	void GenerateShakeRotationTargets()
+	{
+		//values holder [0] root value, [1] amount, [2] generated amount:
+		vector3s = new Vector3[3];
+
+		//root:
+		vector3s[0] = transform.eulerAngles;
+
+		//amount:
+		if (tweenArguments.Contains("amount"))
+		{
+			vector3s[1] = (Vector3)tweenArguments["amount"];
+		}
+		else
+		{
+			if (tweenArguments.Contains("x"))
+			{
+				vector3s[1].x = (float)tweenArguments["x"];
+			}
+			if (tweenArguments.Contains("y"))
+			{
+				vector3s[1].y = (float)tweenArguments["y"];
+			}
+			if (tweenArguments.Contains("z"))
+			{
+				vector3s[1].z = (float)tweenArguments["z"];
+			}
+		}
+	}
+
+	void GeneratePunchPositionTargets()
+	{
+		//values holder [0] from, [1] to, [2] calculated value from ease equation, [3] previous value for Translate usage to allow Space utilization, [4] original rotation to make sure look requests don't interfere with the direction object should move in:
+		vector3s = new Vector3[5];
+
+		//grab starting rotation:
+		vector3s[4] = transform.eulerAngles;
+
+		//from values:
+		vector3s[0] = transform.position;
+		vector3s[1] = vector3s[3] = Vector3.zero;
+
+		//to values:
+		if (tweenArguments.Contains("amount"))
+		{
+			vector3s[1] = (Vector3)tweenArguments["amount"];
+		}
+		else
+		{
+			if (tweenArguments.Contains("x"))
+			{
+				vector3s[1].x = (float)tweenArguments["x"];
+			}
+			if (tweenArguments.Contains("y"))
+			{
+				vector3s[1].y = (float)tweenArguments["y"];
+			}
+			if (tweenArguments.Contains("z"))
+			{
+				vector3s[1].z = (float)tweenArguments["z"];
+			}
+		}
+	}
+
+	void GeneratePunchRotationTargets()
+	{
+		//values holder [0] from, [1] to, [2] calculated value from ease equation, [3] previous value for Translate usage to allow Space utilization:
+		vector3s = new Vector3[4];
+
+		//from values:
+		vector3s[0] = transform.eulerAngles;
+		vector3s[1] = vector3s[3] = Vector3.zero;
+
+		//to values:
+		if (tweenArguments.Contains("amount"))
+		{
+			vector3s[1] = (Vector3)tweenArguments["amount"];
+		}
+		else
+		{
+			if (tweenArguments.Contains("x"))
+			{
+				vector3s[1].x = (float)tweenArguments["x"];
+			}
+			if (tweenArguments.Contains("y"))
+			{
+				vector3s[1].y = (float)tweenArguments["y"];
+			}
+			if (tweenArguments.Contains("z"))
+			{
+				vector3s[1].z = (float)tweenArguments["z"];
+			}
+		}
+	}
+
+	void GeneratePunchScaleTargets()
+	{
+		//values holder [0] from, [1] to, [2] calculated value from ease equation:
+		vector3s = new Vector3[3];
+
+		//from values:
+		vector3s[0] = transform.localScale;
+		vector3s[1] = Vector3.zero;
+
+		//to values:
+		if (tweenArguments.Contains("amount"))
+		{
+			vector3s[1] = (Vector3)tweenArguments["amount"];
+		}
+		else
+		{
+			if (tweenArguments.Contains("x"))
+			{
+				vector3s[1].x = (float)tweenArguments["x"];
+			}
+			if (tweenArguments.Contains("y"))
+			{
+				vector3s[1].y = (float)tweenArguments["y"];
+			}
+			if (tweenArguments.Contains("z"))
+			{
+				vector3s[1].z = (float)tweenArguments["z"];
+			}
+		}
+	}
+
+	#endregion
+
+	#region #4 Apply Targets
+
+	void ApplyRectTargets()
+	{
+		//calculate:
+		rects[2].x = ease(rects[0].x, rects[1].x, percentage);
+		rects[2].y = ease(rects[0].y, rects[1].y, percentage);
+		rects[2].width = ease(rects[0].width, rects[1].width, percentage);
+		rects[2].height = ease(rects[0].height, rects[1].height, percentage);
+
+		//apply:
+		tweenArguments["onupdateparams"] = rects[2];
+
+		//dial in:
+		if (percentage == 1)
+		{
+			tweenArguments["onupdateparams"] = rects[1];
+		}
+	}
+
+	void ApplyColorTargets()
+	{
+		//calculate:
+		colors[0, 2].r = ease(colors[0, 0].r, colors[0, 1].r, percentage);
+		colors[0, 2].g = ease(colors[0, 0].g, colors[0, 1].g, percentage);
+		colors[0, 2].b = ease(colors[0, 0].b, colors[0, 1].b, percentage);
+		colors[0, 2].a = ease(colors[0, 0].a, colors[0, 1].a, percentage);
+
+		//apply:
+		tweenArguments["onupdateparams"] = colors[0, 2];
+
+		//dial in:
+		if (percentage == 1)
+		{
+			tweenArguments["onupdateparams"] = colors[0, 1];
+		}
+	}
+
+	void ApplyVector3Targets()
+	{
+		//calculate:
+		vector3s[2].x = ease(vector3s[0].x, vector3s[1].x, percentage);
+		vector3s[2].y = ease(vector3s[0].y, vector3s[1].y, percentage);
+		vector3s[2].z = ease(vector3s[0].z, vector3s[1].z, percentage);
+
+		//apply:
+		tweenArguments["onupdateparams"] = vector3s[2];
+
+		//dial in:
+		if (percentage == 1)
+		{
+			tweenArguments["onupdateparams"] = vector3s[1];
+		}
+	}
+
+	void ApplyVector2Targets()
+	{
+		//calculate:
+		vector2s[2].x = ease(vector2s[0].x, vector2s[1].x, percentage);
+		vector2s[2].y = ease(vector2s[0].y, vector2s[1].y, percentage);
+
+		//apply:
+		tweenArguments["onupdateparams"] = vector2s[2];
+
+		//dial in:
+		if (percentage == 1)
+		{
+			tweenArguments["onupdateparams"] = vector2s[1];
+		}
+	}
+
+	void ApplyFloatTargets()
+	{
+		//calculate:
+		floats[2] = ease(floats[0], floats[1], percentage);
+
+		//apply:
+		tweenArguments["onupdateparams"] = floats[2];
+
+		//dial in:
+		if (percentage == 1)
+		{
+			tweenArguments["onupdateparams"] = floats[1];
+		}
+	}
+
+	void ApplyColorToTargets()
+	{
+		//calculate:
+		for (int i = 0; i < colors.GetLength(0); i++)
+		{
+			colors[i, 2].r = ease(colors[i, 0].r, colors[i, 1].r, percentage);
+			colors[i, 2].g = ease(colors[i, 0].g, colors[i, 1].g, percentage);
+			colors[i, 2].b = ease(colors[i, 0].b, colors[i, 1].b, percentage);
+			colors[i, 2].a = ease(colors[i, 0].a, colors[i, 1].a, percentage);
+		}
+		/*
+		colors[2].r = ease(colors[0].r,colors[1].r,percentage);
+		colors[2].g = ease(colors[0].g,colors[1].g,percentage);
+		colors[2].b = ease(colors[0].b,colors[1].b,percentage);
+		colors[2].a = ease(colors[0].a,colors[1].a,percentage);
+		*/
+
+		//apply:
+		if (GetComponent(typeof(GUITexture)))
+		{
+			//guiTexture.color=colors[2];
+			guiTexture.color = colors[0, 2];
+		}
+		else if (GetComponent(typeof(GUIText)))
+		{
+			//guiText.material.color=colors[2];
+			guiText.material.color = colors[0, 2];
+		}
+		else if (renderer)
+		{
+			//renderer.material.color=colors[2];
+			for (int i = 0; i < colors.GetLength(0); i++)
+			{
+				renderer.materials[i].SetColor(namedcolorvalue.ToString(), colors[i, 2]);
+			}
+		}
+		else if (light)
+		{
+			//light.color=colors[2];	
+			light.color = colors[0, 2];
+		}
+
+		//dial in:
+		if (percentage == 1)
+		{
+			if (GetComponent(typeof(GUITexture)))
+			{
+				//guiTexture.color=colors[1];
+				guiTexture.color = colors[0, 1];
+			}
+			else if (GetComponent(typeof(GUIText)))
+			{
+				//guiText.material.color=colors[1];
+				guiText.material.color = colors[0, 1];
+			}
+			else if (renderer)
+			{
+				//renderer.material.color=colors[1];	
+				for (int i = 0; i < colors.GetLength(0); i++)
+				{
+					renderer.materials[i].SetColor(namedcolorvalue.ToString(), colors[i, 1]);
+				}
+			}
+			else if (light)
+			{
+				//light.color=colors[1];	
+				light.color = colors[0, 1];
+			}
+		}
+	}
+
+	void ApplyAudioToTargets()
+	{
+		//calculate:
+		vector2s[2].x = ease(vector2s[0].x, vector2s[1].x, percentage);
+		vector2s[2].y = ease(vector2s[0].y, vector2s[1].y, percentage);
+
+		//apply:
+		audioSource.volume = vector2s[2].x;
+		audioSource.pitch = vector2s[2].y;
+
+		//dial in:
+		if (percentage == 1)
+		{
+			audioSource.volume = vector2s[1].x;
+			audioSource.pitch = vector2s[1].y;
+		}
+	}
+
+	void ApplyStabTargets()
+	{
+		//unnecessary but here just in case
+	}
+
+	void ApplyMoveToPathTargets()
+	{
+		preUpdate = transform.position;
+		float t = ease(0, 1, percentage);
+		float lookAheadAmount;
+
+		//clamp easing equation results as "back" will fail since overshoots aren't handled in the Catmull-Rom interpolation:
+		if (isLocal)
+		{
+			transform.localPosition = path.Interp(Mathf.Clamp(t, 0, 1));
+		}
+		else
+		{
+			transform.position = path.Interp(Mathf.Clamp(t, 0, 1));
+		}
+
+		//handle orient to path request:
+		if (tweenArguments.Contains("orienttopath") && (bool)tweenArguments["orienttopath"])
+		{
+
+			//plot a point slightly ahead in the interpolation by pushing the percentage forward using the default lookahead value:
+			float tLook;
+			if (tweenArguments.Contains("lookahead"))
+			{
+				lookAheadAmount = (float)tweenArguments["lookahead"];
+			}
+			else
+			{
+				lookAheadAmount = Defaults.lookAhead;
+			}
+			//tLook = ease(0,1,percentage+lookAheadAmount);			
+			tLook = ease(0, 1, Mathf.Min(1f, percentage + lookAheadAmount));
+
+			//locate new leading point with a clamp as stated above:
+			//Vector3 lookDistance = path.Interp(Mathf.Clamp(tLook,0,1)) - Transform.position;
+			tweenArguments["looktarget"] = path.Interp(Mathf.Clamp(tLook, 0, 1));
+		}
+
+		//need physics?
+		postUpdate = transform.position;
+		if (physics)
+		{
+			transform.position = preUpdate;
+			rigidbody.MovePosition(postUpdate);
+		}
+	}
+
+	void ApplyMoveToTargets()
+	{
+		//record current:
+		preUpdate = transform.position;
+
+		//calculate:
+		vector3s[2].x = ease(vector3s[0].x, vector3s[1].x, percentage);
+		vector3s[2].y = ease(vector3s[0].y, vector3s[1].y, percentage);
+		vector3s[2].z = ease(vector3s[0].z, vector3s[1].z, percentage);
+
+		//apply:	
+		if (isLocal)
+		{
+			transform.localPosition = vector3s[2];
+		}
+		else
+		{
+			transform.position = vector3s[2];
+		}
+
+		//dial in:
+		if (percentage == 1)
+		{
+			if (isLocal)
+			{
+				transform.localPosition = vector3s[1];
+			}
+			else
+			{
+				transform.position = vector3s[1];
+			}
+		}
+
+		//need physics?
+		postUpdate = transform.position;
+		if (physics)
+		{
+			transform.position = preUpdate;
+			rigidbody.MovePosition(postUpdate);
+		}
+	}
+
+	void ApplyMoveByTargets()
+	{
+		preUpdate = transform.position;
+
+		//reset rotation to prevent look interferences as object rotates and attempts to move with translate and record current rotation
+		Vector3 currentRotation = new Vector3();
+
+		if (tweenArguments.Contains("looktarget"))
+		{
+			currentRotation = transform.eulerAngles;
+			transform.eulerAngles = vector3s[4];
+		}
+
+		//calculate:
+		vector3s[2].x = ease(vector3s[0].x, vector3s[1].x, percentage);
+		vector3s[2].y = ease(vector3s[0].y, vector3s[1].y, percentage);
+		vector3s[2].z = ease(vector3s[0].z, vector3s[1].z, percentage);
+
+		//apply:
+		transform.Translate(vector3s[2] - vector3s[3], space);
+
+		//record:
+		vector3s[3] = vector3s[2];
+
+		//reset rotation:
+		if (tweenArguments.Contains("looktarget"))
+		{
+			transform.eulerAngles = currentRotation;
+		}
+
+		/*
+		//dial in:
+		if(percentage==1){	
+			Transform.position=vector3s[5];
+		}
+		*/
+
+		//need physics?
+		postUpdate = transform.position;
+		if (physics)
+		{
+			transform.position = preUpdate;
+			rigidbody.MovePosition(postUpdate);
+		}
+	}
+
+	void ApplyScaleToTargets()
+	{
+		//calculate:
+		vector3s[2].x = ease(vector3s[0].x, vector3s[1].x, percentage);
+		vector3s[2].y = ease(vector3s[0].y, vector3s[1].y, percentage);
+		vector3s[2].z = ease(vector3s[0].z, vector3s[1].z, percentage);
+
+		//apply:
+		transform.localScale = vector3s[2];
+
+		//dial in:
+		if (percentage == 1)
+		{
+			transform.localScale = vector3s[1];
+		}
+	}
+
+	void ApplyLookToTargets()
+	{
+		//calculate:
+		vector3s[2].x = ease(vector3s[0].x, vector3s[1].x, percentage);
+		vector3s[2].y = ease(vector3s[0].y, vector3s[1].y, percentage);
+		vector3s[2].z = ease(vector3s[0].z, vector3s[1].z, percentage);
+
+		//apply:
+		if (isLocal)
+		{
+			transform.localRotation = Quaternion.Euler(vector3s[2]);
+		}
+		else
+		{
+			transform.rotation = Quaternion.Euler(vector3s[2]);
+		};
+	}
+
+	void ApplyRotateToTargets()
+	{
+		preUpdate = transform.eulerAngles;
+
+		//calculate:
+		vector3s[2].x = ease(vector3s[0].x, vector3s[1].x, percentage);
+		vector3s[2].y = ease(vector3s[0].y, vector3s[1].y, percentage);
+		vector3s[2].z = ease(vector3s[0].z, vector3s[1].z, percentage);
+
+		//apply:
+		if (isLocal)
+		{
+			transform.localRotation = Quaternion.Euler(vector3s[2]);
+		}
+		else
+		{
+			transform.rotation = Quaternion.Euler(vector3s[2]);
+		};
+
+		//dial in:
+		if (percentage == 1)
+		{
+			if (isLocal)
+			{
+				transform.localRotation = Quaternion.Euler(vector3s[1]);
+			}
+			else
+			{
+				transform.rotation = Quaternion.Euler(vector3s[1]);
+			};
+		}
+
+		//need physics?
+		postUpdate = transform.eulerAngles;
+		if (physics)
+		{
+			transform.eulerAngles = preUpdate;
+			rigidbody.MoveRotation(Quaternion.Euler(postUpdate));
+		}
+	}
+
+	void ApplyRotateAddTargets()
+	{
+		preUpdate = transform.eulerAngles;
+
+		//calculate:
+		vector3s[2].x = ease(vector3s[0].x, vector3s[1].x, percentage);
+		vector3s[2].y = ease(vector3s[0].y, vector3s[1].y, percentage);
+		vector3s[2].z = ease(vector3s[0].z, vector3s[1].z, percentage);
+
+		//apply:
+		transform.Rotate(vector3s[2] - vector3s[3], space);
+
+		//record:
+		vector3s[3] = vector3s[2];
+
+		//need physics?
+		postUpdate = transform.eulerAngles;
+		if (physics)
+		{
+			transform.eulerAngles = preUpdate;
+			rigidbody.MoveRotation(Quaternion.Euler(postUpdate));
+		}
+	}
+
+	void ApplyShakePositionTargets()
+	{
+		//preUpdate = Transform.position;
+		if (isLocal)
+		{
+			preUpdate = transform.localPosition;
+		}
+		else
+		{
+			preUpdate = transform.position;
+		}
+
+		//reset rotation to prevent look interferences as object rotates and attempts to move with translate and record current rotation
+		Vector3 currentRotation = new Vector3();
+
+		if (tweenArguments.Contains("looktarget"))
+		{
+			currentRotation = transform.eulerAngles;
+			transform.eulerAngles = vector3s[3];
+		}
+
+		//impact:
+		if (percentage == 0)
+		{
+			transform.Translate(vector3s[1], space);
+		}
+
+		//Transform.position=vector3s[0];
+		//reset:
+		if (isLocal)
+		{
+			transform.localPosition = vector3s[0];
+		}
+		else
+		{
+			transform.position = vector3s[0];
+		}
+
+		//generate:
+		float diminishingControl = 1 - percentage;
+		vector3s[2].x = UnityEngine.Random.Range(-vector3s[1].x * diminishingControl, vector3s[1].x * diminishingControl);
+		vector3s[2].y = UnityEngine.Random.Range(-vector3s[1].y * diminishingControl, vector3s[1].y * diminishingControl);
+		vector3s[2].z = UnityEngine.Random.Range(-vector3s[1].z * diminishingControl, vector3s[1].z * diminishingControl);
+
+		//apply:	
+		//Transform.Translate(vector3s[2],space);	
+		if (isLocal)
+		{
+			transform.localPosition += vector3s[2];
+		}
+		else
+		{
+			transform.position += vector3s[2];
+		}
+
+		//reset rotation:
+		if (tweenArguments.Contains("looktarget"))
+		{
+			transform.eulerAngles = currentRotation;
+		}
+
+		//need physics?
+		postUpdate = transform.position;
+		if (physics)
+		{
+			transform.position = preUpdate;
+			rigidbody.MovePosition(postUpdate);
+		}
+	}
+
+	void ApplyShakeScaleTargets()
+	{
+		//impact:
+		if (percentage == 0)
+		{
+			transform.localScale = vector3s[1];
+		}
+
+		//reset:
+		transform.localScale = vector3s[0];
+
+		//generate:
+		float diminishingControl = 1 - percentage;
+		vector3s[2].x = UnityEngine.Random.Range(-vector3s[1].x * diminishingControl, vector3s[1].x * diminishingControl);
+		vector3s[2].y = UnityEngine.Random.Range(-vector3s[1].y * diminishingControl, vector3s[1].y * diminishingControl);
+		vector3s[2].z = UnityEngine.Random.Range(-vector3s[1].z * diminishingControl, vector3s[1].z * diminishingControl);
+
+		//apply:
+		transform.localScale += vector3s[2];
+	}
+
+	void ApplyShakeRotationTargets()
+	{
+		preUpdate = transform.eulerAngles;
+
+		//impact:
+		if (percentage == 0)
+		{
+			transform.Rotate(vector3s[1], space);
+		}
+
+		//reset:
+		transform.eulerAngles = vector3s[0];
+
+		//generate:
+		float diminishingControl = 1 - percentage;
+		vector3s[2].x = UnityEngine.Random.Range(-vector3s[1].x * diminishingControl, vector3s[1].x * diminishingControl);
+		vector3s[2].y = UnityEngine.Random.Range(-vector3s[1].y * diminishingControl, vector3s[1].y * diminishingControl);
+		vector3s[2].z = UnityEngine.Random.Range(-vector3s[1].z * diminishingControl, vector3s[1].z * diminishingControl);
+
+		//apply:
+		transform.Rotate(vector3s[2], space);
+
+		//need physics?
+		postUpdate = transform.eulerAngles;
+		if (physics)
+		{
+			transform.eulerAngles = preUpdate;
+			rigidbody.MoveRotation(Quaternion.Euler(postUpdate));
+		}
+	}
+
+	void ApplyPunchPositionTargets()
+	{
+		preUpdate = transform.position;
+
+		//reset rotation to prevent look interferences as object rotates and attempts to move with translate and record current rotation
+		Vector3 currentRotation = new Vector3();
+
+		if (tweenArguments.Contains("looktarget"))
+		{
+			currentRotation = transform.eulerAngles;
+			transform.eulerAngles = vector3s[4];
+		}
+
+		//calculate:
+		if (vector3s[1].x > 0)
+		{
+			vector3s[2].x = punch(vector3s[1].x, percentage);
+		}
+		else if (vector3s[1].x < 0)
+		{
+			vector3s[2].x = -punch(Mathf.Abs(vector3s[1].x), percentage);
+		}
+		if (vector3s[1].y > 0)
+		{
+			vector3s[2].y = punch(vector3s[1].y, percentage);
+		}
+		else if (vector3s[1].y < 0)
+		{
+			vector3s[2].y = -punch(Mathf.Abs(vector3s[1].y), percentage);
+		}
+		if (vector3s[1].z > 0)
+		{
+			vector3s[2].z = punch(vector3s[1].z, percentage);
+		}
+		else if (vector3s[1].z < 0)
+		{
+			vector3s[2].z = -punch(Mathf.Abs(vector3s[1].z), percentage);
+		}
+
+		//apply:
+		transform.Translate(vector3s[2] - vector3s[3], space);
+
+		//record:
+		vector3s[3] = vector3s[2];
+
+		//reset rotation:
+		if (tweenArguments.Contains("looktarget"))
+		{
+			transform.eulerAngles = currentRotation;
+		}
+
+		//dial in:
+		/*
+		if(percentage==1){	
+			Transform.position=vector3s[0];
+		}
+		*/
+
+		//need physics?
+		postUpdate = transform.position;
+		if (physics)
+		{
+			transform.position = preUpdate;
+			rigidbody.MovePosition(postUpdate);
+		}
+	}
+
+	void ApplyPunchRotationTargets()
+	{
+		preUpdate = transform.eulerAngles;
+
+		//calculate:
+		if (vector3s[1].x > 0)
+		{
+			vector3s[2].x = punch(vector3s[1].x, percentage);
+		}
+		else if (vector3s[1].x < 0)
+		{
+			vector3s[2].x = -punch(Mathf.Abs(vector3s[1].x), percentage);
+		}
+		if (vector3s[1].y > 0)
+		{
+			vector3s[2].y = punch(vector3s[1].y, percentage);
+		}
+		else if (vector3s[1].y < 0)
+		{
+			vector3s[2].y = -punch(Mathf.Abs(vector3s[1].y), percentage);
+		}
+		if (vector3s[1].z > 0)
+		{
+			vector3s[2].z = punch(vector3s[1].z, percentage);
+		}
+		else if (vector3s[1].z < 0)
+		{
+			vector3s[2].z = -punch(Mathf.Abs(vector3s[1].z), percentage);
+		}
+
+		//apply:
+		transform.Rotate(vector3s[2] - vector3s[3], space);
+
+		//record:
+		vector3s[3] = vector3s[2];
+
+		//dial in:
+		/*
+		if(percentage==1){	
+			Transform.eulerAngles=vector3s[0];
+		}
+		*/
+
+		//need physics?
+		postUpdate = transform.eulerAngles;
+		if (physics)
+		{
+			transform.eulerAngles = preUpdate;
+			rigidbody.MoveRotation(Quaternion.Euler(postUpdate));
+		}
+	}
+
+	void ApplyPunchScaleTargets()
+	{
+		//calculate:
+		if (vector3s[1].x > 0)
+		{
+			vector3s[2].x = punch(vector3s[1].x, percentage);
+		}
+		else if (vector3s[1].x < 0)
+		{
+			vector3s[2].x = -punch(Mathf.Abs(vector3s[1].x), percentage);
+		}
+		if (vector3s[1].y > 0)
+		{
+			vector3s[2].y = punch(vector3s[1].y, percentage);
+		}
+		else if (vector3s[1].y < 0)
+		{
+			vector3s[2].y = -punch(Mathf.Abs(vector3s[1].y), percentage);
+		}
+		if (vector3s[1].z > 0)
+		{
+			vector3s[2].z = punch(vector3s[1].z, percentage);
+		}
+		else if (vector3s[1].z < 0)
+		{
+			vector3s[2].z = -punch(Mathf.Abs(vector3s[1].z), percentage);
+		}
+
+		//apply:
+		transform.localScale = vector3s[0] + vector3s[2];
+
+		//dial in:
+		/*
+		if(percentage==1){	
+			Transform.localScale=vector3s[0];
+		}
+		*/
+	}
+
+	#endregion
+
+	#region #5 Tween Steps
+
+	IEnumerator TweenDelay()
+	{
+		delayStarted = Time.time;
+		yield return new WaitForSeconds(delay);
+		if (wasPaused)
+		{
+			wasPaused = false;
+			TweenStart();
+		}
+	}
+
+	void TweenStart()
+	{
+		CallBack("onstart");
+
+		if (!loop)
+		{//only if this is not a loop
+			ConflictCheck();
+			GenerateTargets();
+		}
+
+		//run stab:
+		if (type == "stab")
+		{
+			audioSource.PlayOneShot(audioSource.clip);
+		}
+
+		//toggle isKinematic for iTweens that may interfere with physics:
+		if (type == "move" || type == "scale" || type == "rotate" || type == "punch" || type == "shake" || type == "curve" || type == "look")
+		{
+			EnableKinematic();
+		}
+
+		isRunning = true;
+	}
+
+	IEnumerator TweenRestart()
+	{
+		if (delay > 0)
+		{
+			delayStarted = Time.time;
+			yield return new WaitForSeconds(delay);
+		}
+		loop = true;
+		TweenStart();
+	}
+
+	void TweenUpdate()
+	{
+		apply();
+		CallBack("onupdate");
+		UpdatePercentage();
+	}
+
+	void TweenComplete()
+	{
+		isRunning = false;
+
+		//dial in percentage to 1 or 0 for final run:
+		if (percentage > .5f)
+		{
+			percentage = 1f;
+		}
+		else
+		{
+			percentage = 0;
+		}
+
+		//apply dial in and final run:
+		apply();
+		if (type == "value")
+		{
+			CallBack("onupdate"); //CallBack run for ValueTo since it only calculates and applies in the update callback
+		}
+
+		//loop or dispose?
+		if (loopType == LoopType.none)
+		{
+			Dispose();
+		}
+		else
+		{
+			TweenLoop();
+		}
+
+		CallBack("oncomplete");
+	}
+
+	void TweenLoop()
+	{
+		DisableKinematic(); //give physics control again
+		switch (loopType)
+		{
+			case LoopType.loop:
+				//rewind:
+				percentage = 0;
+				runningTime = 0;
+				apply();
+
+				//replay:
+				StartCoroutine("TweenRestart");
+				break;
+			case LoopType.pingPong:
+				reverse = !reverse;
+				runningTime = 0;
+
+				//replay:
+				StartCoroutine("TweenRestart");
+				break;
+		}
+	}
+
+	#endregion
+
+	#region #6 Update Callable
+
+	/// <summary>
+	/// Returns a Rect that is eased between a current and target value by the supplied speed.
+	/// </summary>
+	/// <returns>
+	/// A <see cref="Rect"/
+	/// </returns>
+	/// <param name='currentValue'>
+	/// A <see cref="Rect"/> the starting or initial value
+	/// </param>
+	/// <param name='targetValue'>
+	/// A <see cref="Rect"/> the target value that the current value will be eased to.
+	/// </param>
+	/// <param name='speed'>
+	/// A <see cref="System.Single"/> to be used as rate of speed (larger number equals faster animation)
+	/// </param>
+	public static Rect RectUpdate(Rect currentValue, Rect targetValue, float speed)
+	{
+		Rect diff = new Rect(FloatUpdate(currentValue.x, targetValue.x, speed), FloatUpdate(currentValue.y, targetValue.y, speed), FloatUpdate(currentValue.width, targetValue.width, speed), FloatUpdate(currentValue.height, targetValue.height, speed));
+		return (diff);
+	}
+
+	/// <summary>
+	/// Returns a Vector3 that is eased between a current and target value by the supplied speed.
+	/// </summary>
+	/// <returns>
+	/// A <see cref="Vector3"/>
+	/// </returns>
+	/// <param name='currentValue'>
+	/// A <see cref="Vector3"/> the starting or initial value
+	/// </param>
+	/// <param name='targetValue'>
+	/// A <see cref="Vector3"/> the target value that the current value will be eased to.
+	/// </param>
+	/// <param name='speed'>
+	/// A <see cref="System.Single"/> to be used as rate of speed (larger number equals faster animation)
+	/// </param>
+	public static Vector3 Vector3Update(Vector3 currentValue, Vector3 targetValue, float speed)
+	{
+		Vector3 diff = targetValue - currentValue;
+		currentValue += (diff * speed) * Time.deltaTime;
+		return (currentValue);
+	}
+
+	/// <summary>
+	/// Returns a Vector2 that is eased between a current and target value by the supplied speed.
+	/// </summary>
+	/// <returns>
+	/// A <see cref="Vector2"/>
+	/// </returns>
+	/// <param name='currentValue'>
+	/// A <see cref="Vector2"/> the starting or initial value
+	/// </param>
+	/// <param name='targetValue'>
+	/// A <see cref="Vector2"/> the target value that the current value will be eased to.
+	/// </param>
+	/// <param name='speed'>
+	/// A <see cref="System.Single"/> to be used as rate of speed (larger number equals faster animation)
+	/// </param>
+	public static Vector2 Vector2Update(Vector2 currentValue, Vector2 targetValue, float speed)
+	{
+		Vector2 diff = targetValue - currentValue;
+		currentValue += (diff * speed) * Time.deltaTime;
+		return (currentValue);
+	}
+
+	/// <summary>
+	/// Returns a float that is eased between a current and target value by the supplied speed.
+	/// </summary>
+	/// <returns>
+	/// A <see cref="System.Single"/>
+	/// </returns>
+	/// <param name='currentValue'>
+	/// A <see cref="System.Single"/> the starting or initial value
+	/// </param>
+	/// <param name='targetValue'>
+	/// A <see cref="System.Single"/> the target value that the current value will be eased to.
+	/// </param>
+	/// <param name='speed'>
+	/// A <see cref="System.Single"/> to be used as rate of speed (larger number equals faster animation)
+	/// </param>
+	public static float FloatUpdate(float currentValue, float targetValue, float speed)
+	{
+		float diff = targetValue - currentValue;
+		currentValue += (diff * speed) * Time.deltaTime;
+		return (currentValue);
+	}
+
+	/// <summary>
+	/// Similar to FadeTo but incredibly less expensive for usage inside the Update function or similar looping situations involving a "live" set of changing values with FULL customization options. Does not utilize an EaseType. 
+	/// </summary>
+	/// <param name="alpha">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the final alpha value of the animation.
+	/// </param>
+	/// <param name="includechildren">
+	/// A <see cref="System.Boolean"/> for whether or not to include children of this GameObject. True by default.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	public static void FadeUpdate(GameObject target, Hashtable args)
+	{
+		args["a"] = args["alpha"];
+		ColorUpdate(target, args);
+	}
+
+	/// <summary>
+	/// Similar to FadeTo but incredibly less expensive for usage inside the Update function or similar looping situations involving a "live" set of changing values with MINIMUM customization options. Does not utilize an EaseType. 
+	/// </summary>
+	/// <param name="target">
+	/// A <see cref="GameObject"/> to be the target of the animation.
+	/// </param>
+	/// <param name="alpha">
+	/// A <see cref="System.Single"/> for the final alpha value of the animation.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	public static void FadeUpdate(GameObject target, float alpha, float time)
+	{
+		FadeUpdate(target, Hash("alpha", alpha, "time", time));
+	}
+
+	/// <summary>
+	/// Similar to ColorTo but incredibly less expensive for usage inside the Update function or similar looping situations involving a "live" set of changing values with FULL customization options. Does not utilize an EaseType. 
+	/// </summary>
+	/// <param name="color">
+	/// A <see cref="Color"/> to change the GameObject's color to.
+	/// </param>
+	/// <param name="r">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the color red.
+	/// </param>
+	/// <param name="g">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the color green.
+	/// </param>
+	/// <param name="b">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the color green.
+	/// </param>
+	/// <param name="a">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the alpha.
+	/// </param> 
+	/// <param name="namedcolorvalue">
+	/// A <see cref="NamedColorValue"/> or <see cref="System.String"/> for the individual setting of the alpha.
+	/// </param> 
+	/// <param name="includechildren">
+	/// A <see cref="System.Boolean"/> for whether or not to include children of this GameObject. True by default.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	public static void ColorUpdate(GameObject target, Hashtable args)
+	{
+		CleanArgs(args);
+
+		float time;
+		Color[] colors = new Color[4];
+
+		//handle children:
+		if (!args.Contains("includechildren") || (bool)args["includechildren"])
+		{
+			foreach (Transform child in target.transform)
+			{
+				ColorUpdate(child.gameObject, args);
+			}
+		}
+
+		//set smooth time:
+		if (args.Contains("time"))
+		{
+			time = (float)args["time"];
+			time *= Defaults.updateTimePercentage;
+		}
+		else
+		{
+			time = Defaults.updateTime;
+		}
+
+		//init values:
+		if (target.GetComponent(typeof(GUITexture)))
+		{
+			colors[0] = colors[1] = target.guiTexture.color;
+		}
+		else if (target.GetComponent(typeof(GUIText)))
+		{
+			colors[0] = colors[1] = target.guiText.material.color;
+		}
+		else if (target.renderer)
+		{
+			colors[0] = colors[1] = target.renderer.material.color;
+		}
+		else if (target.light)
+		{
+			colors[0] = colors[1] = target.light.color;
+		}
+
+		//to values:
+		if (args.Contains("color"))
+		{
+			colors[1] = (Color)args["color"];
+		}
+		else
+		{
+			if (args.Contains("r"))
+			{
+				colors[1].r = (float)args["r"];
+			}
+			if (args.Contains("g"))
+			{
+				colors[1].g = (float)args["g"];
+			}
+			if (args.Contains("b"))
+			{
+				colors[1].b = (float)args["b"];
+			}
+			if (args.Contains("a"))
+			{
+				colors[1].a = (float)args["a"];
+			}
+		}
+
+		//calculate:
+		colors[3].r = Mathf.SmoothDamp(colors[0].r, colors[1].r, ref colors[2].r, time);
+		colors[3].g = Mathf.SmoothDamp(colors[0].g, colors[1].g, ref colors[2].g, time);
+		colors[3].b = Mathf.SmoothDamp(colors[0].b, colors[1].b, ref colors[2].b, time);
+		colors[3].a = Mathf.SmoothDamp(colors[0].a, colors[1].a, ref colors[2].a, time);
+
+		//apply:
+		if (target.GetComponent(typeof(GUITexture)))
+		{
+			target.guiTexture.color = colors[3];
+		}
+		else if (target.GetComponent(typeof(GUIText)))
+		{
+			target.guiText.material.color = colors[3];
+		}
+		else if (target.renderer)
+		{
+			target.renderer.material.color = colors[3];
+		}
+		else if (target.light)
+		{
+			target.light.color = colors[3];
+		}
+	}
+
+	/// <summary>
+	/// Similar to ColorTo but incredibly less expensive for usage inside the Update function or similar looping situations involving a "live" set of changing values with MINIMUM customization options. Does not utilize an EaseType.
+	/// </summary>
+	/// <param name="target">
+	/// A <see cref="GameObject"/> to be the target of the animation.
+	/// </param>
+	/// <param name="color">
+	/// A <see cref="Color"/> to change the GameObject's color to.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	public static void ColorUpdate(GameObject target, Color color, float time)
+	{
+		ColorUpdate(target, Hash("color", color, "time", time));
+	}
+
+	/// <summary>
+	/// Similar to AudioTo but incredibly less expensive for usage inside the Update function or similar looping situations involving a "live" set of changing values with FULL customization options. Does not utilize an EaseType. 
+	/// </summary>
+	/// <param name="audiosource">
+	/// A <see cref="AudioSource"/> for which AudioSource to use.
+	/// </param> 
+	/// <param name="volume">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the target level of volume.
+	/// </param>
+	/// <param name="pitch">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the target pitch.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	public static void AudioUpdate(GameObject target, Hashtable args)
+	{
+		CleanArgs(args);
+
+		AudioSource audioSource;
+		float time;
+		Vector2[] vector2s = new Vector2[4];
+
+		//set smooth time:
+		if (args.Contains("time"))
+		{
+			time = (float)args["time"];
+			time *= Defaults.updateTimePercentage;
+		}
+		else
+		{
+			time = Defaults.updateTime;
+		}
+
+		//set audioSource:
+		if (args.Contains("audiosource"))
+		{
+			audioSource = (AudioSource)args["audiosource"];
+		}
+		else
+		{
+			if (target.GetComponent(typeof(AudioSource)))
+			{
+				audioSource = target.audio;
+			}
+			else
+			{
+				//throw error if no AudioSource is available:
+				Debug.LogError("iTween Error: AudioUpdate requires an AudioSource.");
+				return;
+			}
+		}
+
+		//from values:
+		vector2s[0] = vector2s[1] = new Vector2(audioSource.volume, audioSource.pitch);
+
+		//set to:
+		if (args.Contains("volume"))
+		{
+			vector2s[1].x = (float)args["volume"];
+		}
+		if (args.Contains("pitch"))
+		{
+			vector2s[1].y = (float)args["pitch"];
+		}
+
+		//calculate:
+		vector2s[3].x = Mathf.SmoothDampAngle(vector2s[0].x, vector2s[1].x, ref vector2s[2].x, time);
+		vector2s[3].y = Mathf.SmoothDampAngle(vector2s[0].y, vector2s[1].y, ref vector2s[2].y, time);
+
+		//apply:
+		audioSource.volume = vector2s[3].x;
+		audioSource.pitch = vector2s[3].y;
+	}
+
+	/// <summary>
+	/// Similar to AudioTo but incredibly less expensive for usage inside the Update function or similar looping situations involving a "live" set of changing values with MINIMUM customization options. Does not utilize an EaseType. 
+	/// </summary>
+	/// <param name="target">
+	/// A <see cref="GameObject"/> to be the target of the animation.
+	/// </param>
+	/// <param name="volume">
+	/// A <see cref="System.Single"/> for the target level of volume.
+	/// </param>
+	/// <param name="pitch">
+	/// A <see cref="System.Single"/> for the target pitch.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	public static void AudioUpdate(GameObject target, float volume, float pitch, float time)
+	{
+		AudioUpdate(target, Hash("volume", volume, "pitch", pitch, "time", time));
+	}
+
+	/// <summary>
+	/// Similar to RotateTo but incredibly less expensive for usage inside the Update function or similar looping situations involving a "live" set of changing values with FULL customization options. Does not utilize an EaseType. 
+	/// </summary>
+	/// <param name="rotation">
+	/// A <see cref="Transform"/> or <see cref="Vector3"/> for the target Euler angles in degrees to rotate to.
+	/// </param>
+	/// <param name="x">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the x axis.
+	/// </param>
+	/// <param name="y">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the y axis.
+	/// </param>
+	/// <param name="z">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the z axis.
+	/// </param>
+	/// <param name="islocal">
+	/// A <see cref="System.Boolean"/> for whether to animate in world space or relative to the parent. False by default.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will take to complete.
+	/// </param> 
+	public static void RotateUpdate(GameObject target, Hashtable args)
+	{
+		CleanArgs(args);
+
+		bool isLocal;
+		float time;
+		Vector3[] vector3s = new Vector3[4];
+		Vector3 preUpdate = target.transform.eulerAngles;
+
+		//set smooth time:
+		if (args.Contains("time"))
+		{
+			time = (float)args["time"];
+			time *= Defaults.updateTimePercentage;
+		}
+		else
+		{
+			time = Defaults.updateTime;
+		}
+
+		//set isLocal:
+		if (args.Contains("islocal"))
+		{
+			isLocal = (bool)args["islocal"];
+		}
+		else
+		{
+			isLocal = Defaults.isLocal;
+		}
+
+		//from values:
+		if (isLocal)
+		{
+			vector3s[0] = target.transform.localEulerAngles;
+		}
+		else
+		{
+			vector3s[0] = target.transform.eulerAngles;
+		}
+
+		//set to:
+		if (args.Contains("rotation"))
+		{
+			if (args["rotation"].GetType() == typeof(Transform))
+			{
+				Transform trans = (Transform)args["rotation"];
+				vector3s[1] = trans.eulerAngles;
+			}
+			else if (args["rotation"].GetType() == typeof(Vector3))
+			{
+				vector3s[1] = (Vector3)args["rotation"];
+			}
+		}
+
+		//calculate:
+		vector3s[3].x = Mathf.SmoothDampAngle(vector3s[0].x, vector3s[1].x, ref vector3s[2].x, time);
+		vector3s[3].y = Mathf.SmoothDampAngle(vector3s[0].y, vector3s[1].y, ref vector3s[2].y, time);
+		vector3s[3].z = Mathf.SmoothDampAngle(vector3s[0].z, vector3s[1].z, ref vector3s[2].z, time);
+
+		//apply:
+		if (isLocal)
+		{
+			target.transform.localEulerAngles = vector3s[3];
+		}
+		else
+		{
+			target.transform.eulerAngles = vector3s[3];
+		}
+
+		//need physics?
+		if (target.rigidbody != null)
+		{
+			Vector3 postUpdate = target.transform.eulerAngles;
+			target.transform.eulerAngles = preUpdate;
+			target.rigidbody.MoveRotation(Quaternion.Euler(postUpdate));
+		}
+	}
+
+	/// <summary>
+	/// Similar to RotateTo but incredibly less expensive for usage inside the Update function or similar looping situations involving a "live" set of changing values with MINIMUM customization options. Does not utilize an EaseType. 
+	/// </summary>
+	/// <param name="target">
+	/// A <see cref="GameObject"/> to be the target of the animation.
+	/// </param>
+	/// <param name="rotation">
+	/// A <see cref="Vector3"/> for the target Euler angles in degrees to rotate to.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	public static void RotateUpdate(GameObject target, Vector3 rotation, float time)
+	{
+		RotateUpdate(target, Hash("rotation", rotation, "time", time));
+	}
+
+	/// <summary>
+	/// Similar to ScaleTo but incredibly less expensive for usage inside the Update function or similar looping situations involving a "live" set of changing values with FULL customization options.  Does not utilize an EaseType. 
+	/// </summary>
+	/// <param name="scale">
+	/// A <see cref="Transform"/> or <see cref="Vector3"/> for the final scale.
+	/// </param>
+	/// <param name="x">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the x axis.
+	/// </param>
+	/// <param name="y">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the y axis.
+	/// </param>
+	/// <param name="z">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the z axis.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will take to complete.
+	/// </param> 
+	public static void ScaleUpdate(GameObject target, Hashtable args)
+	{
+		CleanArgs(args);
+
+		float time;
+		Vector3[] vector3s = new Vector3[4];
+
+		//set smooth time:
+		if (args.Contains("time"))
+		{
+			time = (float)args["time"];
+			time *= Defaults.updateTimePercentage;
+		}
+		else
+		{
+			time = Defaults.updateTime;
+		}
+
+		//init values:
+		vector3s[0] = vector3s[1] = target.transform.localScale;
+
+		//to values:
+		if (args.Contains("scale"))
+		{
+			if (args["scale"].GetType() == typeof(Transform))
+			{
+				Transform trans = (Transform)args["scale"];
+				vector3s[1] = trans.localScale;
+			}
+			else if (args["scale"].GetType() == typeof(Vector3))
+			{
+				vector3s[1] = (Vector3)args["scale"];
+			}
+		}
+		else
+		{
+			if (args.Contains("x"))
+			{
+				vector3s[1].x = (float)args["x"];
+			}
+			if (args.Contains("y"))
+			{
+				vector3s[1].y = (float)args["y"];
+			}
+			if (args.Contains("z"))
+			{
+				vector3s[1].z = (float)args["z"];
+			}
+		}
+
+		//calculate:
+		vector3s[3].x = Mathf.SmoothDamp(vector3s[0].x, vector3s[1].x, ref vector3s[2].x, time);
+		vector3s[3].y = Mathf.SmoothDamp(vector3s[0].y, vector3s[1].y, ref vector3s[2].y, time);
+		vector3s[3].z = Mathf.SmoothDamp(vector3s[0].z, vector3s[1].z, ref vector3s[2].z, time);
+
+		//apply:
+		target.transform.localScale = vector3s[3];
+	}
+
+	/// <summary>
+	/// Similar to ScaleTo but incredibly less expensive for usage inside the Update function or similar looping situations involving a "live" set of changing values with MINIMUM customization options.  Does not utilize an EaseType.
+	/// </summary>
+	/// <param name="target">
+	/// A <see cref="GameObject"/> to be the target of the animation.
+	/// </param>
+	/// <param name="scale">
+	/// A <see cref="Vector3"/> for the final scale.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	public static void ScaleUpdate(GameObject target, Vector3 scale, float time)
+	{
+		ScaleUpdate(target, Hash("scale", scale, "time", time));
+	}
+
+	/// <summary>
+	/// Similar to MoveTo but incredibly less expensive for usage inside the Update function or similar looping situations involving a "live" set of changing values with FULL customization options. Does not utilize an EaseType. 
+	/// </summary>
+	/// <param name="position">
+	/// A <see cref="Transform"/> or <see cref="Vector3"/> for a point in space the GameObject will animate to.
+	/// </param>
+	/// <param name="x">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the x axis.
+	/// </param>
+	/// <param name="y">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the y axis.
+	/// </param>
+	/// <param name="z">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the individual setting of the z axis.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will take to complete.
+	/// </param> 
+	/// <param name="islocal">
+	/// A <see cref="System.Boolean"/> for whether to animate in world space or relative to the parent. False by default.
+	/// </param>
+	/// <param name="orienttopath">
+	/// A <see cref="System.Boolean"/> for whether or not the GameObject will orient to its direction of travel.  False by default.
+	/// </param>
+	/// <param name="looktarget">
+	/// A <see cref="Vector3"/> or A <see cref="Transform"/> for a target the GameObject will look at.
+	/// </param>
+	/// <param name="looktime">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the object will take to look at either the "looktarget" or "orienttopath".
+	/// </param>
+	/// <param name="axis">
+	/// A <see cref="System.String"/>. Restricts rotation to the supplied axis only.
+	/// </param>
+	public static void MoveUpdate(GameObject target, Hashtable args)
+	{
+		CleanArgs(args);
+
+		float time;
+		Vector3[] vector3s = new Vector3[4];
+		bool isLocal;
+		Vector3 preUpdate = target.transform.position;
+
+		//set smooth time:
+		if (args.Contains("time"))
+		{
+			time = (float)args["time"];
+			time *= Defaults.updateTimePercentage;
+		}
+		else
+		{
+			time = Defaults.updateTime;
+		}
+
+		//set isLocal:
+		if (args.Contains("islocal"))
+		{
+			isLocal = (bool)args["islocal"];
+		}
+		else
+		{
+			isLocal = Defaults.isLocal;
+		}
+
+		//init values:
+		if (isLocal)
+		{
+			vector3s[0] = vector3s[1] = target.transform.localPosition;
+		}
+		else
+		{
+			vector3s[0] = vector3s[1] = target.transform.position;
+		}
+
+		//to values:
+		if (args.Contains("position"))
+		{
+			if (args["position"].GetType() == typeof(Transform))
+			{
+				Transform trans = (Transform)args["position"];
+				vector3s[1] = trans.position;
+			}
+			else if (args["position"].GetType() == typeof(Vector3))
+			{
+				vector3s[1] = (Vector3)args["position"];
+			}
+		}
+		else
+		{
+			if (args.Contains("x"))
+			{
+				vector3s[1].x = (float)args["x"];
+			}
+			if (args.Contains("y"))
+			{
+				vector3s[1].y = (float)args["y"];
+			}
+			if (args.Contains("z"))
+			{
+				vector3s[1].z = (float)args["z"];
+			}
+		}
+
+		//calculate:
+		vector3s[3].x = Mathf.SmoothDamp(vector3s[0].x, vector3s[1].x, ref vector3s[2].x, time);
+		vector3s[3].y = Mathf.SmoothDamp(vector3s[0].y, vector3s[1].y, ref vector3s[2].y, time);
+		vector3s[3].z = Mathf.SmoothDamp(vector3s[0].z, vector3s[1].z, ref vector3s[2].z, time);
+
+		//handle orient to path:
+		if (args.Contains("orienttopath") && (bool)args["orienttopath"])
+		{
+			args["looktarget"] = vector3s[3];
+		}
+
+		//look applications:
+		if (args.Contains("looktarget"))
+		{
+			iTween.LookUpdate(target, args);
+		}
+
+		//apply:
+		if (isLocal)
+		{
+			target.transform.localPosition = vector3s[3];
+		}
+		else
+		{
+			target.transform.position = vector3s[3];
+		}
+
+		//need physics?
+		if (target.rigidbody != null)
+		{
+			Vector3 postUpdate = target.transform.position;
+			target.transform.position = preUpdate;
+			target.rigidbody.MovePosition(postUpdate);
+		}
+	}
+
+	/// <summary>
+	/// Similar to MoveTo but incredibly less expensive for usage inside the Update function or similar looping situations involving a "live" set of changing values with MINIMUM customization options. Does not utilize an EaseType. 
+	/// </summary>
+	/// <param name="target">
+	/// A <see cref="GameObject"/> to be the target of the animation.
+	/// </param>
+	/// <param name="position">
+	/// A <see cref="Vector3"/> for a point in space the GameObject will animate to.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	public static void MoveUpdate(GameObject target, Vector3 position, float time)
+	{
+		MoveUpdate(target, Hash("position", position, "time", time));
+	}
+
+	/// <summary>
+	/// Similar to LookTo but incredibly less expensive for usage inside the Update function or similar looping situations involving a "live" set of changing values with FULL customization options. Does not utilize an EaseType. 
+	/// </summary>
+	/// <param name="looktarget">
+	/// A <see cref="Transform"/> or <see cref="Vector3"/> for a target the GameObject will look at.
+	/// </param>
+	/// <param name="axis">
+	/// A <see cref="System.String"/>. Restricts rotation to the supplied axis only.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> or <see cref="System.Double"/> for the time in seconds the animation will take to complete.
+	/// </param> 
+	public static void LookUpdate(GameObject target, Hashtable args)
+	{
+		CleanArgs(args);
+
+		float time;
+		Vector3[] vector3s = new Vector3[5];
+
+		//set smooth time:
+		if (args.Contains("looktime"))
+		{
+			time = (float)args["looktime"];
+			time *= Defaults.updateTimePercentage;
+		}
+		else if (args.Contains("time"))
+		{
+			time = (float)args["time"] * .15f;
+			time *= Defaults.updateTimePercentage;
+		}
+		else
+		{
+			time = Defaults.updateTime;
+		}
+
+		//from values:
+		vector3s[0] = target.transform.eulerAngles;
+
+		//set look:
+		if (args.Contains("looktarget"))
+		{
+			if (args["looktarget"].GetType() == typeof(Transform))
+			{
+				//target.Transform.LookAt((Transform)args["looktarget"]);
+				target.transform.LookAt((Transform)args["looktarget"], (Vector3?)args["up"] ?? Defaults.up);
+			}
+			else if (args["looktarget"].GetType() == typeof(Vector3))
+			{
+				//target.Transform.LookAt((Vector3)args["looktarget"]);
+				target.transform.LookAt((Vector3)args["looktarget"], (Vector3?)args["up"] ?? Defaults.up);
+			}
+		}
+		else
+		{
+			Debug.LogError("iTween Error: LookUpdate needs a 'looktarget' property!");
+			return;
+		}
+
+		//to values and reset look:
+		vector3s[1] = target.transform.eulerAngles;
+		target.transform.eulerAngles = vector3s[0];
+
+		//calculate:
+		vector3s[3].x = Mathf.SmoothDampAngle(vector3s[0].x, vector3s[1].x, ref vector3s[2].x, time);
+		vector3s[3].y = Mathf.SmoothDampAngle(vector3s[0].y, vector3s[1].y, ref vector3s[2].y, time);
+		vector3s[3].z = Mathf.SmoothDampAngle(vector3s[0].z, vector3s[1].z, ref vector3s[2].z, time);
+
+		//apply:
+		target.transform.eulerAngles = vector3s[3];
+
+		//axis restriction:
+		if (args.Contains("axis"))
+		{
+			vector3s[4] = target.transform.eulerAngles;
+			switch ((string)args["axis"])
+			{
+				case "x":
+					vector3s[4].y = vector3s[0].y;
+					vector3s[4].z = vector3s[0].z;
+					break;
+				case "y":
+					vector3s[4].x = vector3s[0].x;
+					vector3s[4].z = vector3s[0].z;
+					break;
+				case "z":
+					vector3s[4].x = vector3s[0].x;
+					vector3s[4].y = vector3s[0].y;
+					break;
+			}
+
+			//apply axis restriction:
+			target.transform.eulerAngles = vector3s[4];
+		}
+	}
+
+	/// <summary>
+	/// Similar to LookTo but incredibly less expensive for usage inside the Update function or similar looping situations involving a "live" set of changing values with FULL customization options. Does not utilize an EaseType. 
+	/// </summary>
+	/// <param name="target">
+	/// A <see cref="GameObject"/> to be the target of the animation.
+	/// </param>
+	/// <param name="looktarget">
+	/// A <see cref="Vector3"/> for a target the GameObject will look at.
+	/// </param>
+	/// <param name="time">
+	/// A <see cref="System.Single"/> for the time in seconds the animation will take to complete.
+	/// </param>
+	public static void LookUpdate(GameObject target, Vector3 looktarget, float time)
+	{
+		LookUpdate(target, Hash("looktarget", looktarget, "time", time));
+	}
+
+	#endregion
+
+	#region #7 External Utilities
+
+	/// <summary>
+	/// Returns the length of a curved path drawn through the provided array of Transforms.
+	/// </summary>
+	/// <returns>
+	/// A <see cref="System.Single"/>
+	/// </returns>
+	/// <param name='path'>
+	/// A <see cref="Transform[]"/>
+	/// </param>
+	public static float PathLength(Transform[] path)
+	{
+		Vector3[] suppliedPath = new Vector3[path.Length];
+		float pathLength = 0;
+
+		//create and store path points:
+		for (int i = 0; i < path.Length; i++)
+		{
+			suppliedPath[i] = path[i].position;
+		}
+
+		Vector3[] vector3s = PathControlPointGenerator(suppliedPath);
+
+		//Line Draw:
+		Vector3 prevPt = Interp(vector3s, 0);
+		int SmoothAmount = path.Length * 20;
+		for (int i = 1; i <= SmoothAmount; i++)
+		{
+			float pm = (float)i / SmoothAmount;
+			Vector3 currPt = Interp(vector3s, pm);
+			pathLength += Vector3.Distance(prevPt, currPt);
+			prevPt = currPt;
+		}
+
+		return pathLength;
+	}
+
+	/// <summary>
+	/// Returns the length of a curved path drawn through the provided array of Vector3s.
+	/// </summary>
+	/// <returns>
+	/// The length.
+	/// </returns>
+	/// <param name='path'>
+	/// A <see cref="Vector3[]"/>
+	/// </param>
+	public static float PathLength(Vector3[] path)
+	{
+		float pathLength = 0;
+
+		Vector3[] vector3s = PathControlPointGenerator(path);
+
+		//Line Draw:
+		Vector3 prevPt = Interp(vector3s, 0);
+		int SmoothAmount = path.Length * 20;
+		for (int i = 1; i <= SmoothAmount; i++)
+		{
+			float pm = (float)i / SmoothAmount;
+			Vector3 currPt = Interp(vector3s, pm);
+			pathLength += Vector3.Distance(prevPt, currPt);
+			prevPt = currPt;
+		}
+
+		return pathLength;
+	}
+
+	/// <summary>
+	/// Creates and returns a full-screen Texture2D for use with CameraFade.
+	/// </summary>
+	/// <returns>
+	/// Texture2D
+	/// </returns>
+	/// <param name='color'>
+	/// Color
+	/// </param>
+	public static Texture2D CameraTexture(Color color)
+	{
+		Texture2D texture = new Texture2D(Screen.width, Screen.height, TextureFormat.ARGB32, false);
+		Color[] colors = new Color[Screen.width * Screen.height];
+		for (int i = 0; i < colors.Length; i++)
+		{
+			colors[i] = color;
+		}
+		texture.SetPixels(colors);
+		texture.Apply();
+		return (texture);
+	}
+
+	/// <summary>
+	/// Puts a GameObject on a path at the provided percentage 
+	/// </summary>
+	/// <param name="target">
+	/// A <see cref="GameObject"/>
+	/// </param>
+	/// <param name="path">
+	/// A <see cref="Vector3[]"/>
+	/// </param>
+	/// <param name="percent">
+	/// A <see cref="System.Single"/>
+	/// </param>
+	public static void PutOnPath(GameObject target, Vector3[] path, float percent)
+	{
+		target.transform.position = Interp(PathControlPointGenerator(path), percent);
+	}
+
+	/// <summary>
+	/// Puts a GameObject on a path at the provided percentage 
+	/// </summary>
+	/// <param name="target">
+	/// A <see cref="Transform"/>
+	/// </param>
+	/// <param name="path">
+	/// A <see cref="Vector3[]"/>
+	/// </param>
+	/// <param name="percent">
+	/// A <see cref="System.Single"/>
+	/// </param>
+	public static void PutOnPath(Transform target, Vector3[] path, float percent)
+	{
+		target.position = Interp(PathControlPointGenerator(path), percent);
+	}
+
+	/// <summary>
+	/// Puts a GameObject on a path at the provided percentage 
+	/// </summary>
+	/// <param name="target">
+	/// A <see cref="GameObject"/>
+	/// </param>
+	/// <param name="path">
+	/// A <see cref="Transform[]"/>
+	/// </param>
+	/// <param name="percent">
+	/// A <see cref="System.Single"/>
+	/// </param>
+	public static void PutOnPath(GameObject target, Transform[] path, float percent)
+	{
+		//create and store path points:
+		Vector3[] suppliedPath = new Vector3[path.Length];
+		for (int i = 0; i < path.Length; i++)
+		{
+			suppliedPath[i] = path[i].position;
+		}
+		target.transform.position = Interp(PathControlPointGenerator(suppliedPath), percent);
+	}
+
+	/// <summary>
+	/// Puts a GameObject on a path at the provided percentage 
+	/// </summary>
+	/// <param name="target">
+	/// A <see cref="Transform"/>
+	/// </param>
+	/// <param name="path">
+	/// A <see cref="Transform[]"/>
+	/// </param>
+	/// <param name="percent">
+	/// A <see cref="System.Single"/>
+	/// </param>
+	public static void PutOnPath(Transform target, Transform[] path, float percent)
+	{
+		//create and store path points:
+		Vector3[] suppliedPath = new Vector3[path.Length];
+		for (int i = 0; i < path.Length; i++)
+		{
+			suppliedPath[i] = path[i].position;
+		}
+		target.position = Interp(PathControlPointGenerator(suppliedPath), percent);
+	}
+
+	/// <summary>
+	/// Returns a Vector3 position on a path at the provided percentage  
+	/// </summary>
+	/// <param name="path">
+	/// A <see cref="Transform[]"/>
+	/// </param>
+	/// <param name="percent">
+	/// A <see cref="System.Single"/>
+	/// </param>
+	/// <returns>
+	/// A <see cref="Vector3"/>
+	/// </returns>
+	public static Vector3 PointOnPath(Transform[] path, float percent)
+	{
+		//create and store path points:
+		Vector3[] suppliedPath = new Vector3[path.Length];
+		for (int i = 0; i < path.Length; i++)
+		{
+			suppliedPath[i] = path[i].position;
+		}
+		return (Interp(PathControlPointGenerator(suppliedPath), percent));
+	}
+
+	/// <summary>
+	/// When called from an OnDrawGizmos() function it will draw a line through the provided array of Vector3s.
+	/// </summary>
+	/// <param name="line">
+	/// A <see cref="Vector3s[]"/>
+	/// </param>
+	public static void DrawLine(Vector3[] line)
+	{
+		if (line.Length > 0)
+		{
+			DrawLineHelper(line, Defaults.color, "gizmos");
+		}
+	}
+
+	/// <summary>
+	/// When called from an OnDrawGizmos() function it will draw a line through the provided array of Vector3s.
+	/// </summary>
+	/// <param name="line">
+	/// A <see cref="Vector3s[]"/>
+	/// </param>
+	/// <param name="color">
+	/// A <see cref="Color"/>
+	/// </param> 
+	public static void DrawLine(Vector3[] line, Color color)
+	{
+		if (line.Length > 0)
+		{
+			DrawLineHelper(line, color, "gizmos");
+		}
+	}
+
+	/// <summary>
+	/// When called from an OnDrawGizmos() function it will draw a line through the provided array of Transforms.
+	/// </summary>
+	/// <param name="line">
+	/// A <see cref="Transform[]"/>
+	/// </param>
+	public static void DrawLine(Transform[] line)
+	{
+		if (line.Length > 0)
+		{
+			//create and store line points:
+			Vector3[] suppliedLine = new Vector3[line.Length];
+			for (int i = 0; i < line.Length; i++)
+			{
+				suppliedLine[i] = line[i].position;
+			}
+			DrawLineHelper(suppliedLine, Defaults.color, "gizmos");
+		}
+	}
+
+	/// <summary>
+	/// When called from an OnDrawGizmos() function it will draw a line through the provided array of Transforms.
+	/// </summary>
+	/// <param name="line">
+	/// A <see cref="Transform[]"/>
+	/// </param>
+	/// <param name="color">
+	/// A <see cref="Color"/>
+	/// </param> 
+	public static void DrawLine(Transform[] line, Color color)
+	{
+		if (line.Length > 0)
+		{
+			//create and store line points:
+			Vector3[] suppliedLine = new Vector3[line.Length];
+			for (int i = 0; i < line.Length; i++)
+			{
+				suppliedLine[i] = line[i].position;
+			}
+
+			DrawLineHelper(suppliedLine, color, "gizmos");
+		}
+	}
+
+	/// <summary>
+	/// Draws a line through the provided array of Vector3s with Gizmos.DrawLine().
+	/// </summary>
+	/// <param name="line">
+	/// A <see cref="Vector3s[]"/>
+	/// </param>
+	public static void DrawLineGizmos(Vector3[] line)
+	{
+		if (line.Length > 0)
+		{
+			DrawLineHelper(line, Defaults.color, "gizmos");
+		}
+	}
+
+	/// <summary>
+	/// Draws a line through the provided array of Vector3s with Gizmos.DrawLine().
+	/// </summary>
+	/// <param name="line">
+	/// A <see cref="Vector3s[]"/>
+	/// </param>
+	/// <param name="color">
+	/// A <see cref="Color"/>
+	/// </param> 
+	public static void DrawLineGizmos(Vector3[] line, Color color)
+	{
+		if (line.Length > 0)
+		{
+			DrawLineHelper(line, color, "gizmos");
+		}
+	}
+
+	/// <summary>
+	/// Draws a line through the provided array of Transforms with Gizmos.DrawLine().
+	/// </summary>
+	/// <param name="line">
+	/// A <see cref="Transform[]"/>
+	/// </param>
+	public static void DrawLineGizmos(Transform[] line)
+	{
+		if (line.Length > 0)
+		{
+			//create and store line points:
+			Vector3[] suppliedLine = new Vector3[line.Length];
+			for (int i = 0; i < line.Length; i++)
+			{
+				suppliedLine[i] = line[i].position;
+			}
+			DrawLineHelper(suppliedLine, Defaults.color, "gizmos");
+		}
+	}
+
+	/// <summary>
+	/// Draws a line through the provided array of Transforms with Gizmos.DrawLine().
+	/// </summary>
+	/// <param name="line">
+	/// A <see cref="Transform[]"/>
+	/// </param>
+	/// <param name="color">
+	/// A <see cref="Color"/>
+	/// </param> 
+	public static void DrawLineGizmos(Transform[] line, Color color)
+	{
+		if (line.Length > 0)
+		{
+			//create and store line points:
+			Vector3[] suppliedLine = new Vector3[line.Length];
+			for (int i = 0; i < line.Length; i++)
+			{
+				suppliedLine[i] = line[i].position;
+			}
+
+			DrawLineHelper(suppliedLine, color, "gizmos");
+		}
+	}
+
+	/// <summary>
+	/// Draws a line through the provided array of Vector3s with Handles.DrawLine().
+	/// </summary>
+	/// <param name="line">
+	/// A <see cref="Vector3s[]"/>
+	/// </param>
+	public static void DrawLineHandles(Vector3[] line)
+	{
+		if (line.Length > 0)
+		{
+			DrawLineHelper(line, Defaults.color, "handles");
+		}
+	}
+
+	/// <summary>
+	/// Draws a line through the provided array of Vector3s with Handles.DrawLine().
+	/// </summary>
+	/// <param name="line">
+	/// A <see cref="Vector3s[]"/>
+	/// </param>
+	/// <param name="color">
+	/// A <see cref="Color"/>
+	/// </param> 
+	public static void DrawLineHandles(Vector3[] line, Color color)
+	{
+		if (line.Length > 0)
+		{
+			DrawLineHelper(line, color, "handles");
+		}
+	}
+
+	/// <summary>
+	/// Draws a line through the provided array of Transforms with Handles.DrawLine().
+	/// </summary>
+	/// <param name="line">
+	/// A <see cref="Transform[]"/>
+	/// </param>
+	public static void DrawLineHandles(Transform[] line)
+	{
+		if (line.Length > 0)
+		{
+			//create and store line points:
+			Vector3[] suppliedLine = new Vector3[line.Length];
+			for (int i = 0; i < line.Length; i++)
+			{
+				suppliedLine[i] = line[i].position;
+			}
+			DrawLineHelper(suppliedLine, Defaults.color, "handles");
+		}
+	}
+
+	/// <summary>
+	/// Draws a line through the provided array of Transforms with Handles.DrawLine().
+	/// </summary>
+	/// <param name="line">
+	/// A <see cref="Transform[]"/>
+	/// </param>
+	/// <param name="color">
+	/// A <see cref="Color"/>
+	/// </param> 
+	public static void DrawLineHandles(Transform[] line, Color color)
+	{
+		if (line.Length > 0)
+		{
+			//create and store line points:
+			Vector3[] suppliedLine = new Vector3[line.Length];
+			for (int i = 0; i < line.Length; i++)
+			{
+				suppliedLine[i] = line[i].position;
+			}
+
+			DrawLineHelper(suppliedLine, color, "handles");
+		}
+	}
+
+	/// <summary>
+	/// Returns a Vector3 position on a path at the provided percentage  
+	/// </summary>
+	/// <param name="path">
+	/// A <see cref="Vector3[]"/>
+	/// </param>
+	/// <param name="percent">
+	/// A <see cref="System.Single"/>
+	/// </param>
+	/// <returns>
+	/// A <see cref="Vector3"/>
+	/// </returns>
+	public static Vector3 PointOnPath(Vector3[] path, float percent)
+	{
+		return (Interp(PathControlPointGenerator(path), percent));
+	}
+
+	/// <summary>
+	/// When called from an OnDrawGizmos() function it will draw a curved path through the provided array of Vector3s.
+	/// </summary>
+	/// <param name="path">
+	/// A <see cref="Vector3s[]"/>
+	/// </param>
+	public static void DrawPath(Vector3[] path)
+	{
+		if (path.Length > 0)
+		{
+			DrawPathHelper(path, Defaults.color, "gizmos");
+		}
+	}
+
+	/// <summary>
+	/// When called from an OnDrawGizmos() function it will draw a curved path through the provided array of Vector3s.
+	/// </summary>
+	/// <param name="path">
+	/// A <see cref="Vector3s[]"/>
+	/// </param>
+	/// <param name="color">
+	/// A <see cref="Color"/>
+	/// </param> 
+	public static void DrawPath(Vector3[] path, Color color)
+	{
+		if (path.Length > 0)
+		{
+			DrawPathHelper(path, color, "gizmos");
+		}
+	}
+
+	/// <summary>
+	/// When called from an OnDrawGizmos() function it will draw a curved path through the provided array of Transforms.
+	/// </summary>
+	/// <param name="path">
+	/// A <see cref="Transform[]"/>
+	/// </param>
+	public static void DrawPath(Transform[] path)
+	{
+		if (path.Length > 0)
+		{
+			//create and store path points:
+			Vector3[] suppliedPath = new Vector3[path.Length];
+			for (int i = 0; i < path.Length; i++)
+			{
+				suppliedPath[i] = path[i].position;
+			}
+
+			DrawPathHelper(suppliedPath, Defaults.color, "gizmos");
+		}
+	}
+
+	/// <summary>
+	/// When called from an OnDrawGizmos() function it will draw a curved path through the provided array of Transforms.
+	/// </summary>
+	/// <param name="path">
+	/// A <see cref="Transform[]"/>
+	/// </param>
+	/// <param name="color">
+	/// A <see cref="Color"/>
+	/// </param> 
+	public static void DrawPath(Transform[] path, Color color)
+	{
+		if (path.Length > 0)
+		{
+			//create and store path points:
+			Vector3[] suppliedPath = new Vector3[path.Length];
+			for (int i = 0; i < path.Length; i++)
+			{
+				suppliedPath[i] = path[i].position;
+			}
+
+			DrawPathHelper(suppliedPath, color, "gizmos");
+		}
+	}
+
+	/// <summary>
+	/// Draws a curved path through the provided array of Vector3s with Gizmos.DrawLine().
+	/// </summary>
+	/// <param name="path">
+	/// A <see cref="Vector3s[]"/>
+	/// </param>
+	public static void DrawPathGizmos(Vector3[] path)
+	{
+		if (path.Length > 0)
+		{
+			DrawPathHelper(path, Defaults.color, "gizmos");
+		}
+	}
+
+	/// <summary>
+	/// Draws a curved path through the provided array of Vector3s with Gizmos.DrawLine().
+	/// </summary>
+	/// <param name="path">
+	/// A <see cref="Vector3s[]"/>
+	/// </param>
+	/// <param name="color">
+	/// A <see cref="Color"/>
+	/// </param> 
+	public static void DrawPathGizmos(Vector3[] path, Color color)
+	{
+		if (path.Length > 0)
+		{
+			DrawPathHelper(path, color, "gizmos");
+		}
+	}
+
+	/// <summary>
+	/// Draws a curved path through the provided array of Transforms with Gizmos.DrawLine().
+	/// </summary>
+	/// <param name="path">
+	/// A <see cref="Transform[]"/>
+	/// </param>
+	public static void DrawPathGizmos(Transform[] path)
+	{
+		if (path.Length > 0)
+		{
+			//create and store path points:
+			Vector3[] suppliedPath = new Vector3[path.Length];
+			for (int i = 0; i < path.Length; i++)
+			{
+				suppliedPath[i] = path[i].position;
+			}
+
+			DrawPathHelper(suppliedPath, Defaults.color, "gizmos");
+		}
+	}
+
+	/// <summary>
+	/// Draws a curved path through the provided array of Transforms with Gizmos.DrawLine().
+	/// </summary>
+	/// <param name="path">
+	/// A <see cref="Transform[]"/>
+	/// </param>
+	/// <param name="color">
+	/// A <see cref="Color"/>
+	/// </param> 
+	public static void DrawPathGizmos(Transform[] path, Color color)
+	{
+		if (path.Length > 0)
+		{
+			//create and store path points:
+			Vector3[] suppliedPath = new Vector3[path.Length];
+			for (int i = 0; i < path.Length; i++)
+			{
+				suppliedPath[i] = path[i].position;
+			}
+
+			DrawPathHelper(suppliedPath, color, "gizmos");
+		}
+	}
+
+	/// <summary>
+	/// Draws a curved path through the provided array of Vector3s with Handles.DrawLine().
+	/// </summary>
+	/// <param name="path">
+	/// A <see cref="Vector3s[]"/>
+	/// </param>
+	public static void DrawPathHandles(Vector3[] path)
+	{
+		if (path.Length > 0)
+		{
+			DrawPathHelper(path, Defaults.color, "handles");
+		}
+	}
+
+	/// <summary>
+	/// Draws a curved path through the provided array of Vector3s with Handles.DrawLine().
+	/// </summary>
+	/// <param name="path">
+	/// A <see cref="Vector3s[]"/>
+	/// </param>
+	/// <param name="color">
+	/// A <see cref="Color"/>
+	/// </param> 
+	public static void DrawPathHandles(Vector3[] path, Color color)
+	{
+		if (path.Length > 0)
+		{
+			DrawPathHelper(path, color, "handles");
+		}
+	}
+
+	/// <summary>
+	/// Draws a curved path through the provided array of Transforms with Handles.DrawLine().
+	/// </summary>
+	/// <param name="path">
+	/// A <see cref="Transform[]"/>
+	/// </param>
+	public static void DrawPathHandles(Transform[] path)
+	{
+		if (path.Length > 0)
+		{
+			//create and store path points:
+			Vector3[] suppliedPath = new Vector3[path.Length];
+			for (int i = 0; i < path.Length; i++)
+			{
+				suppliedPath[i] = path[i].position;
+			}
+
+			DrawPathHelper(suppliedPath, Defaults.color, "handles");
+		}
+	}
+
+	/// <summary>
+	/// Draws a curved path through the provided array of Transforms with Handles.DrawLine().
+	/// </summary>
+	/// <param name="path">
+	/// A <see cref="Transform[]"/>
+	/// </param>
+	/// <param name="color">
+	/// A <see cref="Color"/>
+	/// </param> 
+	public static void DrawPathHandles(Transform[] path, Color color)
+	{
+		if (path.Length > 0)
+		{
+			//create and store path points:
+			Vector3[] suppliedPath = new Vector3[path.Length];
+			for (int i = 0; i < path.Length; i++)
+			{
+				suppliedPath[i] = path[i].position;
+			}
+
+			DrawPathHelper(suppliedPath, color, "handles");
+		}
+	}
+
+	/// <summary>
+	/// Changes a camera fade's texture.
+	/// </summary>
+	/// <param name="depth">
+	/// A <see cref="System.Int32"/>
+	/// </param>
+	public static void CameraFadeDepth(int depth)
+	{
+		if (cameraFade)
+		{
+			cameraFade.transform.position = new Vector3(cameraFade.transform.position.x, cameraFade.transform.position.y, depth);
+		}
+	}
+
+	/// <summary>
+	/// Removes and destroyes a camera fade.
+	/// </summary>
+	public static void CameraFadeDestroy()
+	{
+		if (cameraFade)
+		{
+			Destroy(cameraFade);
+		}
+	}
+
+	/// <summary>
+	/// Changes a camera fade's texture.
+	/// </summary>
+	/// <param name='texture'>
+	/// A <see cref="Texture2D"/>
+	/// </param>
+	public static void CameraFadeSwap(Texture2D texture)
+	{
+		if (cameraFade)
+		{
+			cameraFade.guiTexture.texture = texture;
+		}
+	}
+
+	/// <summary>
+	/// Creates a GameObject (if it doesn't exist) at the supplied depth that can be used to simulate a camera fade.
+	/// </summary>
+	/// <param name='texture'>
+	/// A <see cref="Texture2D"/>
+	/// </param>
+	/// <param name='depth'>
+	/// A <see cref="System.Int32"/>
+	/// </param>
+	/// <returns>
+	/// A <see cref="GameObject"/> for a reference to the CameraFade.
+	/// </returns>
+	public static GameObject CameraFadeAdd(Texture2D texture, int depth)
+	{
+		if (cameraFade)
+		{
+			return null;
+		}
+		else
+		{
+			//establish colorFade object:
+			cameraFade = new GameObject("iTween Camera Fade");
+			cameraFade.transform.position = new Vector3(.5f, .5f, depth);
+			cameraFade.AddComponent("GUITexture");
+			cameraFade.guiTexture.texture = texture;
+			cameraFade.guiTexture.color = new Color(.5f, .5f, .5f, 0);
+			return cameraFade;
+		}
+	}
+
+	/// <summary>
+	/// Creates a GameObject (if it doesn't exist) at the default depth that can be used to simulate a camera fade.
+	/// </summary>
+	/// <param name='texture'>
+	/// A <see cref="Texture2D"/>
+	/// </param>
+	/// <returns>
+	/// A <see cref="GameObject"/> for a reference to the CameraFade.
+	/// </returns>
+	public static GameObject CameraFadeAdd(Texture2D texture)
+	{
+		if (cameraFade)
+		{
+			return null;
+		}
+		else
+		{
+			//establish colorFade object:
+			cameraFade = new GameObject("iTween Camera Fade");
+			cameraFade.transform.position = new Vector3(.5f, .5f, Defaults.cameraFadeDepth);
+			cameraFade.AddComponent("GUITexture");
+			cameraFade.guiTexture.texture = texture;
+			cameraFade.guiTexture.color = new Color(.5f, .5f, .5f, 0);
+			return cameraFade;
+		}
+	}
+
+	/// <summary>
+	/// Creates a GameObject (if it doesn't exist) at the default depth filled with black that can be used to simulate a camera fade.
+	/// </summary>
+	/// <returns>
+	/// A <see cref="GameObject"/> for a reference to the CameraFade.
+	/// </returns>
+	public static GameObject CameraFadeAdd()
+	{
+		if (cameraFade)
+		{
+			return null;
+		}
+		else
+		{
+			//establish colorFade object:
+			cameraFade = new GameObject("iTween Camera Fade");
+			cameraFade.transform.position = new Vector3(.5f, .5f, Defaults.cameraFadeDepth);
+			cameraFade.AddComponent("GUITexture");
+			cameraFade.guiTexture.texture = CameraTexture(Color.black);
+			cameraFade.guiTexture.color = new Color(.5f, .5f, .5f, 0);
+			return cameraFade;
+		}
+	}
+
+
+	//#################################
+	//# RESUME UTILITIES AND OVERLOADS # 
+	//#################################	
+
+	/// <summary>
+	/// Resume all iTweens on a GameObject.
+	/// </summary>
+	public static void Resume(GameObject target)
+	{
+		Component[] tweens = target.GetComponents(typeof(iTween));
+		foreach (iTween item in tweens)
+		{
+			item.enabled = true;
+		}
+	}
+
+	/// <summary>
+	/// Resume all iTweens on a GameObject including its children.
+	/// </summary>
+	public static void Resume(GameObject target, bool includechildren)
+	{
+		Resume(target);
+		if (includechildren)
+		{
+			foreach (Transform child in target.transform)
+			{
+				Resume(child.gameObject, true);
+			}
+		}
+	}
+
+	/// <summary>
+	/// Resume all iTweens on a GameObject of a particular type.
+	/// </summar
+	/// <param name="type">
+	/// A <see cref="System.String"/> name of the type of iTween you would like to resume.  Can be written as part of a name such as "mov" for all "MoveTo" iTweens.
+	/// </param>	
+	public static void Resume(GameObject target, string type)
+	{
+		Component[] tweens = target.GetComponents(typeof(iTween));
+		foreach (iTween item in tweens)
+		{
+			if (TypeMatchesTween(item, type))
+			{
+				item.enabled = true;
+			}
+		}
+	}
+
+	/// <summary>
+	/// Resume all iTweens on a GameObject of a particular type including its children.
+	/// </summar
+	/// <param name="type">
+	/// A <see cref="System.String"/> name of the type of iTween you would like to resume.  Can be written as part of a name such as "mov" for all "MoveTo" iTweens.
+	/// </param>	
+	public static void Resume(GameObject target, string type, bool includechildren)
+	{
+		Component[] tweens = target.GetComponents(typeof(iTween));
+		foreach (iTween item in tweens)
+		{
+			if (TypeMatchesTween(item, type))
+			{
+				item.enabled = true;
+			}
+		}
+		if (includechildren)
+		{
+			foreach (Transform child in target.transform)
+			{
+				Resume(child.gameObject, type, true);
+			}
+		}
+	}
+
+	/// <summary>
+	/// Resume all iTweens in scene.
+	/// </summary>
+	public static void Resume()
+	{
+		for (int i = 0; i < tweens.Count; i++)
+		{
+			Hashtable currentTween = (Hashtable)tweens[i];
+			GameObject target = (GameObject)currentTween["target"];
+			Resume(target);
+		}
+	}
+
+	/// <summary>
+	/// Resume all iTweens in scene of a particular type.
+	/// </summary>
+	/// <param name="type">
+	/// A <see cref="System.String"/> name of the type of iTween you would like to resume.  Can be written as part of a name such as "mov" for all "MoveTo" iTweens.
+	/// </param> 
+	public static void Resume(string type)
+	{
+		ArrayList resumeArray = new ArrayList();
+
+		for (int i = 0; i < tweens.Count; i++)
+		{
+			Hashtable currentTween = (Hashtable)tweens[i];
+			GameObject target = (GameObject)currentTween["target"];
+			resumeArray.Insert(resumeArray.Count, target);
+		}
+
+		for (int i = 0; i < resumeArray.Count; i++)
+		{
+			Resume((GameObject)resumeArray[i], type);
+		}
+	}
+
+	//#################################
+	//# PAUSE UTILITIES AND OVERLOADS # 
+	//#################################
+
+	/// <summary>
+	/// Pause all iTweens on a GameObject.
+	/// </summary>
+	public static void Pause(GameObject target)
+	{
+		Component[] tweens = target.GetComponents(typeof(iTween));
+		foreach (iTween item in tweens)
+		{
+			if (item.delay > 0)
+			{
+				item.delay -= Time.time - item.delayStarted;
+				item.StopCoroutine("TweenDelay");
+			}
+			item.isPaused = true;
+			item.enabled = false;
+		}
+	}
+
+	/// <summary>
+	/// Pause all iTweens on a GameObject including its children.
+	/// </summary>
+	public static void Pause(GameObject target, bool includechildren)
+	{
+		Pause(target);
+		if (includechildren)
+		{
+			foreach (Transform child in target.transform)
+			{
+				Pause(child.gameObject, true);
+			}
+		}
+	}
+
+	/// <summary>
+	/// Pause all iTweens on a GameObject of a particular type.
+	/// </summar
+	/// <param name="type">
+	/// A <see cref="System.String"/> name of the type of iTween you would like to pause.  Can be written as part of a name such as "mov" for all "MoveTo" iTweens.
+	/// </param>	
+	public static void Pause(GameObject target, string type)
+	{
+		Component[] tweens = target.GetComponents(typeof(iTween));
+		foreach (iTween item in tweens)
+		{
+			if (TypeMatchesTween(item, type))
+			{
+				if (item.delay > 0)
+				{
+					item.delay -= Time.time - item.delayStarted;
+					item.StopCoroutine("TweenDelay");
+				}
+				item.isPaused = true;
+				item.enabled = false;
+			}
+		}
+	}
+
+	/// <summary>
+	/// Pause all iTweens on a GameObject of a particular type including its children.
+	/// </summar
+	/// <param name="type">
+	/// A <see cref="System.String"/> name of the type of iTween you would like to pause.  Can be written as part of a name such as "mov" for all "MoveTo" iTweens.
+	/// </param>	
+	public static void Pause(GameObject target, string type, bool includechildren)
+	{
+		Component[] tweens = target.GetComponents(typeof(iTween));
+		foreach (iTween item in tweens)
+		{
+			if (TypeMatchesTween(item, type))
+			{
+				if (item.delay > 0)
+				{
+					item.delay -= Time.time - item.delayStarted;
+					item.StopCoroutine("TweenDelay");
+				}
+				item.isPaused = true;
+				item.enabled = false;
+			}
+		}
+		if (includechildren)
+		{
+			foreach (Transform child in target.transform)
+			{
+				Pause(child.gameObject, type, true);
+			}
+		}
+	}
+
+	/// <summary>
+	/// Pause all iTweens in scene.
+	/// </summary>
+	public static void Pause()
+	{
+		for (int i = 0; i < tweens.Count; i++)
+		{
+			Hashtable currentTween = (Hashtable)tweens[i];
+			GameObject target = (GameObject)currentTween["target"];
+			Pause(target);
+		}
+	}
+
+	/// <summary>
+	/// Pause all iTweens in scene of a particular type.
+	/// </summary>
+	/// <param name="type">
+	/// A <see cref="System.String"/> name of the type of iTween you would like to pause.  Can be written as part of a name such as "mov" for all "MoveTo" iTweens.
+	/// </param> 
+	public static void Pause(string type)
+	{
+		ArrayList pauseArray = new ArrayList();
+
+		for (int i = 0; i < tweens.Count; i++)
+		{
+			Hashtable currentTween = (Hashtable)tweens[i];
+			GameObject target = (GameObject)currentTween["target"];
+			pauseArray.Insert(pauseArray.Count, target);
+		}
+
+		for (int i = 0; i < pauseArray.Count; i++)
+		{
+			Pause((GameObject)pauseArray[i], type);
+		}
+	}
+
+	//#################################
+	//# COUNT UTILITIES AND OVERLOADS # 
+	//#################################	
+
+	/// <summary>
+	/// Count all iTweens in current scene.
+	/// </summary>
+	public static int Count()
+	{
+		return (tweens.Count);
+	}
+
+	/// <summary>
+	/// Count all iTweens in current scene of a particular type.
+	/// </summary>
+	/// <param name="type">
+	/// A <see cref="System.String"/> name of the type of iTween you would like to stop.  Can be written as part of a name such as "mov" for all "MoveTo" iTweens.
+	/// </param> 
+	public static int Count(string type)
+	{
+		int tweenCount = 0;
+
+		for (int i = 0; i < tweens.Count; i++)
+		{
+			Hashtable currentTween = (Hashtable)tweens[i];
+			string targetType = (string)currentTween["type"] + (string)currentTween["method"];
+			if (TypesMatch(targetType, type))
+			{
+				tweenCount++;
+			}
+		}
+
+		return (tweenCount);
+	}
+
+	/// <summary>
+	/// Count all iTweens on a GameObject.
+	/// </summary>
+	public static int Count(GameObject target)
+	{
+		Component[] tweens = target.GetComponents(typeof(iTween));
+		return (tweens.Length);
+	}
+
+	/// <summary>
+	/// Count all iTweens on a GameObject of a particular type.
+	/// </summary>
+	/// <param name="type">
+	/// A <see cref="System.String"/> name of the type of iTween you would like to count.  Can be written as part of a name such as "mov" for all "MoveTo" iTweens.
+	/// </param>  
+	public static int Count(GameObject target, string type)
+	{
+		int tweenCount = 0;
+		Component[] tweens = target.GetComponents(typeof(iTween));
+		foreach (iTween item in tweens)
+		{
+			if (TypeMatchesTween(item, type))
+			{
+				tweenCount++;
+			}
+		}
+		return (tweenCount);
+	}
+
+	//################################
+	//# STOP UTILITIES AND OVERLOADS # 
+	//################################	
+
+	/// <summary>
+	/// Stop and destroy all Tweens in current scene.
+	/// </summary>
+	public static void Stop()
+	{
+		for (int i = 0; i < tweens.Count; i++)
+		{
+			Hashtable currentTween = (Hashtable)tweens[i];
+			GameObject target = (GameObject)currentTween["target"];
+			Stop(target);
+		}
+		tweens.Clear();
+	}
+
+	/// <summary>
+	/// Stop and destroy all iTweens in current scene of a particular type.
+	/// </summary>
+	/// <param name="type">
+	/// A <see cref="System.String"/> name of the type of iTween you would like to stop.  Can be written as part of a name such as "mov" for all "MoveTo" iTweens.
+	/// </param> 
+	public static void Stop(string type)
+	{
+		ArrayList stopArray = new ArrayList();
+
+		for (int i = 0; i < tweens.Count; i++)
+		{
+			Hashtable currentTween = (Hashtable)tweens[i];
+			GameObject target = (GameObject)currentTween["target"];
+			stopArray.Insert(stopArray.Count, target);
+		}
+
+		for (int i = 0; i < stopArray.Count; i++)
+		{
+			Stop((GameObject)stopArray[i], type);
+		}
+	}
+
+	/* GFX47 MOD START */
+	/// <summary>
+	/// Stop and destroy all iTweens in current scene of a particular name.
+	/// </summary>
+	/// <param name="name">
+	/// The <see cref="System.String"/> name of iTween you would like to stop.
+	/// </param> 
+	public static void StopByName(string name)
+	{
+		ArrayList stopArray = new ArrayList();
+
+		for (int i = 0; i < tweens.Count; i++)
+		{
+			Hashtable currentTween = (Hashtable)tweens[i];
+			GameObject target = (GameObject)currentTween["target"];
+			stopArray.Insert(stopArray.Count, target);
+		}
+
+		for (int i = 0; i < stopArray.Count; i++)
+		{
+			StopByName((GameObject)stopArray[i], name);
+		}
+	}
+	/* GFX47 MOD END */
+
+	/// <summary>
+	/// Stop and destroy all iTweens on a GameObject.
+	/// </summary>
+	public static void Stop(GameObject target)
+	{
+		Component[] tweens = target.GetComponents(typeof(iTween));
+		foreach (iTween item in tweens)
+		{
+			item.Dispose();
+		}
+	}
+
+	/// <summary>
+	/// Stop and destroy all iTweens on a GameObject including its children.
+	/// </summary>
+	public static void Stop(GameObject target, bool includechildren)
+	{
+		Stop(target);
+		if (includechildren)
+		{
+			foreach (Transform child in target.transform)
+			{
+				Stop(child.gameObject, true);
+			}
+		}
+	}
+
+	/// <summary>
+	/// Stop and destroy all iTweens on a GameObject of a particular type.
+	/// </summar
+	/// <param name="type">
+	/// A <see cref="System.String"/> name of the type of iTween you would like to stop.  Can be written as part of a name such as "mov" for all "MoveTo" iTweens.
+	/// </param>	
+	public static void Stop(GameObject target, string type)
+	{
+		Component[] tweens = target.GetComponents(typeof(iTween));
+		foreach (iTween item in tweens)
+		{
+			if (TypeMatchesTween(item, type))
+			{
+				item.Dispose();
+			}
+		}
+	}
+
+
+	/* GFX47 MOD START */
+	/// <summary>
+	/// Stop and destroy all iTweens on a GameObject of a particular name.
+	/// </summar
+	/// <param name="name">
+	/// The <see cref="System.String"/> name of iTween you would like to stop.
+	/// </param>	
+	public static void StopByName(GameObject target, string name)
+	{
+		Component[] tweens = target.GetComponents(typeof(iTween));
+		foreach (iTween item in tweens)
+		{
+			if (item._name == name)
+			{
+				item.Dispose();
+			}
+		}
+	}
+	/* GFX47 MOD END */
+
+	/// <summary>
+	/// Stop and destroy all iTweens on a GameObject of a particular type including its children.
+	/// </summar
+	/// <param name="type">
+	/// A <see cref="System.String"/> name of the type of iTween you would like to stop.  Can be written as part of a name such as "mov" for all "MoveTo" iTweens.
+	/// </param>	
+	public static void Stop(GameObject target, string type, bool includechildren)
+	{
+		Component[] tweens = target.GetComponents(typeof(iTween));
+		foreach (iTween item in tweens)
+		{
+			if (TypeMatchesTween(item, type))
+			{
+				item.Dispose();
+			}
+		}
+		if (includechildren)
+		{
+			foreach (Transform child in target.transform)
+			{
+				Stop(child.gameObject, type, true);
+			}
+		}
+	}
+
+	/* GFX47 MOD START */
+	/// <summary>
+	/// Stop and destroy all iTweens on a GameObject of a particular name including its children.
+	/// </summar
+	/// <param name="name">
+	/// The <see cref="System.String"/> name of iTween you would like to stop.
+	/// </param>	
+	public static void StopByName(GameObject target, string name, bool includechildren)
+	{
+		Component[] tweens = target.GetComponents(typeof(iTween));
+		foreach (iTween item in tweens)
+		{
+			if (item._name == name)
+			{
+				item.Dispose();
+			}
+		}
+		if (includechildren)
+		{
+			foreach (Transform child in target.transform)
+			{
+				//Stop(child.GameObjectBase,type,true);
+				StopByName(child.gameObject, name, true);
+			}
+		}
+	}
+	/* GFX47 MOD END */
+
+	/// <summary>
+	/// Universal interface to help in the creation of Hashtables.  Especially useful for C# users.
+	/// </summary>
+	/// <param name="args">
+	/// A <see cref="System.Object[]"/> of alternating name value pairs.  For example "time",1,"delay",2...
+	/// </param>
+	/// <returns>
+	/// A <see cref="Hashtable"/>
+	/// </returns>
+	public static Hashtable Hash(params object[] args)
+	{
+		Hashtable hashTable = new Hashtable(args.Length / 2);
+		if (args.Length % 2 != 0)
+		{
+			Debug.LogError("Tween Error: Hash requires an even number of arguments!");
+			return null;
+		}
+		else
+		{
+			int i = 0;
+			while (i < args.Length - 1)
+			{
+				hashTable.Add(args[i], args[i + 1]);
+				i += 2;
+			}
+			return hashTable;
+		}
+	}
+
+	#endregion
+
+	#region Component Segments
+
+	void Awake()
+	{
+		RetrieveArgs();
+		lastRealTime = Time.realtimeSinceStartup; // Added by PressPlay
+	}
+
+	IEnumerator Start()
+	{
+		if (delay > 0)
+		{
+			yield return StartCoroutine("TweenDelay");
+		}
+		TweenStart();
+	}
+
+	//non-physics
+	void Update()
+	{
+		if (isRunning && !physics)
+		{
+			if (!reverse)
+			{
+				if (percentage < 1f)
+				{
+					TweenUpdate();
+				}
+				else
+				{
+					TweenComplete();
+				}
+			}
+			else
+			{
+				if (percentage > 0)
+				{
+					TweenUpdate();
+				}
+				else
+				{
+					TweenComplete();
+				}
+			}
+		}
+	}
+
+	//physics
+	void FixedUpdate()
+	{
+		if (isRunning && physics)
+		{
+			if (!reverse)
+			{
+				if (percentage < 1f)
+				{
+					TweenUpdate();
+				}
+				else
+				{
+					TweenComplete();
+				}
+			}
+			else
+			{
+				if (percentage > 0)
+				{
+					TweenUpdate();
+				}
+				else
+				{
+					TweenComplete();
+				}
+			}
+		}
+	}
+
+	void LateUpdate()
+	{
+		//look applications:
+		if (tweenArguments.Contains("looktarget") && isRunning)
+		{
+			if (type == "move" || type == "shake" || type == "punch")
+			{
+				LookUpdate(gameObject, tweenArguments);
+			}
+		}
+	}
+
+	void OnEnable()
+	{
+		if (isRunning)
+		{
+			EnableKinematic();
+		}
+
+		//resume delay:
+		if (isPaused)
+		{
+			isPaused = false;
+			if (delay > 0)
+			{
+				wasPaused = true;
+				ResumeDelay();
+			}
+		}
+	}
+
+	void OnDisable()
+	{
+		DisableKinematic();
+	}
+
+	#endregion
+
+	#region Internal Helpers
+
+	private static bool TypeMatchesTween(iTween item, string type)
+	{
+		string targetType = item.type + item.method;
+		return TypesMatch(targetType, type);
+	}
+
+	private static bool TypesMatch(string targetType, string type)
+	{
+		bool match = false;
+		if (type.Length <= targetType.Length)
+		{
+			targetType = targetType.Substring(0, type.Length);
+			if (targetType.ToLower() == type.ToLower())
+			{
+				match = true;
+			}
+		}
+		return match;
+	}
+
+	private static void DrawLineHelper(Vector3[] line, Color color, string method)
+	{
+		Gizmos.color = color;
+		for (int i = 0; i < line.Length - 1; i++)
+		{
+			if (method == "gizmos")
+			{
+				Gizmos.DrawLine(line[i], line[i + 1]); ;
+			}
+			else if (method == "handles")
+			{
+				Debug.LogError("iTween Error: Drawing a line with Handles is temporarily disabled because of compatability issues with Unity 2.6!");
+				//UnityEditor.Handles.DrawLine(line[i], line[i+1]);
+			}
+		}
+	}
+
+	private static void DrawPathHelper(Vector3[] path, Color color, string method)
+	{
+		Vector3[] vector3s = PathControlPointGenerator(path);
+
+		//Line Draw:
+		Vector3 prevPt = Interp(vector3s, 0);
+		Gizmos.color = color;
+		int SmoothAmount = path.Length * 20;
+		for (int i = 1; i <= SmoothAmount; i++)
+		{
+			float pm = (float)i / SmoothAmount;
+			Vector3 currPt = Interp(vector3s, pm);
+			if (method == "gizmos")
+			{
+				Gizmos.DrawLine(currPt, prevPt);
+			}
+			else if (method == "handles")
+			{
+				Debug.LogError("iTween Error: Drawing a path with Handles is temporarily disabled because of compatability issues with Unity 2.6!");
+				//UnityEditor.Handles.DrawLine(currPt, prevPt);
+			}
+			prevPt = currPt;
+		}
+	}
+
+	private static Vector3[] PathControlPointGenerator(Vector3[] path)
+	{
+		Vector3[] suppliedPath;
+		Vector3[] vector3s;
+
+		//create and store path points:
+		suppliedPath = path;
+
+		//populate calculate path;
+		int offset = 2;
+		vector3s = new Vector3[suppliedPath.Length + offset];
+		Array.Copy(suppliedPath, 0, vector3s, 1, suppliedPath.Length);
+
+		//populate start and end control points:
+		//vector3s[0] = vector3s[1] - vector3s[2];
+		vector3s[0] = vector3s[1] + (vector3s[1] - vector3s[2]);
+		vector3s[vector3s.Length - 1] = vector3s[vector3s.Length - 2] + (vector3s[vector3s.Length - 2] - vector3s[vector3s.Length - 3]);
+
+		//is this a closed, continuous loop? yes? well then so let's make a continuous Catmull-Rom spline!
+		if (vector3s[1] == vector3s[vector3s.Length - 2])
+		{
+			Vector3[] tmpLoopSpline = new Vector3[vector3s.Length];
+			Array.Copy(vector3s, tmpLoopSpline, vector3s.Length);
+			tmpLoopSpline[0] = tmpLoopSpline[tmpLoopSpline.Length - 3];
+			tmpLoopSpline[tmpLoopSpline.Length - 1] = tmpLoopSpline[2];
+			vector3s = new Vector3[tmpLoopSpline.Length];
+			Array.Copy(tmpLoopSpline, vector3s, tmpLoopSpline.Length);
+		}
+
+		return (vector3s);
+	}
+
+	//andeeee from the Unity forum's steller Catmull-Rom class ( http://forum.unity3d.com/viewtopic.php?p=218400#218400 ):
+	private static Vector3 Interp(Vector3[] pts, float t)
+	{
+		int numSections = pts.Length - 3;
+		int currPt = Mathf.Min(Mathf.FloorToInt(t * (float)numSections), numSections - 1);
+		float u = t * (float)numSections - (float)currPt;
+
+		Vector3 a = pts[currPt];
+		Vector3 b = pts[currPt + 1];
+		Vector3 c = pts[currPt + 2];
+		Vector3 d = pts[currPt + 3];
+
+		return .5f * (
+			(-a + 3f * b - 3f * c + d) * (u * u * u)
+			+ (2f * a - 5f * b + 4f * c - d) * (u * u)
+			+ (-a + c) * u
+			+ 2f * b
+		);
+	}
+
+	//andeeee from the Unity forum's steller Catmull-Rom class ( http://forum.unity3d.com/viewtopic.php?p=218400#218400 ):
+	private class CRSpline
+	{
+		public Vector3[] pts;
+
+		public CRSpline(params Vector3[] pts)
+		{
+			this.pts = new Vector3[pts.Length];
+			Array.Copy(pts, this.pts, pts.Length);
+		}
+
+
+		public Vector3 Interp(float t)
+		{
+			int numSections = pts.Length - 3;
+			int currPt = Mathf.Min(Mathf.FloorToInt(t * (float)numSections), numSections - 1);
+			float u = t * (float)numSections - (float)currPt;
+			Vector3 a = pts[currPt];
+			Vector3 b = pts[currPt + 1];
+			Vector3 c = pts[currPt + 2];
+			Vector3 d = pts[currPt + 3];
+			return .5f * ((-a + 3f * b - 3f * c + d) * (u * u * u) + (2f * a - 5f * b + 4f * c - d) * (u * u) + (-a + c) * u + 2f * b);
+		}
+	}
+
+	//catalog new tween and add component phase of iTween:
+	static void Launch(GameObject target, Hashtable args)
+	{
+		if (!args.Contains("id"))
+		{
+			args["id"] = GenerateID();
+		}
+		if (!args.Contains("target"))
+		{
+			args["target"] = target;
+		}
+		tweens.Insert(0, args);
+		target.AddComponent("iTween");
+	}
+
+	//cast any accidentally supplied doubles and ints as floats as iTween only uses floats internally and unify parameter case:
+	static Hashtable CleanArgs(Hashtable args)
+	{
+		Hashtable argsCopy = new Hashtable(args.Count);
+		Hashtable argsCaseUnified = new Hashtable(args.Count);
+
+		foreach (DictionaryEntry item in args)
+		{
+			argsCopy.Add(item.Key, item.Value);
+		}
+
+		foreach (DictionaryEntry item in argsCopy)
+		{
+			if (item.Value.GetType() == typeof(System.Int32))
+			{
+				int original = (int)item.Value;
+				float casted = (float)original;
+				args[item.Key] = casted;
+			}
+			if (item.Value.GetType() == typeof(System.Double))
+			{
+				double original = (double)item.Value;
+				float casted = (float)original;
+				args[item.Key] = casted;
+			}
+		}
+
+		//unify parameter case:
+		foreach (DictionaryEntry item in args)
+		{
+			argsCaseUnified.Add(item.Key.ToString().ToLower(), item.Value);
+		}
+
+		//swap back case unification:
+		args = argsCaseUnified;
+
+		return args;
+	}
+
+	//random ID generator:
+	static string GenerateID()
+	{
+		int strlen = 15;
+		char[] chars = { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '0', '1', '2', '3', '4', '5', '6', '7', '8' };
+		int num_chars = chars.Length - 1;
+		string randomChar = "";
+		for (int i = 0; i < strlen; i++)
+		{
+			randomChar += chars[(int)Mathf.Floor(UnityEngine.Random.Range(0, num_chars))];
+		}
+		return randomChar;
+	}
+
+	//grab and set generic, neccesary iTween arguments:
+	void RetrieveArgs()
+	{
+		foreach (Hashtable item in tweens)
+		{
+			if ((GameObject)item["target"] == gameObject)
+			{
+				tweenArguments = item;
+				break;
+			}
+		}
+
+		id = (string)tweenArguments["id"];
+		type = (string)tweenArguments["type"];
+		/* GFX47 MOD START */
+		_name = (string)tweenArguments["name"];
+		/* GFX47 MOD END */
+		method = (string)tweenArguments["method"];
+
+		if (tweenArguments.Contains("time"))
+		{
+			time = (float)tweenArguments["time"];
+		}
+		else
+		{
+			time = Defaults.time;
+		}
+
+		//do we need to use physics, is there a rigidbody?
+		if (rigidbody != null)
+		{
+			physics = true;
+		}
+
+		if (tweenArguments.Contains("delay"))
+		{
+			delay = (float)tweenArguments["delay"];
+		}
+		else
+		{
+			delay = Defaults.delay;
+		}
+
+		if (tweenArguments.Contains("namedcolorvalue"))
+		{
+			//allows namedcolorvalue to be set as either an enum(C# friendly) or a string(JS friendly), string case usage doesn't matter to further increase usability:
+			if (tweenArguments["namedcolorvalue"].GetType() == typeof(NamedValueColor))
+			{
+				namedcolorvalue = (NamedValueColor)tweenArguments["namedcolorvalue"];
+			}
+			else
+			{
+				try
+				{
+					namedcolorvalue = (NamedValueColor)Enum.Parse(typeof(NamedValueColor), (string)tweenArguments["namedcolorvalue"], true);
+				}
+				catch
+				{
+					Debug.LogWarning("iTween: Unsupported namedcolorvalue supplied! Default will be used.");
+					namedcolorvalue = iTween.NamedValueColor._Color;
+				}
+			}
+		}
+		else
+		{
+			namedcolorvalue = Defaults.namedColorValue;
+		}
+
+		if (tweenArguments.Contains("looptype"))
+		{
+			//allows loopType to be set as either an enum(C# friendly) or a string(JS friendly), string case usage doesn't matter to further increase usability:
+			if (tweenArguments["looptype"].GetType() == typeof(LoopType))
+			{
+				loopType = (LoopType)tweenArguments["looptype"];
+			}
+			else
+			{
+				try
+				{
+					loopType = (LoopType)Enum.Parse(typeof(LoopType), (string)tweenArguments["looptype"], true);
+				}
+				catch
+				{
+					Debug.LogWarning("iTween: Unsupported loopType supplied! Default will be used.");
+					loopType = iTween.LoopType.none;
+				}
+			}
+		}
+		else
+		{
+			loopType = iTween.LoopType.none;
+		}
+
+		if (tweenArguments.Contains("easetype"))
+		{
+			//allows easeType to be set as either an enum(C# friendly) or a string(JS friendly), string case usage doesn't matter to further increase usability:
+			if (tweenArguments["easetype"].GetType() == typeof(EaseType))
+			{
+				easeType = (EaseType)tweenArguments["easetype"];
+			}
+			else
+			{
+				try
+				{
+					easeType = (EaseType)Enum.Parse(typeof(EaseType), (string)tweenArguments["easetype"], true);
+				}
+				catch
+				{
+					Debug.LogWarning("iTween: Unsupported easeType supplied! Default will be used.");
+					easeType = Defaults.easeType;
+				}
+			}
+		}
+		else
+		{
+			easeType = Defaults.easeType;
+		}
+
+		if (tweenArguments.Contains("space"))
+		{
+			//allows space to be set as either an enum(C# friendly) or a string(JS friendly), string case usage doesn't matter to further increase usability:
+			if (tweenArguments["space"].GetType() == typeof(Space))
+			{
+				space = (Space)tweenArguments["space"];
+			}
+			else
+			{
+				try
+				{
+					space = (Space)Enum.Parse(typeof(Space), (string)tweenArguments["space"], true);
+				}
+				catch
+				{
+					Debug.LogWarning("iTween: Unsupported space supplied! Default will be used.");
+					space = Defaults.space;
+				}
+			}
+		}
+		else
+		{
+			space = Defaults.space;
+		}
+
+		if (tweenArguments.Contains("islocal"))
+		{
+			isLocal = (bool)tweenArguments["islocal"];
+		}
+		else
+		{
+			isLocal = Defaults.isLocal;
+		}
+
+		// Added by PressPlay
+		if (tweenArguments.Contains("ignoretimescale"))
+		{
+			useRealTime = (bool)tweenArguments["ignoretimescale"];
+		}
+		else
+		{
+			useRealTime = Defaults.useRealTime;
+		}
+
+		//instantiates a cached ease equation reference:
+		GetEasingFunction();
+	}
+
+	//instantiates a cached ease equation refrence:
+	void GetEasingFunction()
+	{
+		switch (easeType)
+		{
+			case EaseType.easeInQuad:
+				ease = new EasingFunction(easeInQuad);
+				break;
+			case EaseType.easeOutQuad:
+				ease = new EasingFunction(easeOutQuad);
+				break;
+			case EaseType.easeInOutQuad:
+				ease = new EasingFunction(easeInOutQuad);
+				break;
+			case EaseType.easeInCubic:
+				ease = new EasingFunction(easeInCubic);
+				break;
+			case EaseType.easeOutCubic:
+				ease = new EasingFunction(easeOutCubic);
+				break;
+			case EaseType.easeInOutCubic:
+				ease = new EasingFunction(easeInOutCubic);
+				break;
+			case EaseType.easeInQuart:
+				ease = new EasingFunction(easeInQuart);
+				break;
+			case EaseType.easeOutQuart:
+				ease = new EasingFunction(easeOutQuart);
+				break;
+			case EaseType.easeInOutQuart:
+				ease = new EasingFunction(easeInOutQuart);
+				break;
+			case EaseType.easeInQuint:
+				ease = new EasingFunction(easeInQuint);
+				break;
+			case EaseType.easeOutQuint:
+				ease = new EasingFunction(easeOutQuint);
+				break;
+			case EaseType.easeInOutQuint:
+				ease = new EasingFunction(easeInOutQuint);
+				break;
+			case EaseType.easeInSine:
+				ease = new EasingFunction(easeInSine);
+				break;
+			case EaseType.easeOutSine:
+				ease = new EasingFunction(easeOutSine);
+				break;
+			case EaseType.easeInOutSine:
+				ease = new EasingFunction(easeInOutSine);
+				break;
+			case EaseType.easeInExpo:
+				ease = new EasingFunction(easeInExpo);
+				break;
+			case EaseType.easeOutExpo:
+				ease = new EasingFunction(easeOutExpo);
+				break;
+			case EaseType.easeInOutExpo:
+				ease = new EasingFunction(easeInOutExpo);
+				break;
+			case EaseType.easeInCirc:
+				ease = new EasingFunction(easeInCirc);
+				break;
+			case EaseType.easeOutCirc:
+				ease = new EasingFunction(easeOutCirc);
+				break;
+			case EaseType.easeInOutCirc:
+				ease = new EasingFunction(easeInOutCirc);
+				break;
+			case EaseType.linear:
+				ease = new EasingFunction(linear);
+				break;
+			case EaseType.spring:
+				ease = new EasingFunction(spring);
+				break;
+			/* GFX47 MOD START */
+			/*case EaseType.bounce:
+				ease = new EasingFunction(bounce);
+				break;*/
+			case EaseType.easeInBounce:
+				ease = new EasingFunction(easeInBounce);
+				break;
+			case EaseType.easeOutBounce:
+				ease = new EasingFunction(easeOutBounce);
+				break;
+			case EaseType.easeInOutBounce:
+				ease = new EasingFunction(easeInOutBounce);
+				break;
+			/* GFX47 MOD END */
+			case EaseType.easeInBack:
+				ease = new EasingFunction(easeInBack);
+				break;
+			case EaseType.easeOutBack:
+				ease = new EasingFunction(easeOutBack);
+				break;
+			case EaseType.easeInOutBack:
+				ease = new EasingFunction(easeInOutBack);
+				break;
+			/* GFX47 MOD START */
+			/*case EaseType.elastic:
+				ease = new EasingFunction(elastic);
+				break;*/
+			case EaseType.easeInElastic:
+				ease = new EasingFunction(easeInElastic);
+				break;
+			case EaseType.easeOutElastic:
+				ease = new EasingFunction(easeOutElastic);
+				break;
+			case EaseType.easeInOutElastic:
+				ease = new EasingFunction(easeInOutElastic);
+				break;
+			/* GFX47 MOD END */
+		}
+	}
+
+	//calculate percentage of tween based on time:
+	void UpdatePercentage()
+	{
+
+		// Added by PressPlay   
+		if (useRealTime)
+		{
+			runningTime += (Time.realtimeSinceStartup - lastRealTime);
+		}
+		else
+		{
+			runningTime += Time.deltaTime;
+		}
+
+		if (reverse)
+		{
+			percentage = 1 - runningTime / time;
+		}
+		else
+		{
+			percentage = runningTime / time;
+		}
+
+		lastRealTime = Time.realtimeSinceStartup; // Added by PressPlay
+	}
+
+	void CallBack(string callbackType)
+	{
+		if (tweenArguments.Contains(callbackType) && !tweenArguments.Contains("ischild"))
+		{
+			//establish target:
+			GameObject target;
+			if (tweenArguments.Contains(callbackType + "target"))
+			{
+				target = (GameObject)tweenArguments[callbackType + "target"];
+			}
+			else
+			{
+				target = gameObject;
+			}
+
+			//throw an error if a string wasn't passed for callback:
+			if (tweenArguments[callbackType].GetType() == typeof(System.String))
+			{
+				target.SendMessage((string)tweenArguments[callbackType], (object)tweenArguments[callbackType + "params"], SendMessageOptions.DontRequireReceiver);
+			}
+			else
+			{
+				Debug.LogError("iTween Error: Callback method references must be passed as a String!");
+				Destroy(this);
+			}
+		}
+	}
+
+	void Dispose()
+	{
+		for (int i = 0; i < tweens.Count; i++)
+		{
+			Hashtable tweenEntry = (Hashtable)tweens[i];
+			if ((string)tweenEntry["id"] == id)
+			{
+				tweens.RemoveAt(i);
+				break;
+			}
+		}
+		Destroy(this);
+	}
+
+	void ConflictCheck()
+	{//if a new iTween is about to run and is of the same type as an in progress iTween this will destroy the previous if the new one is NOT identical in every way or it will destroy the new iTween if they are:	
+		Component[] tweens = GetComponents(typeof(iTween));
+		foreach (iTween item in tweens)
+		{
+			if (item.type == "value")
+			{
+				return;
+			}
+			else if (item.isRunning && item.type == type)
+			{
+				//cancel out if this is a shake or punch variant:
+				if (item.method != method)
+				{
+					return;
+				}
+
+				//step 1: check for length first since it's the fastest:
+				if (item.tweenArguments.Count != tweenArguments.Count)
+				{
+					item.Dispose();
+					return;
+				}
+
+				//step 2: side-by-side check to figure out if this is an identical tween scenario to handle Update usages of iTween:
+				foreach (DictionaryEntry currentProp in tweenArguments)
+				{
+					if (!item.tweenArguments.Contains(currentProp.Key))
+					{
+						item.Dispose();
+						return;
+					}
+					else
+					{
+						if (!item.tweenArguments[currentProp.Key].Equals(tweenArguments[currentProp.Key]) && (string)currentProp.Key != "id")
+						{//if we aren't comparing ids and something isn't exactly the same replace the running iTween: 
+							item.Dispose();
+							return;
+						}
+					}
+				}
+
+				//step 3: prevent a new iTween addition if it is identical to the currently running iTween
+				Dispose();
+				//Destroy(this);	
+			}
+		}
+	}
+
+	void EnableKinematic()
+	{
+		/*
+		if(GameObjectBase.GetComponent(typeof(Rigidbody))){
+			if(!rigidbody.isKinematic){
+				kinematic=true;
+				rigidbody.isKinematic=true;
+			}
+		}
+		*/
+	}
+
+	void DisableKinematic()
+	{
+		/*
+		if(kinematic && rigidbody.isKinematic==true){
+			kinematic=false;
+			rigidbody.isKinematic=false;
+		}
+		*/
+	}
+
+	void ResumeDelay()
+	{
+		StartCoroutine("TweenDelay");
+	}
+
+	#endregion
+
+	#region Easing Curves
+
+	private float linear(float start, float end, float value)
+	{
+		return Mathf.Lerp(start, end, value);
+	}
+
+	private float clerp(float start, float end, float value)
+	{
+		float min = 0.0f;
+		float max = 360.0f;
+		float half = Mathf.Abs((max - min) / 2.0f);
+		float retval = 0.0f;
+		float diff = 0.0f;
+		if ((end - start) < -half)
+		{
+			diff = ((max - start) + end) * value;
+			retval = start + diff;
+		}
+		else if ((end - start) > half)
+		{
+			diff = -((max - end) + start) * value;
+			retval = start + diff;
+		}
+		else retval = start + (end - start) * value;
+		return retval;
+	}
+
+	private float spring(float start, float end, float value)
+	{
+		value = Mathf.Clamp01(value);
+		value = (Mathf.Sin(value * Mathf.PI * (0.2f + 2.5f * value * value * value)) * Mathf.Pow(1f - value, 2.2f) + value) * (1f + (1.2f * (1f - value)));
+		return start + (end - start) * value;
+	}
+
+	private float easeInQuad(float start, float end, float value)
+	{
+		end -= start;
+		return end * value * value + start;
+	}
+
+	private float easeOutQuad(float start, float end, float value)
+	{
+		end -= start;
+		return -end * value * (value - 2) + start;
+	}
+
+	private float easeInOutQuad(float start, float end, float value)
+	{
+		value /= .5f;
+		end -= start;
+		if (value < 1) return end / 2 * value * value + start;
+		value--;
+		return -end / 2 * (value * (value - 2) - 1) + start;
+	}
+
+	private float easeInCubic(float start, float end, float value)
+	{
+		end -= start;
+		return end * value * value * value + start;
+	}
+
+	private float easeOutCubic(float start, float end, float value)
+	{
+		value--;
+		end -= start;
+		return end * (value * value * value + 1) + start;
+	}
+
+	private float easeInOutCubic(float start, float end, float value)
+	{
+		value /= .5f;
+		end -= start;
+		if (value < 1) return end / 2 * value * value * value + start;
+		value -= 2;
+		return end / 2 * (value * value * value + 2) + start;
+	}
+
+	private float easeInQuart(float start, float end, float value)
+	{
+		end -= start;
+		return end * value * value * value * value + start;
+	}
+
+	private float easeOutQuart(float start, float end, float value)
+	{
+		value--;
+		end -= start;
+		return -end * (value * value * value * value - 1) + start;
+	}
+
+	private float easeInOutQuart(float start, float end, float value)
+	{
+		value /= .5f;
+		end -= start;
+		if (value < 1) return end / 2 * value * value * value * value + start;
+		value -= 2;
+		return -end / 2 * (value * value * value * value - 2) + start;
+	}
+
+	private float easeInQuint(float start, float end, float value)
+	{
+		end -= start;
+		return end * value * value * value * value * value + start;
+	}
+
+	private float easeOutQuint(float start, float end, float value)
+	{
+		value--;
+		end -= start;
+		return end * (value * value * value * value * value + 1) + start;
+	}
+
+	private float easeInOutQuint(float start, float end, float value)
+	{
+		value /= .5f;
+		end -= start;
+		if (value < 1) return end / 2 * value * value * value * value * value + start;
+		value -= 2;
+		return end / 2 * (value * value * value * value * value + 2) + start;
+	}
+
+	private float easeInSine(float start, float end, float value)
+	{
+		end -= start;
+		return -end * Mathf.Cos(value / 1 * (Mathf.PI / 2)) + end + start;
+	}
+
+	private float easeOutSine(float start, float end, float value)
+	{
+		end -= start;
+		return end * Mathf.Sin(value / 1 * (Mathf.PI / 2)) + start;
+	}
+
+	private float easeInOutSine(float start, float end, float value)
+	{
+		end -= start;
+		return -end / 2 * (Mathf.Cos(Mathf.PI * value / 1) - 1) + start;
+	}
+
+	private float easeInExpo(float start, float end, float value)
+	{
+		end -= start;
+		return end * Mathf.Pow(2, 10 * (value / 1 - 1)) + start;
+	}
+
+	private float easeOutExpo(float start, float end, float value)
+	{
+		end -= start;
+		return end * (-Mathf.Pow(2, -10 * value / 1) + 1) + start;
+	}
+
+	private float easeInOutExpo(float start, float end, float value)
+	{
+		value /= .5f;
+		end -= start;
+		if (value < 1) return end / 2 * Mathf.Pow(2, 10 * (value - 1)) + start;
+		value--;
+		return end / 2 * (-Mathf.Pow(2, -10 * value) + 2) + start;
+	}
+
+	private float easeInCirc(float start, float end, float value)
+	{
+		end -= start;
+		return -end * (Mathf.Sqrt(1 - value * value) - 1) + start;
+	}
+
+	private float easeOutCirc(float start, float end, float value)
+	{
+		value--;
+		end -= start;
+		return end * Mathf.Sqrt(1 - value * value) + start;
+	}
+
+	private float easeInOutCirc(float start, float end, float value)
+	{
+		value /= .5f;
+		end -= start;
+		if (value < 1) return -end / 2 * (Mathf.Sqrt(1 - value * value) - 1) + start;
+		value -= 2;
+		return end / 2 * (Mathf.Sqrt(1 - value * value) + 1) + start;
+	}
+
+	/* GFX47 MOD START */
+	private float easeInBounce(float start, float end, float value)
+	{
+		end -= start;
+		float d = 1f;
+		return end - easeOutBounce(0, end, d - value) + start;
+	}
+	/* GFX47 MOD END */
+
+	/* GFX47 MOD START */
+	//private float bounce(float start, float end, float value){
+	private float easeOutBounce(float start, float end, float value)
+	{
+		value /= 1f;
+		end -= start;
+		if (value < (1 / 2.75f))
+		{
+			return end * (7.5625f * value * value) + start;
+		}
+		else if (value < (2 / 2.75f))
+		{
+			value -= (1.5f / 2.75f);
+			return end * (7.5625f * (value) * value + .75f) + start;
+		}
+		else if (value < (2.5 / 2.75))
+		{
+			value -= (2.25f / 2.75f);
+			return end * (7.5625f * (value) * value + .9375f) + start;
+		}
+		else
+		{
+			value -= (2.625f / 2.75f);
+			return end * (7.5625f * (value) * value + .984375f) + start;
+		}
+	}
+	/* GFX47 MOD END */
+
+	/* GFX47 MOD START */
+	private float easeInOutBounce(float start, float end, float value)
+	{
+		end -= start;
+		float d = 1f;
+		if (value < d / 2) return easeInBounce(0, end, value * 2) * 0.5f + start;
+		else return easeOutBounce(0, end, value * 2 - d) * 0.5f + end * 0.5f + start;
+	}
+	/* GFX47 MOD END */
+
+	private float easeInBack(float start, float end, float value)
+	{
+		end -= start;
+		value /= 1;
+		float s = 1.70158f;
+		return end * (value) * value * ((s + 1) * value - s) + start;
+	}
+
+	private float easeOutBack(float start, float end, float value)
+	{
+		float s = 1.70158f;
+		end -= start;
+		value = (value / 1) - 1;
+		return end * ((value) * value * ((s + 1) * value + s) + 1) + start;
+	}
+
+	private float easeInOutBack(float start, float end, float value)
+	{
+		float s = 1.70158f;
+		end -= start;
+		value /= .5f;
+		if ((value) < 1)
+		{
+			s *= (1.525f);
+			return end / 2 * (value * value * (((s) + 1) * value - s)) + start;
+		}
+		value -= 2;
+		s *= (1.525f);
+		return end / 2 * ((value) * value * (((s) + 1) * value + s) + 2) + start;
+	}
+
+	private float punch(float amplitude, float value)
+	{
+		float s = 9;
+		if (value == 0)
+		{
+			return 0;
+		}
+		if (value == 1)
+		{
+			return 0;
+		}
+		float period = 1 * 0.3f;
+		s = period / (2 * Mathf.PI) * Mathf.Asin(0);
+		return (amplitude * Mathf.Pow(2, -10 * value) * Mathf.Sin((value * 1 - s) * (2 * Mathf.PI) / period));
+	}
+
+	/* GFX47 MOD START */
+	private float easeInElastic(float start, float end, float value)
+	{
+		end -= start;
+
+		float d = 1f;
+		float p = d * .3f;
+		float s = 0;
+		float a = 0;
+
+		if (value == 0) return start;
+
+		if ((value /= d) == 1) return start + end;
+
+		if (a == 0f || a < Mathf.Abs(end))
+		{
+			a = end;
+			s = p / 4;
+		}
+		else
+		{
+			s = p / (2 * Mathf.PI) * Mathf.Asin(end / a);
+		}
+
+		return -(a * Mathf.Pow(2, 10 * (value -= 1)) * Mathf.Sin((value * d - s) * (2 * Mathf.PI) / p)) + start;
+	}
+	/* GFX47 MOD END */
+
+	/* GFX47 MOD START */
+	//private float elastic(float start, float end, float value){
+	private float easeOutElastic(float start, float end, float value)
+	{
+		/* GFX47 MOD END */
+		//Thank you to rafael.marteleto for fixing this as a port over from Pedro's UnityTween
+		end -= start;
+
+		float d = 1f;
+		float p = d * .3f;
+		float s = 0;
+		float a = 0;
+
+		if (value == 0) return start;
+
+		if ((value /= d) == 1) return start + end;
+
+		if (a == 0f || a < Mathf.Abs(end))
+		{
+			a = end;
+			s = p / 4;
+		}
+		else
+		{
+			s = p / (2 * Mathf.PI) * Mathf.Asin(end / a);
+		}
+
+		return (a * Mathf.Pow(2, -10 * value) * Mathf.Sin((value * d - s) * (2 * Mathf.PI) / p) + end + start);
+	}
+
+	/* GFX47 MOD START */
+	private float easeInOutElastic(float start, float end, float value)
+	{
+		end -= start;
+
+		float d = 1f;
+		float p = d * .3f;
+		float s = 0;
+		float a = 0;
+
+		if (value == 0) return start;
+
+		if ((value /= d / 2) == 2) return start + end;
+
+		if (a == 0f || a < Mathf.Abs(end))
+		{
+			a = end;
+			s = p / 4;
+		}
+		else
+		{
+			s = p / (2 * Mathf.PI) * Mathf.Asin(end / a);
+		}
+
+		if (value < 1) return -0.5f * (a * Mathf.Pow(2, 10 * (value -= 1)) * Mathf.Sin((value * d - s) * (2 * Mathf.PI) / p)) + start;
+		return a * Mathf.Pow(2, -10 * (value -= 1)) * Mathf.Sin((value * d - s) * (2 * Mathf.PI) / p) * 0.5f + end + start;
+	}
+	/* GFX47 MOD END */
+
+	#endregion
+
+	#region Deprecated and Renamed
+	/*
+	public static void audioFrom(GameObject target, Hashtable args){Debug.LogError("iTween Error: audioFrom() has been renamed to AudioFrom().");}
+	public static void audioTo(GameObject target, Hashtable args){Debug.LogError("iTween Error: audioTo() has been renamed to AudioTo().");}
+	public static void colorFrom(GameObject target, Hashtable args){Debug.LogError("iTween Error: colorFrom() has been renamed to ColorFrom().");}
+	public static void colorTo(GameObject target, Hashtable args){Debug.LogError("iTween Error: colorTo() has been renamed to ColorTo().");}
+	public static void fadeFrom(GameObject target, Hashtable args){Debug.LogError("iTween Error: fadeFrom() has been renamed to FadeFrom().");}
+	public static void fadeTo(GameObject target, Hashtable args){Debug.LogError("iTween Error: fadeTo() has been renamed to FadeTo().");}
+	public static void lookFrom(GameObject target, Hashtable args){Debug.LogError("iTween Error: lookFrom() has been renamed to LookFrom().");}
+	public static void lookFromWorld(GameObject target, Hashtable args){Debug.LogError("iTween Error: lookFromWorld() has been deprecated. Please investigate LookFrom().");}
+	public static void lookTo(GameObject target, Hashtable args){Debug.LogError("iTween Error: lookTo() has been renamed to LookTo().");}
+	public static void lookToUpdate(GameObject target, Hashtable args){Debug.LogError("iTween Error: lookToUpdate() has been renamed to LookUpdate().");}
+	public static void lookToUpdateWorld(GameObject target, Hashtable args){Debug.LogError("iTween Error: lookToUpdateWorld() has been deprecated. Please investigate LookUpdate().");}
+	public static void moveAdd(GameObject target, Hashtable args){Debug.LogError("iTween Error: moveAdd() has been renamed to MoveAdd().");}
+	public static void moveAddWorld(GameObject target, Hashtable args){Debug.LogError("iTween Error: moveAddWorld() has been deprecated. Please investigate MoveAdd().");}
+	public static void moveBy(GameObject target, Hashtable args){Debug.LogError("iTween Error: moveBy() has been renamed to MoveBy().");}
+	public static void moveByWorld(GameObject target, Hashtable args){Debug.LogError("iTween Error: moveAddWorld() has been deprecated. Please investigate MoveAdd().");}
+	public static void moveFrom(GameObject target, Hashtable args){Debug.LogError("iTween Error: moveFrom() has been renamed to MoveFrom().");}
+	public static void moveFromWorld(GameObject target, Hashtable args){Debug.LogError("iTween Error: moveFromWorld() has been deprecated. Please investigate MoveFrom().");}
+	public static void moveTo(GameObject target, Hashtable args){Debug.LogError("iTween Error: moveTo() has been renamed to MoveTo().");}
+	public static void moveToBezier(GameObject target, Hashtable args){Debug.LogError("iTween Error: moveToBezier() has been deprecated. Please investigate MoveTo() and the "path" property.");}
+	public static void moveToBezierWorld(GameObject target, Hashtable args){Debug.LogError("iTween Error: moveToBezierWorld() has been deprecated. Please investigate MoveTo() and the "path" property.");}
+	public static void moveToUpdate(GameObject target, Hashtable args){Debug.LogError("iTween Error: moveToUpdate() has been renamed to MoveUpdate().");}
+	public static void moveToUpdateWorld(GameObject target, Hashtable args){Debug.LogError("iTween Error: moveToUpdateWorld() has been deprecated. Please investigate MoveUpdate().");}
+	public static void moveToWorld(GameObject target, Hashtable args){Debug.LogError("iTween Error: moveToWorld() has been deprecated. Please investigate MoveTo().");}
+	public static void punchPosition(GameObject target, Hashtable args){Debug.LogError("iTween Error: punchPosition() has been renamed to PunchPosition().");}
+	public static void punchPositionWorld(GameObject target, Hashtable args){Debug.LogError("iTween Error: punchPositionWorld() has been deprecated. Please investigate PunchPosition().");}	
+	public static void punchRotation(GameObject target, Hashtable args){Debug.LogError("iTween Error: punchPosition() has been renamed to PunchRotation().");}
+	public static void punchRotationWorld(GameObject target, Hashtable args){Debug.LogError("iTween Error: punchRotationWorld() has been deprecated. Please investigate PunchRotation().");}	
+	public static void punchScale(GameObject target, Hashtable args){Debug.LogError("iTween Error: punchScale() has been renamed to PunchScale().");}
+	public static void rotateAdd(GameObject target, Hashtable args){Debug.LogError("iTween Error: rotateAdd() has been renamed to RotateAdd().");}
+	public static void rotateBy(GameObject target, Hashtable args){Debug.LogError("iTween Error: rotateBy() has been renamed to RotateBy().");}
+	public static void rotateByWorld(GameObject target, Hashtable args){Debug.LogError("iTween Error: rotateByWorld() has been deprecated. Please investigate RotateBy().");}
+	public static void rotateFrom(GameObject target, Hashtable args){Debug.LogError("iTween Error: rotateFrom() has been renamed to RotateFrom().");}
+	public static void rotateTo(GameObject target, Hashtable args){Debug.LogError("iTween Error: rotateTo() has been renamed to RotateTo().");}
+	public static void scaleAdd(GameObject target, Hashtable args){Debug.LogError("iTween Error: scaleAdd() has been renamed to ScaleAdd().");}
+	public static void scaleBy(GameObject target, Hashtable args){Debug.LogError("iTween Error: scaleBy() has been renamed to ScaleBy().");}
+	public static void scaleFrom(GameObject target, Hashtable args){Debug.LogError("iTween Error: scaleFrom() has been renamed to ScaleFrom().");}
+	public static void scaleTo(GameObject target, Hashtable args){Debug.LogError("iTween Error: scaleTo() has been renamed to ScaleTo().");}
+	public static void shake(GameObject target, Hashtable args){Debug.LogError("iTween Error: scale() has been deprecated. Please investigate ShakePosition(), ShakeRotation() and ShakeScale().");}
+	public static void shakeWorld(GameObject target, Hashtable args){Debug.LogError("iTween Error: shakeWorld() has been deprecated. Please investigate ShakePosition(), ShakeRotation() and ShakeScale().");}
+	public static void stab(GameObject target, Hashtable args){Debug.LogError("iTween Error: stab() has been renamed to Stab().");}
+	public static void stop(GameObject target, Hashtable args){Debug.LogError("iTween Error: stop() has been renamed to Stop().");}
+	public static void stopType(GameObject target, Hashtable args){Debug.LogError("iTween Error: stopType() has been deprecated. Please investigate Stop().");}
+	public static void tweenCount(GameObject target, Hashtable args){Debug.LogError("iTween Error: tweenCount() has been deprecated. Please investigate Count().");}
+	*/
+	#endregion
 }

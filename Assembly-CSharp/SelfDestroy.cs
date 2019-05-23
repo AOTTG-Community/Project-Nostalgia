@@ -1,19 +1,10 @@
-﻿using Optimization.Caching;
+using Photon;
+using System;
 using UnityEngine;
 
 public class SelfDestroy : Photon.MonoBehaviour
 {
     public float CountDown = 5f;
-
-    private void OnDisable()
-    {
-
-    }
-
-    private void OnEnable()
-    {
-        CountDown = 5f;
-    }
 
     private void Start()
     {
@@ -24,29 +15,29 @@ public class SelfDestroy : Photon.MonoBehaviour
         this.CountDown -= Time.deltaTime;
         if (this.CountDown <= 0f)
         {
-            if (IN_GAME_MAIN_CAMERA.GameType == GameType.Single)
+            if (IN_GAME_MAIN_CAMERA.gametype == GAMETYPE.SINGLE)
             {
-                Pool.Disable(gameObject);
-                return;
+                UnityEngine.Object.Destroy(base.gameObject);
             }
-            else if (IN_GAME_MAIN_CAMERA.GameType == GameType.Multi)
+            else if (IN_GAME_MAIN_CAMERA.gametype == GAMETYPE.MULTIPLAYER)
             {
-                if (BasePV != null)
+                if (base.photonView != null)
                 {
-                    if (BasePV.viewID == 0)
+                    if (base.photonView.viewID == 0)
                     {
-                        Pool.Disable(base.gameObject);
+                        UnityEngine.Object.Destroy(base.gameObject);
                     }
-                    else if (BasePV.IsMine)
+                    else if (base.photonView.isMine)
                     {
                         PhotonNetwork.Destroy(base.gameObject);
                     }
                 }
                 else
                 {
-                    Pool.Disable(base.gameObject);
+                    UnityEngine.Object.Destroy(base.gameObject);
                 }
             }
         }
     }
 }
+

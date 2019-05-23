@@ -1,12 +1,24 @@
-﻿using Optimization.Caching;
+using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
-[AddComponentMenu("NGUI/Interaction/Popup List")]
-[ExecuteInEditMode]
+[AddComponentMenu("NGUI/Interaction/Popup List"), ExecuteInEditMode]
 public class UIPopupList : MonoBehaviour
 {
     private const float animSpeed = 0.15f;
+    public UIAtlas atlas;
+    public Color backgroundColor = Color.white;
+    public string backgroundSprite;
+    public static UIPopupList current;
+    public GameObject eventReceiver;
+    public UIFont font;
+    public string functionName = "OnSelectionChange";
+    public Color highlightColor = new Color(0.5960785f, 1f, 0.2f, 1f);
+    public string highlightSprite;
+    public bool isAnimated = true;
+    public bool isLocalized;
+    public List<string> items = new List<string>();
     private UISprite mBackground;
     private float mBgBorder;
     private GameObject mChild;
@@ -14,96 +26,14 @@ public class UIPopupList : MonoBehaviour
     private UILabel mHighlightedLabel;
     private List<UILabel> mLabelList = new List<UILabel>();
     private UIPanel mPanel;
-
-    [HideInInspector]
-    [SerializeField]
+    [HideInInspector, SerializeField]
     private string mSelectedItem;
-
-    public static UIPopupList current;
-    public UIAtlas atlas;
-    public Color backgroundColor = Color.white;
-    public string backgroundSprite;
-    public GameObject eventReceiver;
-    public UIFont font;
-    public string functionName = "OnSelectionChange";
-    public Color highlightColor = new Color(0.596078455f, 1f, 0.2f, 1f);
-    public string highlightSprite;
-    public bool isAnimated = true;
-    public bool isLocalized;
-    public List<string> items = new List<string>();
-    public UIPopupList.OnSelectionChange onSelectionChange;
+    public OnSelectionChange onSelectionChange;
     public Vector2 padding = new Vector3(4f, 4f);
-    public UIPopupList.Position position;
+    public Position position;
     public Color textColor = Color.white;
     public UILabel textLabel;
     public float textScale = 1f;
-
-    public delegate void OnSelectionChange(string item);
-
-    public enum Position
-    {
-        Auto,
-        Above,
-        Below
-    }
-
-    private bool handleEvents
-    {
-        get
-        {
-            UIButtonKeys component = base.GetComponent<UIButtonKeys>();
-            return component == null || !component.enabled;
-        }
-        set
-        {
-            UIButtonKeys component = base.GetComponent<UIButtonKeys>();
-            if (component != null)
-            {
-                component.enabled = !value;
-            }
-        }
-    }
-
-    public bool isOpen
-    {
-        get
-        {
-            return this.mChild != null;
-        }
-    }
-
-    public string selection
-    {
-        get
-        {
-            return this.mSelectedItem;
-        }
-        set
-        {
-            if (this.mSelectedItem != value)
-            {
-                this.mSelectedItem = value;
-                if (this.textLabel != null)
-                {
-                    this.textLabel.text = ((!this.isLocalized) ? value : Localization.Localize(value));
-                }
-                UIPopupList.current = this;
-                if (this.onSelectionChange != null)
-                {
-                    this.onSelectionChange(this.mSelectedItem);
-                }
-                if (this.eventReceiver != null && !string.IsNullOrEmpty(this.functionName) && Application.isPlaying)
-                {
-                    this.eventReceiver.SendMessage(this.functionName, this.mSelectedItem, SendMessageOptions.DontRequireReceiver);
-                }
-                UIPopupList.current = null;
-                if (this.textLabel == null)
-                {
-                    this.mSelectedItem = null;
-                }
-            }
-        }
-    }
 
     private void Animate(UIWidget widget, bool placeAbove, float bottom)
     {
@@ -121,24 +51,23 @@ public class UIPopupList : MonoBehaviour
     private void AnimatePosition(UIWidget widget, bool placeAbove, float bottom)
     {
         Vector3 localPosition = widget.cachedTransform.localPosition;
-        Vector3 localPosition2 = (!placeAbove) ? new Vector3(localPosition.x, 0f, localPosition.z) : new Vector3(localPosition.x, bottom, localPosition.z);
-        widget.cachedTransform.localPosition = localPosition2;
-        GameObject gameObject = widget.gameObject;
-        TweenPosition.Begin(gameObject, 0.15f, localPosition).method = UITweener.Method.EaseOut;
+        Vector3 vector2 = !placeAbove ? new Vector3(localPosition.x, 0f, localPosition.z) : new Vector3(localPosition.x, bottom, localPosition.z);
+        widget.cachedTransform.localPosition = vector2;
+        TweenPosition.Begin(widget.gameObject, 0.15f, localPosition).method = UITweener.Method.EaseOut;
     }
 
     private void AnimateScale(UIWidget widget, bool placeAbove, float bottom)
     {
         GameObject gameObject = widget.gameObject;
         Transform cachedTransform = widget.cachedTransform;
-        float num = (float)this.font.size * this.textScale + this.mBgBorder * 2f;
+        float y = (this.font.size * this.textScale) + (this.mBgBorder * 2f);
         Vector3 localScale = cachedTransform.localScale;
-        cachedTransform.localScale = new Vector3(localScale.x, num, localScale.z);
+        cachedTransform.localScale = new Vector3(localScale.x, y, localScale.z);
         TweenScale.Begin(gameObject, 0.15f, localScale).method = UITweener.Method.EaseOut;
         if (placeAbove)
         {
             Vector3 localPosition = cachedTransform.localPosition;
-            cachedTransform.localPosition = new Vector3(localPosition.x, localPosition.y - localScale.y + num, localPosition.z);
+            cachedTransform.localPosition = new Vector3(localPosition.x, (localPosition.y - localScale.y) + y, localPosition.z);
             TweenPosition.Begin(gameObject, 0.15f, localPosition).method = UITweener.Method.EaseOut;
         }
     }
@@ -148,33 +77,31 @@ public class UIPopupList : MonoBehaviour
         if (this.mHighlight != null)
         {
             TweenPosition component = lbl.GetComponent<TweenPosition>();
-            if (component != null && component.enabled)
+            if ((component == null) || !component.enabled)
             {
-                return;
-            }
-            this.mHighlightedLabel = lbl;
-            UIAtlas.Sprite atlasSprite = this.mHighlight.GetAtlasSprite();
-            if (atlasSprite == null)
-            {
-                return;
-            }
-            float num = atlasSprite.inner.xMin - atlasSprite.outer.xMin;
-            float y = atlasSprite.inner.yMin - atlasSprite.outer.yMin;
-            Vector3 vector = lbl.cachedTransform.localPosition + new Vector3(-num, y, 1f);
-            if (instant || !this.isAnimated)
-            {
-                this.mHighlight.cachedTransform.localPosition = vector;
-            }
-            else
-            {
-                TweenPosition.Begin(this.mHighlight.gameObject, 0.1f, vector).method = UITweener.Method.EaseOut;
+                this.mHighlightedLabel = lbl;
+                UIAtlas.Sprite atlasSprite = this.mHighlight.GetAtlasSprite();
+                if (atlasSprite != null)
+                {
+                    float num = atlasSprite.inner.xMin - atlasSprite.outer.xMin;
+                    float y = atlasSprite.inner.yMin - atlasSprite.outer.yMin;
+                    Vector3 pos = lbl.cachedTransform.localPosition + new Vector3(-num, y, 1f);
+                    if (instant || !this.isAnimated)
+                    {
+                        this.mHighlight.cachedTransform.localPosition = pos;
+                    }
+                    else
+                    {
+                        TweenPosition.Begin(this.mHighlight.gameObject, 0.1f, pos).method = UITweener.Method.EaseOut;
+                    }
+                }
             }
         }
     }
 
     private void OnClick()
     {
-        if (this.mChild == null && this.atlas != null && this.font != null && this.items.Count > 0)
+        if (((this.mChild == null) && (this.atlas != null)) && ((this.font != null) && (this.items.Count > 0)))
         {
             this.mLabelList.Clear();
             this.handleEvents = true;
@@ -182,15 +109,15 @@ public class UIPopupList : MonoBehaviour
             {
                 this.mPanel = UIPanel.Find(base.transform, true);
             }
-            Transform transform = base.transform;
-            Bounds bounds = NGUIMath.CalculateRelativeWidgetBounds(transform.parent, transform);
+            Transform child = base.transform;
+            Bounds bounds = NGUIMath.CalculateRelativeWidgetBounds(child.parent, child);
             this.mChild = new GameObject("Drop-down List");
             this.mChild.layer = base.gameObject.layer;
-            Transform transform2 = this.mChild.transform;
-            transform2.parent = transform.parent;
-            transform2.localPosition = bounds.min;
-            transform2.localRotation = Quaternion.identity;
-            transform2.localScale = Vectors.one;
+            Transform transform = this.mChild.transform;
+            transform.parent = child.parent;
+            transform.localPosition = bounds.min;
+            transform.localRotation = Quaternion.identity;
+            transform.localScale = Vector3.one;
             this.mBackground = NGUITools.AddSprite(this.mChild, this.atlas, this.backgroundSprite);
             this.mBackground.pivot = UIWidget.Pivot.TopLeft;
             this.mBackground.depth = NGUITools.CalculateNextDepth(this.mPanel.gameObject);
@@ -202,91 +129,90 @@ public class UIPopupList : MonoBehaviour
             this.mHighlight.pivot = UIWidget.Pivot.TopLeft;
             this.mHighlight.color = this.highlightColor;
             UIAtlas.Sprite atlasSprite = this.mHighlight.GetAtlasSprite();
-            if (atlasSprite == null)
+            if (atlasSprite != null)
             {
-                return;
-            }
-            float num = atlasSprite.inner.yMin - atlasSprite.outer.yMin;
-            float num2 = (float)this.font.size * this.font.pixelSize * this.textScale;
-            float num3 = 0f;
-            float num4 = -this.padding.y;
-            List<UILabel> list = new List<UILabel>();
-            int i = 0;
-            int count = this.items.Count;
-            while (i < count)
-            {
-                string text = this.items[i];
-                UILabel uilabel = NGUITools.AddWidget<UILabel>(this.mChild);
-                uilabel.pivot = UIWidget.Pivot.TopLeft;
-                uilabel.font = this.font;
-                uilabel.text = ((!this.isLocalized || !(Localization.instance != null)) ? text : Localization.instance.Get(text));
-                uilabel.color = this.textColor;
-                uilabel.cachedTransform.localPosition = new Vector3(border.x + this.padding.x, num4, -1f);
-                uilabel.MakePixelPerfect();
-                if (this.textScale != 1f)
+                float num = atlasSprite.inner.yMin - atlasSprite.outer.yMin;
+                float num2 = (this.font.size * this.font.pixelSize) * this.textScale;
+                float a = 0f;
+                float y = -this.padding.y;
+                List<UILabel> list = new List<UILabel>();
+                int num5 = 0;
+                int count = this.items.Count;
+                while (num5 < count)
                 {
-                    Vector3 localScale = uilabel.cachedTransform.localScale;
-                    uilabel.cachedTransform.localScale = localScale * this.textScale;
+                    string key = this.items[num5];
+                    UILabel item = NGUITools.AddWidget<UILabel>(this.mChild);
+                    item.pivot = UIWidget.Pivot.TopLeft;
+                    item.font = this.font;
+                    item.text = (!this.isLocalized || (Localization.instance == null)) ? key : Localization.instance.Get(key);
+                    item.color = this.textColor;
+                    item.cachedTransform.localPosition = new Vector3(border.x + this.padding.x, y, -1f);
+                    item.MakePixelPerfect();
+                    if (this.textScale != 1f)
+                    {
+                        Vector3 localScale = item.cachedTransform.localScale;
+                        item.cachedTransform.localScale = (Vector3) (localScale * this.textScale);
+                    }
+                    list.Add(item);
+                    y -= num2;
+                    y -= this.padding.y;
+                    a = Mathf.Max(a, item.relativeSize.x * num2);
+                    UIEventListener listener = UIEventListener.Get(item.gameObject);
+                    listener.onHover = new UIEventListener.BoolDelegate(this.OnItemHover);
+                    listener.onPress = new UIEventListener.BoolDelegate(this.OnItemPress);
+                    listener.parameter = key;
+                    if (this.mSelectedItem == key)
+                    {
+                        this.Highlight(item, true);
+                    }
+                    this.mLabelList.Add(item);
+                    num5++;
                 }
-                list.Add(uilabel);
-                num4 -= num2;
-                num4 -= this.padding.y;
-                num3 = Mathf.Max(num3, uilabel.relativeSize.x * num2);
-                UIEventListener uieventListener = UIEventListener.Get(uilabel.gameObject);
-                uieventListener.onHover = new UIEventListener.BoolDelegate(this.OnItemHover);
-                uieventListener.onPress = new UIEventListener.BoolDelegate(this.OnItemPress);
-                uieventListener.parameter = text;
-                if (this.mSelectedItem == text)
+                a = Mathf.Max(a, bounds.size.x - ((border.x + this.padding.x) * 2f));
+                Vector3 vector3 = new Vector3((a * 0.5f) / num2, -0.5f, 0f);
+                Vector3 vector4 = new Vector3(a / num2, (num2 + this.padding.y) / num2, 1f);
+                int num7 = 0;
+                int num8 = list.Count;
+                while (num7 < num8)
                 {
-                    this.Highlight(uilabel, true);
+                    UILabel label2 = list[num7];
+                    BoxCollider collider = NGUITools.AddWidgetCollider(label2.gameObject);
+                    vector3.z = collider.center.z;
+                    collider.center = vector3;
+                    collider.size = vector4;
+                    num7++;
                 }
-                this.mLabelList.Add(uilabel);
-                i++;
-            }
-            num3 = Mathf.Max(num3, bounds.size.x - (border.x + this.padding.x) * 2f);
-            Vector3 center = new Vector3(num3 * 0.5f / num2, -0.5f, 0f);
-            Vector3 size = new Vector3(num3 / num2, (num2 + this.padding.y) / num2, 1f);
-            int j = 0;
-            int count2 = list.Count;
-            while (j < count2)
-            {
-                UILabel uilabel2 = list[j];
-                BoxCollider boxCollider = NGUITools.AddWidgetCollider(uilabel2.gameObject);
-                center.z = boxCollider.center.z;
-                boxCollider.center = center;
-                boxCollider.size = size;
-                j++;
-            }
-            num3 += (border.x + this.padding.x) * 2f;
-            num4 -= border.y;
-            this.mBackground.cachedTransform.localScale = new Vector3(num3, -num4 + border.y, 1f);
-            this.mHighlight.cachedTransform.localScale = new Vector3(num3 - (border.x + this.padding.x) * 2f + (atlasSprite.inner.xMin - atlasSprite.outer.xMin) * 2f, num2 + num * 2f, 1f);
-            bool flag = this.position == UIPopupList.Position.Above;
-            if (this.position == UIPopupList.Position.Auto)
-            {
-                UICamera uicamera = UICamera.FindCameraForLayer(base.gameObject.layer);
-                if (uicamera != null)
+                a += (border.x + this.padding.x) * 2f;
+                y -= border.y;
+                this.mBackground.cachedTransform.localScale = new Vector3(a, -y + border.y, 1f);
+                this.mHighlight.cachedTransform.localScale = new Vector3((a - ((border.x + this.padding.x) * 2f)) + ((atlasSprite.inner.xMin - atlasSprite.outer.xMin) * 2f), num2 + (num * 2f), 1f);
+                bool placeAbove = this.position == Position.Above;
+                if (this.position == Position.Auto)
                 {
-                    flag = (uicamera.cachedCamera.WorldToViewportPoint(transform.position).y < 0.5f);
+                    UICamera camera = UICamera.FindCameraForLayer(base.gameObject.layer);
+                    if (camera != null)
+                    {
+                        placeAbove = camera.cachedCamera.WorldToViewportPoint(child.position).y < 0.5f;
+                    }
                 }
-            }
-            if (this.isAnimated)
-            {
-                float bottom = num4 + num2;
-                this.Animate(this.mHighlight, flag, bottom);
-                int k = 0;
-                int count3 = list.Count;
-                while (k < count3)
+                if (this.isAnimated)
                 {
-                    this.Animate(list[k], flag, bottom);
-                    k++;
+                    float bottom = y + num2;
+                    this.Animate(this.mHighlight, placeAbove, bottom);
+                    int num10 = 0;
+                    int num11 = list.Count;
+                    while (num10 < num11)
+                    {
+                        this.Animate(list[num10], placeAbove, bottom);
+                        num10++;
+                    }
+                    this.AnimateColor(this.mBackground);
+                    this.AnimateScale(this.mBackground, placeAbove, bottom);
                 }
-                this.AnimateColor(this.mBackground);
-                this.AnimateScale(this.mBackground, flag, bottom);
-            }
-            if (flag)
-            {
-                transform2.localPosition = new Vector3(bounds.min.x, bounds.max.y - num4 - border.y, bounds.min.z);
+                if (placeAbove)
+                {
+                    transform.localPosition = new Vector3(bounds.min.x, (bounds.max.y - y) - border.y, bounds.min.z);
+                }
             }
         }
         else
@@ -314,21 +240,21 @@ public class UIPopupList : MonoBehaviour
 
     private void OnKey(KeyCode key)
     {
-        if (base.enabled && NGUITools.GetActive(base.gameObject) && this.handleEvents)
+        if ((base.enabled && NGUITools.GetActive(base.gameObject)) && this.handleEvents)
         {
-            int num = this.mLabelList.IndexOf(this.mHighlightedLabel);
+            int index = this.mLabelList.IndexOf(this.mHighlightedLabel);
             if (key == KeyCode.UpArrow)
             {
-                if (num > 0)
+                if (index > 0)
                 {
-                    this.Select(this.mLabelList[num - 1], false);
+                    this.Select(this.mLabelList[--index], false);
                 }
             }
             else if (key == KeyCode.DownArrow)
             {
-                if (num + 1 < this.mLabelList.Count)
+                if ((index + 1) < this.mLabelList.Count)
                 {
-                    this.Select(this.mLabelList[num + 1], false);
+                    this.Select(this.mLabelList[++index], false);
                 }
             }
             else if (key == KeyCode.Escape)
@@ -340,7 +266,7 @@ public class UIPopupList : MonoBehaviour
 
     private void OnLocalize(Localization loc)
     {
-        if (this.isLocalized && this.textLabel != null)
+        if (this.isLocalized && (this.textLabel != null))
         {
             this.textLabel.text = loc.Get(this.mSelectedItem);
         }
@@ -348,30 +274,30 @@ public class UIPopupList : MonoBehaviour
 
     private void OnSelect(bool isSelected)
     {
-        if (!isSelected && this.mChild != null)
+        if (!isSelected && (this.mChild != null))
         {
             this.mLabelList.Clear();
             this.handleEvents = false;
             if (this.isAnimated)
             {
                 UIWidget[] componentsInChildren = this.mChild.GetComponentsInChildren<UIWidget>();
-                int i = 0;
-                int num = componentsInChildren.Length;
-                while (i < num)
+                int index = 0;
+                int length = componentsInChildren.Length;
+                while (index < length)
                 {
-                    UIWidget uiwidget = componentsInChildren[i];
-                    Color color = uiwidget.color;
+                    UIWidget widget = componentsInChildren[index];
+                    Color color = widget.color;
                     color.a = 0f;
-                    TweenColor.Begin(uiwidget.gameObject, 0.15f, color).method = UITweener.Method.EaseOut;
-                    i++;
+                    TweenColor.Begin(widget.gameObject, 0.15f, color).method = UITweener.Method.EaseOut;
+                    index++;
                 }
-                Collider[] componentsInChildren2 = this.mChild.GetComponentsInChildren<Collider>();
-                int j = 0;
-                int num2 = componentsInChildren2.Length;
-                while (j < num2)
+                Collider[] colliderArray = this.mChild.GetComponentsInChildren<Collider>();
+                int num3 = 0;
+                int num4 = colliderArray.Length;
+                while (num3 < num4)
                 {
-                    componentsInChildren2[j].enabled = false;
-                    j++;
+                    colliderArray[num3].enabled = false;
+                    num3++;
                 }
                 UnityEngine.Object.Destroy(this.mChild, 0.15f);
             }
@@ -389,18 +315,18 @@ public class UIPopupList : MonoBehaviour
     {
         this.Highlight(lbl, instant);
         UIEventListener component = lbl.gameObject.GetComponent<UIEventListener>();
-        this.selection = (component.parameter as string);
+        this.selection = component.parameter as string;
         UIButtonSound[] components = base.GetComponents<UIButtonSound>();
-        int i = 0;
-        int num = components.Length;
-        while (i < num)
+        int index = 0;
+        int length = components.Length;
+        while (index < length)
         {
-            UIButtonSound uibuttonSound = components[i];
-            if (uibuttonSound.trigger == UIButtonSound.Trigger.OnClick)
+            UIButtonSound sound = components[index];
+            if (sound.trigger == UIButtonSound.Trigger.OnClick)
             {
-                NGUITools.PlaySound(uibuttonSound.audioClip, uibuttonSound.volume, 1f);
+                NGUITools.PlaySound(sound.audioClip, sound.volume, 1f);
             }
-            i++;
+            index++;
         }
     }
 
@@ -417,10 +343,78 @@ public class UIPopupList : MonoBehaviour
             }
             else
             {
-                string selection = this.mSelectedItem;
+                string mSelectedItem = this.mSelectedItem;
                 this.mSelectedItem = null;
-                this.selection = selection;
+                this.selection = mSelectedItem;
             }
         }
     }
+
+    private bool handleEvents
+    {
+        get
+        {
+            UIButtonKeys component = base.GetComponent<UIButtonKeys>();
+            return ((component == null) || !component.enabled);
+        }
+        set
+        {
+            UIButtonKeys component = base.GetComponent<UIButtonKeys>();
+            if (component != null)
+            {
+                component.enabled = !value;
+            }
+        }
+    }
+
+    public bool isOpen
+    {
+        get
+        {
+            return (this.mChild != null);
+        }
+    }
+
+    public string selection
+    {
+        get
+        {
+            return this.mSelectedItem;
+        }
+        set
+        {
+            if (this.mSelectedItem != value)
+            {
+                this.mSelectedItem = value;
+                if (this.textLabel != null)
+                {
+                    this.textLabel.text = !this.isLocalized ? value : Localization.Localize(value);
+                }
+                current = this;
+                if (this.onSelectionChange != null)
+                {
+                    this.onSelectionChange(this.mSelectedItem);
+                }
+                if (((this.eventReceiver != null) && !string.IsNullOrEmpty(this.functionName)) && Application.isPlaying)
+                {
+                    this.eventReceiver.SendMessage(this.functionName, this.mSelectedItem, SendMessageOptions.DontRequireReceiver);
+                }
+                current = null;
+                if (this.textLabel == null)
+                {
+                    this.mSelectedItem = null;
+                }
+            }
+        }
+    }
+
+    public delegate void OnSelectionChange(string item);
+
+    public enum Position
+    {
+        Auto,
+        Above,
+        Below
+    }
 }
+

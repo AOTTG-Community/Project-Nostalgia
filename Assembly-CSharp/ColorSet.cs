@@ -1,4 +1,6 @@
-﻿public class ColorSet
+using System;
+
+public class ColorSet
 {
     public static string color_A = "FAAC58";
     public static string color_B = "F4FA58";
@@ -16,3 +18,4 @@
     public static string color_titans = "FA8258";
     public static string color_X = "000000";
 }
+

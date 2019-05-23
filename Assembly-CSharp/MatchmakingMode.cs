@@ -1,6 +1,9 @@
-﻿public enum MatchmakingMode : byte
+using System;
+
+public enum MatchmakingMode : byte
 {
-    FillRoom,
-    SerialMatching,
-    RandomMatching
+    FillRoom = 0,
+    RandomMatching = 2,
+    SerialMatching = 1
 }
+

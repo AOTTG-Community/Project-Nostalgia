@@ -1,14 +1,16 @@
-﻿using ExitGames.Client.Photon;
+using ExitGames.Client.Photon;
+using System;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 internal static class TeamExtensions
 {
     public static PunTeams.Team GetTeam(this PhotonPlayer player)
     {
-        object obj;
-        if (player.Properties.TryGetValue("team", out obj))
+        object obj2;
+        if (player.customProperties.TryGetValue("team", out obj2))
         {
-            return (PunTeams.Team)((byte)obj);
+            return (PunTeams.Team) ((byte) obj2);
         }
         return PunTeams.Team.none;
     }
@@ -19,16 +21,12 @@ internal static class TeamExtensions
         {
             Debug.LogWarning("JoinTeam was called in state: " + PhotonNetwork.connectionStateDetailed + ". Not connectedAndReady.");
         }
-        PunTeams.Team team2 = PhotonNetwork.player.GetTeam();
-        if (team2 != team)
+        if (PhotonNetwork.player.GetTeam() != team)
         {
-            PhotonNetwork.player.SetCustomProperties(new Hashtable
-            {
-                {
-                    "team",
-                    (byte)team
-                }
-            });
+            Hashtable propertiesToSet = new Hashtable();
+            propertiesToSet.Add("team", (byte) team);
+            PhotonNetwork.player.SetCustomProperties(propertiesToSet);
         }
     }
 }
+

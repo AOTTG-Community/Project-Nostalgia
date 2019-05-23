@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 public class LevelTeleport : MonoBehaviour
 {
@@ -7,7 +8,7 @@ public class LevelTeleport : MonoBehaviour
 
     private void OnTriggerStay(Collider other)
     {
-        if (other.gameObject.CompareTag("Player"))
+        if (other.gameObject.tag == "Player")
         {
             if (this.levelname != string.Empty)
             {
@@ -19,4 +20,13 @@ public class LevelTeleport : MonoBehaviour
             }
         }
     }
+
+    private void Start()
+    {
+    }
+
+    private void Update()
+    {
+    }
 }
+

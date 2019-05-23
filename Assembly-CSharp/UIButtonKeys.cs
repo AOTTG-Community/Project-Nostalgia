@@ -1,7 +1,7 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
-[AddComponentMenu("NGUI/Interaction/Button Keys")]
-[RequireComponent(typeof(Collider))]
+[AddComponentMenu("NGUI/Interaction/Button Keys"), RequireComponent(typeof(Collider))]
 public class UIButtonKeys : MonoBehaviour
 {
     public UIButtonKeys selectOnClick;
@@ -13,7 +13,7 @@ public class UIButtonKeys : MonoBehaviour
 
     private void OnClick()
     {
-        if (base.enabled && this.selectOnClick != null)
+        if (base.enabled && (this.selectOnClick != null))
         {
             UICamera.selectedObject = this.selectOnClick.gameObject;
         }
@@ -53,44 +53,41 @@ public class UIButtonKeys : MonoBehaviour
                     }
                     break;
 
-                default:
-                    if (key == KeyCode.Tab)
+                case KeyCode.Tab:
+                    if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
                     {
-                        if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
+                        if (this.selectOnLeft != null)
                         {
-                            if (this.selectOnLeft != null)
-                            {
-                                UICamera.selectedObject = this.selectOnLeft.gameObject;
-                            }
-                            else if (this.selectOnUp != null)
-                            {
-                                UICamera.selectedObject = this.selectOnUp.gameObject;
-                            }
-                            else if (this.selectOnDown != null)
-                            {
-                                UICamera.selectedObject = this.selectOnDown.gameObject;
-                            }
-                            else if (this.selectOnRight != null)
-                            {
-                                UICamera.selectedObject = this.selectOnRight.gameObject;
-                            }
-                        }
-                        else if (this.selectOnRight != null)
-                        {
-                            UICamera.selectedObject = this.selectOnRight.gameObject;
-                        }
-                        else if (this.selectOnDown != null)
-                        {
-                            UICamera.selectedObject = this.selectOnDown.gameObject;
+                            UICamera.selectedObject = this.selectOnLeft.gameObject;
                         }
                         else if (this.selectOnUp != null)
                         {
                             UICamera.selectedObject = this.selectOnUp.gameObject;
                         }
-                        else if (this.selectOnLeft != null)
+                        else if (this.selectOnDown != null)
                         {
-                            UICamera.selectedObject = this.selectOnLeft.gameObject;
+                            UICamera.selectedObject = this.selectOnDown.gameObject;
                         }
+                        else if (this.selectOnRight != null)
+                        {
+                            UICamera.selectedObject = this.selectOnRight.gameObject;
+                        }
+                    }
+                    else if (this.selectOnRight != null)
+                    {
+                        UICamera.selectedObject = this.selectOnRight.gameObject;
+                    }
+                    else if (this.selectOnDown != null)
+                    {
+                        UICamera.selectedObject = this.selectOnDown.gameObject;
+                    }
+                    else if (this.selectOnUp != null)
+                    {
+                        UICamera.selectedObject = this.selectOnUp.gameObject;
+                    }
+                    else if (this.selectOnLeft != null)
+                    {
+                        UICamera.selectedObject = this.selectOnLeft.gameObject;
                     }
                     break;
             }
@@ -99,9 +96,10 @@ public class UIButtonKeys : MonoBehaviour
 
     private void Start()
     {
-        if (this.startsSelected && (UICamera.selectedObject == null || !NGUITools.GetActive(UICamera.selectedObject)))
+        if (this.startsSelected && ((UICamera.selectedObject == null) || !NGUITools.GetActive(UICamera.selectedObject)))
         {
             UICamera.selectedObject = base.gameObject;
         }
     }
 }
+

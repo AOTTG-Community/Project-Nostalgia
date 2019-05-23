@@ -1,6 +1,9 @@
-﻿public enum RSTYPE
+using System;
+
+public enum RSTYPE
 {
     NONE,
     SIMPLE,
     CURVE
 }
+

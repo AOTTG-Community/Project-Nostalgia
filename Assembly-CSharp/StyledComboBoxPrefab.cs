@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 public class StyledComboBoxPrefab : MonoBehaviour
 {
@@ -6,3 +6,4 @@ public class StyledComboBoxPrefab : MonoBehaviour
     public RectTransform itemRoot;
     public RectTransform menuItem;
 }
+

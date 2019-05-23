@@ -1,224 +1,274 @@
-﻿using Optimization.Caching;
-using System.Collections.Generic;
+using Photon;
+using System;
+using System.Collections;
+using System.Runtime.InteropServices;
 using UnityEngine;
 
 public class Bullet : Photon.MonoBehaviour
 {
-    private GameObject baseG;
-    private Transform baseGT;
-    internal Transform baseT;
-    private Vector3 heightOffSet = Vectors.up * 0.48f;
+    private Vector3 heightOffSet = ((Vector3) (Vector3.up * 0.48f));
     private bool isdestroying;
     private float killTime;
     private float killTime2;
-    private Vector3 launchOffSet = Vectors.zero;
+    private Vector3 launchOffSet = Vector3.zero;
     private bool left = true;
+    public bool leviMode;
+    public float leviShootTime;
     private LineRenderer lineRenderer;
-    private HERO master;
+    private GameObject master;
     private GameObject myRef;
-    private Transform myRefT;
-    private List<Vector3> nodes = new List<Vector3>();
+    private ArrayList nodes = new ArrayList();
     private int phase;
     private GameObject rope;
     private int spiralcount;
-    private List<Vector3> spiralNodes;
-    private Vector3 velocity = Vectors.zero;
-    private Vector3 velocity2 = Vectors.zero;
-    public bool leviMode;
-    public float leviShootTime;
-    public TITAN MyTitan;
-    private const float FixedDelta = 1f / 50f;
+    private ArrayList spiralNodes;
+    private Vector3 velocity = Vector3.zero;
+    private Vector3 velocity2 = Vector3.zero;
 
-    private void Awake()
+    public void disable()
     {
-        baseG = gameObject;
-        baseGT = baseG.transform;
-        baseT = transform;
-    }
-
-    private void CheckTitan()
-    {
-        if (Physics.Raycast(baseT.position, velocity, out RaycastHit hit, 10f, Layers.PlayerAttackBox.value))
+        this.phase = 2;
+        this.killTime = 0f;
+        if (IN_GAME_MAIN_CAMERA.gametype == GAMETYPE.MULTIPLAYER)
         {
-            Collider hitCollider = hit.collider;
-            if (hitCollider.name.Contains("PlayerDetectorRC"))
-            {
-                TITAN titan = hitCollider.transform.root.gameObject.GetComponent<TITAN>();
-                if (titan != null)
-                {
-                    this.MyTitan = titan;
-                    this.MyTitan.IsHooked = true;
-                }
-            }
+            object[] parameters = new object[] { 2 };
+            base.photonView.RPC("setPhase", PhotonTargets.Others, parameters);
         }
     }
 
     private void FixedUpdate()
     {
-        if ((this.phase == 2 || this.phase == 1) && this.leviMode)
+        if (((this.phase == 2) || (this.phase == 1)) && this.leviMode)
         {
             this.spiralcount++;
-            if (this.spiralcount >= 50)
+            if (this.spiralcount >= 60)
             {
                 this.isdestroying = true;
-                this.RemoveMe();
+                this.removeMe();
                 return;
             }
         }
-        if (IN_GAME_MAIN_CAMERA.GameType == GameType.Single || BasePV.IsMine)
+        if ((IN_GAME_MAIN_CAMERA.gametype != GAMETYPE.SINGLE) && !base.photonView.isMine)
         {
-            if (phase != 0) return;
-            if (master != null && MyTitan == null) CheckTitan();
-            baseGT.position += (this.velocity * 50f + this.velocity2) *FixedDelta;
+            if (this.phase == 0)
+            {
+                Transform transform = base.gameObject.transform;
+                transform.position += (Vector3) (((this.velocity * Time.deltaTime) * 50f) + (this.velocity2 * Time.deltaTime));
+                this.nodes.Add(new Vector3(base.gameObject.transform.position.x, base.gameObject.transform.position.y, base.gameObject.transform.position.z));
+            }
+        }
+        else if (this.phase == 0)
+        {
+            RaycastHit hit;
+            Transform transform2 = base.gameObject.transform;
+            transform2.position += (Vector3) (((this.velocity * Time.deltaTime) * 50f) + (this.velocity2 * Time.deltaTime));
+            LayerMask mask = ((int) 1) << LayerMask.NameToLayer("EnemyBox");
+            LayerMask mask2 = ((int) 1) << LayerMask.NameToLayer("Ground");
+            LayerMask mask3 = ((int) 1) << LayerMask.NameToLayer("NetworkObject");
+            LayerMask mask4 = (mask | mask2) | mask3;
             bool flag = false;
-            if (Physics.Linecast(nodes.Count > 1 ? nodes[this.nodes.Count - 2] : nodes[this.nodes.Count - 1], baseGT.position, out RaycastHit raycastHit, Layers.EnemyGroundNetwork.value))
+            bool flag2 = false;
+            if (this.nodes.Count > 1)
+            {
+                flag2 = Physics.Linecast((Vector3) this.nodes[this.nodes.Count - 2], base.gameObject.transform.position, out hit, mask4.value);
+            }
+            else
+            {
+                flag2 = Physics.Linecast((Vector3) this.nodes[this.nodes.Count - 1], base.gameObject.transform.position, out hit, mask4.value);
+            }
+            if (flag2)
             {
                 bool flag3 = true;
-                Transform tf = raycastHit.collider.transform;
-                switch (tf.gameObject.layer)
+                if (hit.collider.transform.gameObject.layer == LayerMask.NameToLayer("EnemyBox"))
                 {
-                    case Layers.EnemyBoxN:
-                        if (IN_GAME_MAIN_CAMERA.GameType == GameType.Multi)
-                        {
-                            BasePV.RPC("tieMeToOBJ", PhotonTargets.Others, new object[] { raycastHit.collider.transform.root.gameObject.GetPhotonView().viewID });
-                        }
-                        master.LastHook = this;
-                        baseT.parent = tf;
-                        break;
-
-                    case Layers.GroundN:
-                        master.LastHook = null;
-                        break;
-
-                    case Layers.NetworkObjectN:
-                        if (!tf.gameObject.CompareTag("Player") || leviMode) break;
-                        if (IN_GAME_MAIN_CAMERA.GameType == GameType.Multi)
-                        {
-                            BasePV.RPC("tieMeToOBJ", PhotonTargets.Others, new object[] { tf.root.gameObject.GetPhotonView().viewID });
-                        }
-                        master.hookToHuman(tf.root.gameObject, baseT.position);
-                        baseT.parent = tf;
-                        master.LastHook = null;
-                        break;
-
-                    default:
-                        flag3 = false;
-                        break;
+                    if (IN_GAME_MAIN_CAMERA.gametype == GAMETYPE.MULTIPLAYER)
+                    {
+                        object[] parameters = new object[] { hit.collider.transform.root.gameObject.GetPhotonView().viewID };
+                        base.photonView.RPC("tieMeToOBJ", PhotonTargets.Others, parameters);
+                    }
+                    this.master.GetComponent<HERO>().lastHook = hit.collider.transform.root;
+                    base.transform.parent = hit.collider.transform;
+                }
+                else if (hit.collider.transform.gameObject.layer == LayerMask.NameToLayer("Ground"))
+                {
+                    this.master.GetComponent<HERO>().lastHook = null;
+                }
+                else if (((hit.collider.transform.gameObject.layer == LayerMask.NameToLayer("NetworkObject")) && (hit.collider.transform.gameObject.tag == "Player")) && !this.leviMode)
+                {
+                    if (IN_GAME_MAIN_CAMERA.gametype == GAMETYPE.MULTIPLAYER)
+                    {
+                        object[] objArray2 = new object[] { hit.collider.transform.root.gameObject.GetPhotonView().viewID };
+                        base.photonView.RPC("tieMeToOBJ", PhotonTargets.Others, objArray2);
+                    }
+                    this.master.GetComponent<HERO>().hookToHuman(hit.collider.transform.root.gameObject, base.transform.position);
+                    base.transform.parent = hit.collider.transform;
+                    this.master.GetComponent<HERO>().lastHook = null;
+                }
+                else
+                {
+                    flag3 = false;
+                }
+                if (this.phase == 2)
+                {
+                    flag3 = false;
                 }
                 if (flag3)
                 {
-                    master.launch(raycastHit.point, this.left, this.leviMode);
-                    baseT.position = raycastHit.point;
+                    this.master.GetComponent<HERO>().launch(hit.point, this.left, this.leviMode);
+                    base.transform.position = hit.point;
                     if (this.phase != 2)
                     {
                         this.phase = 1;
-                        if (IN_GAME_MAIN_CAMERA.GameType == GameType.Multi)
+                        if (IN_GAME_MAIN_CAMERA.gametype == GAMETYPE.MULTIPLAYER)
                         {
-                            BasePV.RPC("setPhase", PhotonTargets.Others, new object[] { 1 });
-                            BasePV.RPC("tieMeTo", PhotonTargets.Others, new object[] { baseT.position });
+                            object[] objArray3 = new object[] { 1 };
+                            base.photonView.RPC("setPhase", PhotonTargets.Others, objArray3);
+                            object[] objArray4 = new object[] { base.transform.position };
+                            base.photonView.RPC("tieMeTo", PhotonTargets.Others, objArray4);
                         }
                         if (this.leviMode)
                         {
-                            this.GetSpiral(master.baseT.position, master.baseT.rotation.eulerAngles);
+                            this.getSpiral(this.master.transform.position, this.master.transform.rotation.eulerAngles);
                         }
                         flag = true;
                     }
                 }
             }
-            this.nodes.Add(new Vector3(baseGT.position.x, baseGT.position.y, baseGT.position.z));
-            if (flag) return;
-            this.killTime2 += FixedDelta;
-            if (this.killTime2 > 0.8f)
+            this.nodes.Add(new Vector3(base.gameObject.transform.position.x, base.gameObject.transform.position.y, base.gameObject.transform.position.z));
+            if (!flag)
             {
-                this.phase = 4;
-                if (IN_GAME_MAIN_CAMERA.GameType == GameType.Multi)
+                this.killTime2 += Time.deltaTime;
+                if (this.killTime2 > 0.8f)
                 {
-                    BasePV.RPC("setPhase", PhotonTargets.Others, new object[] { 4 });
+                    this.phase = 4;
+                    if (IN_GAME_MAIN_CAMERA.gametype == GAMETYPE.MULTIPLAYER)
+                    {
+                        object[] objArray5 = new object[] { 4 };
+                        base.photonView.RPC("setPhase", PhotonTargets.Others, objArray5);
+                    }
                 }
-                return;
             }
-            return;
-        }
-        if (this.phase == 0)
-        {
-            baseGT.position += (this.velocity * 50f + this.velocity2) * FixedDelta;
-            nodes.Add(new Vector3(baseGT.position.x, baseGT.position.y, baseGT.position.z));
         }
     }
 
-    private void GetSpiral(Vector3 masterposition, Vector3 masterrotation)
+    private void getSpiral(Vector3 masterposition, Vector3 masterrotation)
     {
-        float num = 30f;
-        float num2 = 0.5f;
-        float num3 = 0.05f + (float)this.spiralcount * 0.03f;
-        float num5;
+        float num = 1.2f;
+        float num2 = 30f;
+        float num3 = 2f;
+        float num4 = 0.5f;
+        num = 30f;
+        num3 = 0.05f + (this.spiralcount * 0.03f);
         if (this.spiralcount < 5)
         {
-            float num4 = Vector2.Distance(new Vector2(masterposition.x, masterposition.z), new Vector2(baseGT.position.x, baseGT.position.z));
-            num5 = num4;
+            num = Vector2.Distance(new Vector2(masterposition.x, masterposition.z), new Vector2(base.gameObject.transform.position.x, base.gameObject.transform.position.z));
         }
         else
         {
-            num5 = 1.2f + (float)(60 - this.spiralcount) * 0.1f;
+            num = 1.2f + ((60 - this.spiralcount) * 0.1f);
         }
-        num2 -= (float)this.spiralcount * 0.06f;
-        float num6 = num5 / num;
-        float num7 = num3 / num;
-        float num8 = num7 * 2f * 3.14159274f;
-        num2 *= 6.28318548f;
-        this.spiralNodes = new List<Vector3>();
-        int num9 = 1;
-        while ((float)num9 <= num)
+        num4 -= this.spiralcount * 0.06f;
+        float num6 = num / num2;
+        float num7 = num3 / num2;
+        float num8 = (num7 * 2f) * 3.141593f;
+        num4 *= 6.283185f;
+        this.spiralNodes = new ArrayList();
+        for (int i = 1; i <= num2; i++)
         {
-            float num10 = (float)num9 * num6 * (1f + 0.05f * (float)num9);
-            float f = (float)num9 * num8 + num2 + 1.2566371f + masterrotation.y * 0.0173f;
+            float num10 = (i * num6) * (1f + (0.05f * i));
+            float f = (((i * num8) + num4) + 1.256637f) + (masterrotation.y * 0.0173f);
             float x = Mathf.Cos(f) * num10;
             float z = -Mathf.Sin(f) * num10;
             this.spiralNodes.Add(new Vector3(x, 0f, z));
-            num9++;
         }
+    }
+
+    public bool isHooked()
+    {
+        return (this.phase == 1);
     }
 
     [RPC]
     private void killObject()
     {
         UnityEngine.Object.Destroy(this.rope);
-        UnityEngine.Object.Destroy(baseG);
+        UnityEngine.Object.Destroy(base.gameObject);
+    }
+
+    public void launch(Vector3 v, Vector3 v2, string launcher_ref, bool isLeft, GameObject hero, bool leviMode = false)
+    {
+        if (this.phase != 2)
+        {
+            this.master = hero;
+            this.velocity = v;
+            float f = Mathf.Acos(Vector3.Dot(v.normalized, v2.normalized)) * 57.29578f;
+            if (Mathf.Abs(f) > 90f)
+            {
+                this.velocity2 = Vector3.zero;
+            }
+            else
+            {
+                this.velocity2 = Vector3.Project(v2, v);
+            }
+            if (launcher_ref == "hookRefL1")
+            {
+                this.myRef = hero.GetComponent<HERO>().hookRefL1;
+            }
+            if (launcher_ref == "hookRefL2")
+            {
+                this.myRef = hero.GetComponent<HERO>().hookRefL2;
+            }
+            if (launcher_ref == "hookRefR1")
+            {
+                this.myRef = hero.GetComponent<HERO>().hookRefR1;
+            }
+            if (launcher_ref == "hookRefR2")
+            {
+                this.myRef = hero.GetComponent<HERO>().hookRefR2;
+            }
+            this.nodes = new ArrayList();
+            this.nodes.Add(this.myRef.transform.position);
+            this.phase = 0;
+            this.leviMode = leviMode;
+            this.left = isLeft;
+            if ((IN_GAME_MAIN_CAMERA.gametype != GAMETYPE.SINGLE) && base.photonView.isMine)
+            {
+                object[] parameters = new object[] { hero.GetComponent<HERO>().photonView.viewID, launcher_ref };
+                base.photonView.RPC("myMasterIs", PhotonTargets.Others, parameters);
+                object[] objArray2 = new object[] { v, this.velocity2, this.left };
+                base.photonView.RPC("setVelocityAndLeft", PhotonTargets.Others, objArray2);
+            }
+            base.transform.position = this.myRef.transform.position;
+            base.transform.rotation = Quaternion.LookRotation(v.normalized);
+        }
     }
 
     [RPC]
     private void myMasterIs(int id, string launcherRef)
     {
-        PhotonView pv = PhotonView.Find(id);
-        if (pv)
+        this.master = PhotonView.Find(id).gameObject;
+        if (launcherRef == "hookRefL1")
         {
-            if (pv.gameObject) master = pv.gameObject.GetComponent<HERO>();
+            this.myRef = this.master.GetComponent<HERO>().hookRefL1;
         }
-        switch (launcherRef)
+        if (launcherRef == "hookRefL2")
         {
-            case "hookRefL1":
-                this.myRef = this.master.hookRefL1;
-                break;
-
-            case "hookRefL2":
-                this.myRef = this.master.hookRefL2;
-                break;
-
-            case "hookRefR1":
-                this.myRef = this.master.hookRefR1;
-                break;
-
-            case "hookRefR2":
-                this.myRef = this.master.hookRefR2;
-                break;
+            this.myRef = this.master.GetComponent<HERO>().hookRefL2;
         }
-        if (myRef) myRefT = myRef.transform;
+        if (launcherRef == "hookRefR1")
+        {
+            this.myRef = this.master.GetComponent<HERO>().hookRefR1;
+        }
+        if (launcherRef == "hookRefR2")
+        {
+            this.myRef = this.master.GetComponent<HERO>().hookRefR2;
+        }
     }
 
     [RPC]
     private void netLaunch(Vector3 newPosition)
     {
-        this.nodes = new List<Vector3>();
+        this.nodes = new ArrayList();
         this.nodes.Add(newPosition);
     }
 
@@ -227,24 +277,22 @@ public class Bullet : Photon.MonoBehaviour
     {
         this.phase = 2;
         this.leviMode = true;
-        this.GetSpiral(masterPosition, masterrotation);
-        Vector3 b = masterPosition - spiralNodes[0];
-        this.lineRenderer.SetVertexCount((int)((float)this.spiralNodes.Count - (float)this.spiralcount * 0.5f));
-        int num = 0;
-        while ((float)num <= (float)(this.spiralNodes.Count - 1) - (float)this.spiralcount * 0.5f)
+        this.getSpiral(masterPosition, masterrotation);
+        Vector3 vector = masterPosition - ((Vector3) this.spiralNodes[0]);
+        this.lineRenderer.SetVertexCount(this.spiralNodes.Count - ((int) (this.spiralcount * 0.5f)));
+        for (int i = 0; i <= ((this.spiralNodes.Count - 1) - (this.spiralcount * 0.5f)); i++)
         {
             if (this.spiralcount < 5)
             {
-                Vector3 position = spiralNodes[num] + b;
-                float num2 = (float)(this.spiralNodes.Count - 1) - (float)this.spiralcount * 0.5f;
-                position = new Vector3(position.x, position.y * ((num2 - (float)num) / num2) + newPosition.y * ((float)num / num2), position.z);
-                this.lineRenderer.SetPosition(num, position);
+                Vector3 position = ((Vector3) this.spiralNodes[i]) + vector;
+                float num2 = (this.spiralNodes.Count - 1) - (this.spiralcount * 0.5f);
+                position = new Vector3(position.x, (position.y * ((num2 - i) / num2)) + (newPosition.y * (((float) i) / num2)), position.z);
+                this.lineRenderer.SetPosition(i, position);
             }
             else
             {
-                this.lineRenderer.SetPosition(num, spiralNodes[num] + b);
+                this.lineRenderer.SetPosition(i, ((Vector3) this.spiralNodes[i]) + vector);
             }
-            num++;
         }
     }
 
@@ -254,43 +302,52 @@ public class Bullet : Photon.MonoBehaviour
         this.lineRenderer.SetVertexCount(2);
         this.lineRenderer.SetPosition(0, newPosition);
         this.lineRenderer.SetPosition(1, masterPosition);
-        baseT.position = newPosition;
+        base.transform.position = newPosition;
     }
 
     private void OnDestroy()
     {
-        if (FengGameManagerMKII.FGM != null)
+        if (GameObject.Find("MultiplayerManager") != null)
         {
-            FengGameManagerMKII.FGM.RemoveHook(this);
-        }
-        if (MyTitan != null)
-        {
-            MyTitan.IsHooked = false;
+            GameObject.Find("MultiplayerManager").GetComponent<FengGameManagerMKII>().removeHook(this);
         }
         UnityEngine.Object.Destroy(this.rope);
     }
 
-    private void SetLinePhase()
+    public void removeMe()
+    {
+        this.isdestroying = true;
+        if ((IN_GAME_MAIN_CAMERA.gametype != GAMETYPE.SINGLE) && base.photonView.isMine)
+        {
+            PhotonNetwork.Destroy(base.photonView);
+            PhotonNetwork.RemoveRPCs(base.photonView);
+        }
+        else if (IN_GAME_MAIN_CAMERA.gametype == GAMETYPE.SINGLE)
+        {
+            UnityEngine.Object.Destroy(this.rope);
+            UnityEngine.Object.Destroy(base.gameObject);
+        }
+    }
+
+    private void setLinePhase0()
     {
         if (this.master == null)
         {
             UnityEngine.Object.Destroy(this.rope);
-            UnityEngine.Object.Destroy(baseG);
-            return;
+            UnityEngine.Object.Destroy(base.gameObject);
         }
-        if (this.nodes.Count <= 0)
+        else if (this.nodes.Count > 0)
         {
-            return;
-        }
-        Vector3 a = myRefT.position - nodes[0];
-        this.lineRenderer.SetVertexCount(this.nodes.Count);
-        for (int i = 0; i <= this.nodes.Count - 1; i++)
-        {
-            this.lineRenderer.SetPosition(i, nodes[i] + a * Mathf.Pow(0.75f, (float)i));
-        }
-        if (this.nodes.Count > 1)
-        {
-            this.lineRenderer.SetPosition(1, myRefT.position);
+            Vector3 vector = this.myRef.transform.position - ((Vector3) this.nodes[0]);
+            this.lineRenderer.SetVertexCount(this.nodes.Count);
+            for (int i = 0; i <= (this.nodes.Count - 1); i++)
+            {
+                this.lineRenderer.SetPosition(i, ((Vector3) this.nodes[i]) + ((Vector3) (vector * Mathf.Pow(0.75f, (float) i))));
+            }
+            if (this.nodes.Count > 1)
+            {
+                this.lineRenderer.SetPosition(1, this.myRef.transform.position);
+            }
         }
     }
 
@@ -306,216 +363,132 @@ public class Bullet : Photon.MonoBehaviour
         this.velocity = value;
         this.velocity2 = v2;
         this.left = l;
-        baseT.rotation = Quaternion.LookRotation(value.normalized);
+        base.transform.rotation = Quaternion.LookRotation(value.normalized);
     }
 
     private void Start()
     {
-        this.rope = (GameObject)UnityEngine.Object.Instantiate(CacheResources.Load("rope"));
+        this.rope = (GameObject) UnityEngine.Object.Instantiate(Resources.Load("rope"));
         this.lineRenderer = this.rope.GetComponent<LineRenderer>();
-        FengGameManagerMKII.FGM.AddHook(this);
+        GameObject.Find("MultiplayerManager").GetComponent<FengGameManagerMKII>().addHook(this);
     }
 
     [RPC]
     private void tieMeTo(Vector3 p)
     {
-        baseT.position = p;
+        base.transform.position = p;
     }
 
     [RPC]
     private void tieMeToOBJ(int id)
     {
-        baseT.parent = PhotonView.Find(id).gameObject.transform;
-    }
-
-    public void Disable()
-    {
-        this.phase = 2;
-        this.killTime = 0f;
-        if (IN_GAME_MAIN_CAMERA.GameType == GameType.Multi)
-        {
-            BasePV.RPC("setPhase", PhotonTargets.Others, new object[] { 2 });
-        }
-    }
-
-    public bool isHooked()
-    {
-        return this.phase == 1;
-    }
-
-    public void Launch(Vector3 v, Vector3 v2, string launcher_ref, bool isLeft, HERO hero, bool leviMode = false)
-    {
-        if (this.phase == 2)
-        {
-            return;
-        }
-        this.master = hero;
-        this.velocity = v;
-        float f = Mathf.Acos(Vector3.Dot(v.normalized, v2.normalized)) * 57.29578f;
-        if (Mathf.Abs(f) > 90f)
-        {
-            this.velocity2 = Vectors.zero;
-        }
-        else
-        {
-            this.velocity2 = Vector3.Project(v2, v);
-        }
-        switch (launcher_ref)
-        {
-            case "hookRefL1":
-                this.myRef = hero.hookRefL1;
-                break;
-
-            case "hookRefL2":
-                this.myRef = hero.hookRefL2;
-                break;
-
-            case "hookRefR1":
-                this.myRef = hero.hookRefR1;
-                break;
-
-            case "hookRefR2":
-                this.myRef = hero.hookRefR2;
-                break;
-        }
-        myRefT = myRef.transform;
-        this.nodes = new List<Vector3>();
-        this.nodes.Add(myRefT.position);
-        this.phase = 0;
-        this.leviMode = leviMode;
-        this.left = isLeft;
-        if (IN_GAME_MAIN_CAMERA.GameType != GameType.Single && BasePV.IsMine)
-        {
-            BasePV.RPC("myMasterIs", PhotonTargets.Others, new object[] { hero.BasePV.viewID, launcher_ref });
-            BasePV.RPC("setVelocityAndLeft", PhotonTargets.Others, new object[] { v, this.velocity2, this.left });
-        }
-        baseT.position = myRefT.position;
-        baseT.rotation = Quaternion.LookRotation(v.normalized);
-    }
-
-    public void RemoveMe()
-    {
-        this.isdestroying = true;
-        if (IN_GAME_MAIN_CAMERA.GameType != GameType.Single && BasePV.IsMine)
-        {
-            PhotonNetwork.Destroy(BasePV);
-            PhotonNetwork.RemoveRPCs(BasePV);
-        }
-        else if (IN_GAME_MAIN_CAMERA.GameType == GameType.Single)
-        {
-            UnityEngine.Object.Destroy(this.rope);
-            UnityEngine.Object.Destroy(baseG);
-        }
+        base.transform.parent = PhotonView.Find(id).gameObject.transform;
     }
 
     public void update()
     {
-        if (this.isdestroying)
-        {
-            return;
-        }
         if (this.master == null)
         {
-            this.RemoveMe();
-            return;
+            this.removeMe();
         }
-        if (this.leviMode)
-        {
-            this.leviShootTime += Time.deltaTime;
-            if (this.leviShootTime > 0.4f)
-            {
-                this.phase = 2;
-                baseG.GetComponent<MeshRenderer>().enabled = false;
-            }
-        }
-        if (this.phase == 0)
-        {
-            this.SetLinePhase();
-        }
-        else if (this.phase == 1)
-        {
-            Vector3 a = baseT.position - myRefT.position;
-            Vector3 vector = baseT.position + myRefT.position;
-            Vector3 a2 = master.baseR.velocity;
-            float magnitude = a2.magnitude;
-            float magnitude2 = a.magnitude;
-            int num = (int)((magnitude2 + magnitude) / 5f);
-            num = Mathf.Clamp(num, 2, 6);
-            this.lineRenderer.SetVertexCount(num);
-            this.lineRenderer.SetPosition(0, myRefT.position);
-            int i = 1;
-            float num2 = Mathf.Pow(magnitude2, 0.3f);
-            while (i < num)
-            {
-                int num3 = num / 2;
-                float num4 = (float)Mathf.Abs(i - num3);
-                float num5 = ((float)num3 - num4) / (float)num3;
-                num5 = Mathf.Pow(num5, 0.5f);
-                float num6 = (num2 + magnitude) * 0.0015f * num5;
-                this.lineRenderer.SetPosition(i, new Vector3(UnityEngine.Random.Range(-num6, num6), UnityEngine.Random.Range(-num6, num6), UnityEngine.Random.Range(-num6, num6)) + myRefT.position + a * ((float)i / (float)num) - Vectors.up * num2 * 0.05f * num5 - a2 * 0.001f * num5 * num2);
-                i++;
-            }
-            this.lineRenderer.SetPosition(num - 1, baseT.position);
-        }
-        else if (this.phase == 2)
+        else if (!this.isdestroying)
         {
             if (this.leviMode)
             {
-                this.GetSpiral(master.baseT.position, master.baseT.rotation.eulerAngles);
-                Vector3 b = myRefT.position - spiralNodes[0];
-                this.lineRenderer.SetVertexCount((int)((float)this.spiralNodes.Count - (float)this.spiralcount * 0.5f));
-                int num7 = 0;
-                while ((float)num7 <= (float)(this.spiralNodes.Count - 1) - (float)this.spiralcount * 0.5f)
+                this.leviShootTime += Time.deltaTime;
+                if (this.leviShootTime > 0.4f)
                 {
-                    if (this.spiralcount < 5)
-                    {
-                        Vector3 position = spiralNodes[num7] + b;
-                        float num8 = (float)(this.spiralNodes.Count - 1) - (float)this.spiralcount * 0.5f;
-                        position = new Vector3(position.x, position.y * ((num8 - (float)num7) / num8) + baseGT.position.y * ((float)num7 / num8), position.z);
-                        this.lineRenderer.SetPosition(num7, position);
-                    }
-                    else
-                    {
-                        this.lineRenderer.SetPosition(num7, spiralNodes[num7] + b);
-                    }
-                    num7++;
+                    this.phase = 2;
+                    base.gameObject.GetComponent<MeshRenderer>().enabled = false;
                 }
             }
-            else
+            if (this.phase == 0)
             {
-                this.lineRenderer.SetVertexCount(2);
-                this.lineRenderer.SetPosition(0, baseT.position);
-                this.lineRenderer.SetPosition(1, myRefT.position);
-                this.killTime += Time.deltaTime * 0.2f;
-                this.lineRenderer.SetWidth(0.1f - this.killTime, 0.1f - this.killTime);
-                if (this.killTime > 0.1f)
+                this.setLinePhase0();
+            }
+            else if (this.phase == 1)
+            {
+                Vector3 vector = base.transform.position - this.myRef.transform.position;
+                Vector3 vector2 = base.transform.position + this.myRef.transform.position;
+                Vector3 velocity = this.master.rigidbody.velocity;
+                float magnitude = velocity.magnitude;
+                float f = vector.magnitude;
+                int num3 = (int) ((f + magnitude) / 5f);
+                num3 = Mathf.Clamp(num3, 2, 6);
+                this.lineRenderer.SetVertexCount(num3);
+                this.lineRenderer.SetPosition(0, this.myRef.transform.position);
+                int index = 1;
+                float num6 = Mathf.Pow(f, 0.3f);
+                while (index < num3)
                 {
-                    this.RemoveMe();
-                    return;
+                    int num7 = num3 / 2;
+                    float num8 = Mathf.Abs((int) (index - num7));
+                    float num9 = (num7 - num8) / ((float) num7);
+                    num9 = Mathf.Pow(num9, 0.5f);
+                    float max = ((num6 + magnitude) * 0.0015f) * num9;
+                    this.lineRenderer.SetPosition(index, (Vector3) ((((new Vector3(UnityEngine.Random.Range(-max, max), UnityEngine.Random.Range(-max, max), UnityEngine.Random.Range(-max, max)) + this.myRef.transform.position) + (vector * (((float) index) / ((float) num3)))) - (((Vector3.up * num6) * 0.05f) * num9)) - (((velocity * 0.001f) * num9) * num6)));
+                    index++;
+                }
+                this.lineRenderer.SetPosition(num3 - 1, base.transform.position);
+            }
+            else if (this.phase == 2)
+            {
+                if (!this.leviMode)
+                {
+                    this.lineRenderer.SetVertexCount(2);
+                    this.lineRenderer.SetPosition(0, base.transform.position);
+                    this.lineRenderer.SetPosition(1, this.myRef.transform.position);
+                    this.killTime += Time.deltaTime * 0.2f;
+                    this.lineRenderer.SetWidth(0.1f - this.killTime, 0.1f - this.killTime);
+                    if (this.killTime > 0.1f)
+                    {
+                        this.removeMe();
+                    }
+                }
+                else
+                {
+                    this.getSpiral(this.master.transform.position, this.master.transform.rotation.eulerAngles);
+                    Vector3 vector4 = this.myRef.transform.position - ((Vector3) this.spiralNodes[0]);
+                    this.lineRenderer.SetVertexCount(this.spiralNodes.Count - ((int) (this.spiralcount * 0.5f)));
+                    for (int i = 0; i <= ((this.spiralNodes.Count - 1) - (this.spiralcount * 0.5f)); i++)
+                    {
+                        if (this.spiralcount < 5)
+                        {
+                            Vector3 position = ((Vector3) this.spiralNodes[i]) + vector4;
+                            float num11 = (this.spiralNodes.Count - 1) - (this.spiralcount * 0.5f);
+                            position = new Vector3(position.x, (position.y * ((num11 - i) / num11)) + (base.gameObject.transform.position.y * (((float) i) / num11)), position.z);
+                            this.lineRenderer.SetPosition(i, position);
+                        }
+                        else
+                        {
+                            this.lineRenderer.SetPosition(i, ((Vector3) this.spiralNodes[i]) + vector4);
+                        }
+                    }
                 }
             }
-        }
-        else if (this.phase == 4)
-        {
-            baseGT.position += this.velocity + this.velocity2 * Time.deltaTime;
-            this.nodes.Add(new Vector3(baseGT.position.x, baseGT.position.y, baseGT.position.z));
-            Vector3 a3 = myRefT.position - nodes[0];
-            for (int j = 0; j <= this.nodes.Count - 1; j++)
+            else if (this.phase == 4)
             {
-                this.lineRenderer.SetVertexCount(this.nodes.Count);
-                this.lineRenderer.SetPosition(j, nodes[j] + a3 * Mathf.Pow(0.5f, (float)j));
-            }
-            this.killTime2 += Time.deltaTime;
-            if (this.killTime2 > 0.8f)
-            {
-                this.killTime += Time.deltaTime * 0.2f;
-                this.lineRenderer.SetWidth(0.1f - this.killTime, 0.1f - this.killTime);
-                if (this.killTime > 0.1f)
+                Transform transform = base.gameObject.transform;
+                transform.position += this.velocity + ((Vector3) (this.velocity2 * Time.deltaTime));
+                this.nodes.Add(new Vector3(base.gameObject.transform.position.x, base.gameObject.transform.position.y, base.gameObject.transform.position.z));
+                Vector3 vector6 = this.myRef.transform.position - ((Vector3) this.nodes[0]);
+                for (int j = 0; j <= (this.nodes.Count - 1); j++)
                 {
-                    this.RemoveMe();
-                    return;
+                    this.lineRenderer.SetVertexCount(this.nodes.Count);
+                    this.lineRenderer.SetPosition(j, ((Vector3) this.nodes[j]) + ((Vector3) (vector6 * Mathf.Pow(0.5f, (float) j))));
+                }
+                this.killTime2 += Time.deltaTime;
+                if (this.killTime2 > 0.8f)
+                {
+                    this.killTime += Time.deltaTime * 0.2f;
+                    this.lineRenderer.SetWidth(0.1f - this.killTime, 0.1f - this.killTime);
+                    if (this.killTime > 0.1f)
+                    {
+                        this.removeMe();
+                    }
                 }
             }
         }
     }
 }
+

@@ -1,4 +1,6 @@
-﻿public enum ConnectionState
+using System;
+
+public enum ConnectionState
 {
     Disconnected,
     Connecting,
@@ -6,3 +8,4 @@
     Disconnecting,
     InitializingApplication
 }
+

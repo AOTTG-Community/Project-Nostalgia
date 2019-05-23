@@ -1,4 +1,6 @@
-﻿public enum PeerState
+using System;
+
+public enum PeerState
 {
     Uninitialized,
     PeerCreated,
@@ -22,3 +24,4 @@
     DisconnectingFromNameServer,
     Authenticating
 }
+

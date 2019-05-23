@@ -1,14 +1,12 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
-[ExecuteInEditMode]
-[AddComponentMenu("NGUI/Interaction/Drag Camera")]
+[ExecuteInEditMode, AddComponentMenu("NGUI/Interaction/Drag Camera")]
 public class UIDragCamera : IgnoreTimeScale
 {
-    [HideInInspector]
-    [SerializeField]
-    private Component target;
-
     public UIDraggableCamera draggableCamera;
+    [HideInInspector, SerializeField]
+    private Component target;
 
     private void Awake()
     {
@@ -32,7 +30,7 @@ public class UIDragCamera : IgnoreTimeScale
 
     private void OnDrag(Vector2 delta)
     {
-        if (base.enabled && NGUITools.GetActive(base.gameObject) && this.draggableCamera != null)
+        if ((base.enabled && NGUITools.GetActive(base.gameObject)) && (this.draggableCamera != null))
         {
             this.draggableCamera.Drag(delta);
         }
@@ -40,7 +38,7 @@ public class UIDragCamera : IgnoreTimeScale
 
     private void OnPress(bool isPressed)
     {
-        if (base.enabled && NGUITools.GetActive(base.gameObject) && this.draggableCamera != null)
+        if ((base.enabled && NGUITools.GetActive(base.gameObject)) && (this.draggableCamera != null))
         {
             this.draggableCamera.Press(isPressed);
         }
@@ -48,9 +46,10 @@ public class UIDragCamera : IgnoreTimeScale
 
     private void OnScroll(float delta)
     {
-        if (base.enabled && NGUITools.GetActive(base.gameObject) && this.draggableCamera != null)
+        if ((base.enabled && NGUITools.GetActive(base.gameObject)) && (this.draggableCamera != null))
         {
             this.draggableCamera.Scroll(delta);
         }
     }
 }
+

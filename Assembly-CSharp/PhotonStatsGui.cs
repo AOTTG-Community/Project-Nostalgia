@@ -1,4 +1,5 @@
-﻿using ExitGames.Client.Photon;
+using ExitGames.Client.Photon;
+using System;
 using UnityEngine;
 
 public class PhotonStatsGui : MonoBehaviour
@@ -17,24 +18,23 @@ public class PhotonStatsGui : MonoBehaviour
         {
             PhotonNetwork.networkingPeer.TrafficStatsEnabled = this.statsOn;
         }
-        if (!this.statsWindowOn)
+        if (this.statsWindowOn)
         {
-            return;
+            this.statsRect = GUILayout.Window(this.WindowId, this.statsRect, new GUI.WindowFunction(this.TrafficStatsWindow), "Messages (shift+tab)", new GUILayoutOption[0]);
         }
-        this.statsRect = GUILayout.Window(this.WindowId, this.statsRect, new GUI.WindowFunction(this.TrafficStatsWindow), "Messages (shift+tab)", new GUILayoutOption[0]);
     }
 
     public void Start()
     {
-        this.statsRect.x = (float)Screen.width - this.statsRect.width;
+        this.statsRect.x = Screen.width - this.statsRect.width;
     }
 
     public void TrafficStatsWindow(int windowID)
     {
         bool flag = false;
         TrafficStatsGameLevel trafficStatsGameLevel = PhotonNetwork.networkingPeer.TrafficStatsGameLevel;
-        long num = PhotonNetwork.networkingPeer.TrafficStatsElapsedMs / 1000L;
-        if (num == 0L)
+        long num = PhotonNetwork.networkingPeer.TrafficStatsElapsedMs / 0x3e8L;
+        if (num == 0)
         {
             num = 1L;
         }
@@ -44,11 +44,11 @@ public class PhotonStatsGui : MonoBehaviour
         this.trafficStatsOn = GUILayout.Toggle(this.trafficStatsOn, "traffic", new GUILayoutOption[0]);
         GUILayout.EndHorizontal();
         string text = string.Format("Out|In|Sum:\t{0,4} | {1,4} | {2,4}", trafficStatsGameLevel.TotalOutgoingMessageCount, trafficStatsGameLevel.TotalIncomingMessageCount, trafficStatsGameLevel.TotalMessageCount);
-        string text2 = string.Format("{0}sec average:", num);
-        string text3 = string.Format("Out|In|Sum:\t{0,4} | {1,4} | {2,4}", (long)trafficStatsGameLevel.TotalOutgoingMessageCount / num, (long)trafficStatsGameLevel.TotalIncomingMessageCount / num, (long)trafficStatsGameLevel.TotalMessageCount / num);
+        string str2 = string.Format("{0}sec average:", num);
+        string str3 = string.Format("Out|In|Sum:\t{0,4} | {1,4} | {2,4}", ((long) trafficStatsGameLevel.TotalOutgoingMessageCount) / num, ((long) trafficStatsGameLevel.TotalIncomingMessageCount) / num, ((long) trafficStatsGameLevel.TotalMessageCount) / num);
         GUILayout.Label(text, new GUILayoutOption[0]);
-        GUILayout.Label(text2, new GUILayoutOption[0]);
-        GUILayout.Label(text3, new GUILayoutOption[0]);
+        GUILayout.Label(str2, new GUILayoutOption[0]);
+        GUILayout.Label(str3, new GUILayoutOption[0]);
         if (this.buttonsOn)
         {
             GUILayout.BeginHorizontal(new GUILayoutOption[0]);
@@ -61,43 +61,26 @@ public class PhotonStatsGui : MonoBehaviour
             flag = GUILayout.Button("To Log", new GUILayoutOption[0]);
             GUILayout.EndHorizontal();
         }
-        string text4 = string.Empty;
-        string text5 = string.Empty;
+        string str4 = string.Empty;
+        string str5 = string.Empty;
         if (this.trafficStatsOn)
         {
-            text4 = "Incoming: " + PhotonNetwork.networkingPeer.TrafficStatsIncoming.ToString();
-            text5 = "Outgoing: " + PhotonNetwork.networkingPeer.TrafficStatsOutgoing.ToString();
-            GUILayout.Label(text4, new GUILayoutOption[0]);
-            GUILayout.Label(text5, new GUILayoutOption[0]);
+            str4 = "Incoming: " + PhotonNetwork.networkingPeer.TrafficStatsIncoming.ToString();
+            str5 = "Outgoing: " + PhotonNetwork.networkingPeer.TrafficStatsOutgoing.ToString();
+            GUILayout.Label(str4, new GUILayoutOption[0]);
+            GUILayout.Label(str5, new GUILayoutOption[0]);
         }
-        string text6 = string.Empty;
+        string str6 = string.Empty;
         if (this.healthStatsVisible)
         {
-            text6 = string.Format("ping: {6}[+/-{7}]ms\nlongest delta between\nsend: {0,4}ms disp: {1,4}ms\nlongest time for:\nev({3}):{2,3}ms op({5}):{4,3}ms", new object[]
-            {
-                trafficStatsGameLevel.LongestDeltaBetweenSending,
-                trafficStatsGameLevel.LongestDeltaBetweenDispatching,
-                trafficStatsGameLevel.LongestEventCallback,
-                trafficStatsGameLevel.LongestEventCallbackCode,
-                trafficStatsGameLevel.LongestOpResponseCallback,
-                trafficStatsGameLevel.LongestOpResponseCallbackOpCode,
-                PhotonNetwork.networkingPeer.RoundTripTime,
-                PhotonNetwork.networkingPeer.RoundTripTimeVariance
-            });
-            GUILayout.Label(text6, new GUILayoutOption[0]);
+            object[] args = new object[] { trafficStatsGameLevel.LongestDeltaBetweenSending, trafficStatsGameLevel.LongestDeltaBetweenDispatching, trafficStatsGameLevel.LongestEventCallback, trafficStatsGameLevel.LongestEventCallbackCode, trafficStatsGameLevel.LongestOpResponseCallback, trafficStatsGameLevel.LongestOpResponseCallbackOpCode, PhotonNetwork.networkingPeer.RoundTripTime, PhotonNetwork.networkingPeer.RoundTripTimeVariance };
+            str6 = string.Format("ping: {6}[+/-{7}]ms\nlongest delta between\nsend: {0,4}ms disp: {1,4}ms\nlongest time for:\nev({3}):{2,3}ms op({5}):{4,3}ms", args);
+            GUILayout.Label(str6, new GUILayoutOption[0]);
         }
         if (flag)
         {
-            string message = string.Format("{0}\n{1}\n{2}\n{3}\n{4}\n{5}", new object[]
-            {
-                text,
-                text2,
-                text3,
-                text4,
-                text5,
-                text6
-            });
-            Debug.Log(message);
+            object[] objArray2 = new object[] { text, str2, str3, str4, str5, str6 };
+            Debug.Log(string.Format("{0}\n{1}\n{2}\n{3}\n{4}\n{5}", objArray2));
         }
         if (GUI.changed)
         {
@@ -115,3 +98,4 @@ public class PhotonStatsGui : MonoBehaviour
         }
     }
 }
+

@@ -1,11 +1,11 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
-[RequireComponent(typeof(UIWidget))]
-[ExecuteInEditMode]
+[RequireComponent(typeof(UIWidget)), ExecuteInEditMode]
 public class AnimatedColor : MonoBehaviour
 {
-    private UIWidget mWidget;
     public Color color = Color.white;
+    private UIWidget mWidget;
 
     private void Awake()
     {
@@ -17,3 +17,4 @@ public class AnimatedColor : MonoBehaviour
         this.mWidget.color = this.color;
     }
 }
+

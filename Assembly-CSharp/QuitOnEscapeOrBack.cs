@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 public class QuitOnEscapeOrBack : MonoBehaviour
 {
@@ -10,3 +11,4 @@ public class QuitOnEscapeOrBack : MonoBehaviour
         }
     }
 }
+

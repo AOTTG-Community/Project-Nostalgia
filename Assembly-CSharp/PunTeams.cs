@@ -1,19 +1,12 @@
-﻿using System;
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class PunTeams : MonoBehaviour
 {
+    public static Dictionary<Team, List<PhotonPlayer>> PlayersPerTeam;
     public const string TeamPlayerProp = "team";
-
-    public static Dictionary<PunTeams.Team, List<PhotonPlayer>> PlayersPerTeam;
-
-    public enum Team : byte
-    {
-        none,
-        red,
-        blue
-    }
 
     public void OnJoinedRoom()
     {
@@ -27,26 +20,58 @@ public class PunTeams : MonoBehaviour
 
     public void Start()
     {
-        PunTeams.PlayersPerTeam = new Dictionary<PunTeams.Team, List<PhotonPlayer>>();
-        Array values = Enum.GetValues(typeof(PunTeams.Team));
-        foreach (object obj in values)
+        PlayersPerTeam = new Dictionary<Team, List<PhotonPlayer>>();
+        IEnumerator enumerator = Enum.GetValues(typeof(Team)).GetEnumerator();
+        try
         {
-            PunTeams.PlayersPerTeam[(PunTeams.Team)((byte)obj)] = new List<PhotonPlayer>();
+            while (enumerator.MoveNext())
+            {
+                object current = enumerator.Current;
+                PlayersPerTeam[(Team) ((byte) current)] = new List<PhotonPlayer>();
+            }
+        }
+        finally
+        {
+            IDisposable disposable = enumerator as IDisposable;
+            if (disposable != null)
+            {
+	            disposable.Dispose();
+            }
         }
     }
 
     public void UpdateTeams()
     {
-        Array values = Enum.GetValues(typeof(PunTeams.Team));
-        foreach (object obj in values)
+        IEnumerator enumerator = Enum.GetValues(typeof(Team)).GetEnumerator();
+        try
         {
-            PunTeams.PlayersPerTeam[(PunTeams.Team)((byte)obj)].Clear();
+            while (enumerator.MoveNext())
+            {
+                object current = enumerator.Current;
+                PlayersPerTeam[(Team) ((byte) current)].Clear();
+            }
+        }
+        finally
+        {
+            IDisposable disposable = enumerator as IDisposable;
+            if (disposable != null)
+            {
+	            disposable.Dispose();
+            }
         }
         for (int i = 0; i < PhotonNetwork.playerList.Length; i++)
         {
-            PhotonPlayer photonPlayer = PhotonNetwork.playerList[i];
-            PunTeams.Team team = photonPlayer.GetTeam();
-            PunTeams.PlayersPerTeam[team].Add(photonPlayer);
+            PhotonPlayer player = PhotonNetwork.playerList[i];
+            Team team = player.GetTeam();
+            PlayersPerTeam[team].Add(player);
         }
     }
+
+    public enum Team : byte
+    {
+        blue = 2,
+        none = 0,
+        red = 1
+    }
 }
+

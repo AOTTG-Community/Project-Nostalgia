@@ -1,11 +1,12 @@
-﻿using UnityEngine;
+using System;
+using System.Runtime.CompilerServices;
+using UnityEngine;
 
 public class InputToEvent : MonoBehaviour
 {
-    private GameObject lastGo;
-    public static Vector3 inputHitPos;
     public bool DetectPointedAtGameObject;
-    public static GameObject goPointedAt { get; private set; }
+    public static Vector3 inputHitPos;
+    private GameObject lastGo;
 
     private void Press(Vector2 screenPos)
     {
@@ -18,11 +19,11 @@ public class InputToEvent : MonoBehaviour
 
     private GameObject RaycastObject(Vector2 screenPos)
     {
-        RaycastHit raycastHit;
-        if (Physics.Raycast(base.camera.ScreenPointToRay(screenPos), out raycastHit, 200f))
+        RaycastHit hit;
+        if (Physics.Raycast(base.camera.ScreenPointToRay((Vector3) screenPos), out hit, 200f))
         {
-            InputToEvent.inputHitPos = raycastHit.point;
-            return raycastHit.collider.gameObject;
+            inputHitPos = hit.point;
+            return hit.collider.gameObject;
         }
         return null;
     }
@@ -31,8 +32,7 @@ public class InputToEvent : MonoBehaviour
     {
         if (this.lastGo != null)
         {
-            GameObject x = this.RaycastObject(screenPos);
-            if (x == this.lastGo)
+            if (this.RaycastObject(screenPos) == this.lastGo)
             {
                 this.lastGo.SendMessage("OnClick", SendMessageOptions.DontRequireReceiver);
             }
@@ -45,7 +45,7 @@ public class InputToEvent : MonoBehaviour
     {
         if (this.DetectPointedAtGameObject)
         {
-            InputToEvent.goPointedAt = this.RaycastObject(Input.mousePosition);
+            goPointedAt = this.RaycastObject(Input.mousePosition);
         }
         if (Input.touchCount > 0)
         {
@@ -58,15 +58,32 @@ public class InputToEvent : MonoBehaviour
             {
                 this.Release(touch.position);
             }
-            return;
         }
-        if (Input.GetMouseButtonDown(0))
+        else
         {
-            this.Press(Input.mousePosition);
+            if (Input.GetMouseButtonDown(0))
+            {
+                this.Press(Input.mousePosition);
+            }
+            if (Input.GetMouseButtonUp(0))
+            {
+                this.Release(Input.mousePosition);
+            }
         }
-        if (Input.GetMouseButtonUp(0))
+    }
+
+    public static GameObject goPointedAt
+    {
+        [CompilerGenerated]
+        get
         {
-            this.Release(Input.mousePosition);
+            return goPointedAt;
+        }
+        [CompilerGenerated]
+        private set
+        {
+            goPointedAt = value;
         }
     }
 }
+

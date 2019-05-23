@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 public class PanelGroupManager
 {
@@ -6,10 +7,11 @@ public class PanelGroupManager
 
     public void ActivePanel(int index)
     {
-        foreach (GameObject gameObject in this.panelGroup)
+        foreach (GameObject obj2 in this.panelGroup)
         {
-            gameObject.SetActive(false);
+            obj2.SetActive(false);
         }
         this.panelGroup[index].SetActive(true);
     }
 }
+

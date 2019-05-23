@@ -1,45 +1,75 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 [Serializable]
 public class InvGameItem
 {
+    public int itemLevel;
     private InvBaseItem mBaseItem;
-
     [SerializeField]
     private int mBaseItemID;
-
-    public int itemLevel = 1;
-
-    public InvGameItem.Quality quality = InvGameItem.Quality.Sturdy;
+    public Quality quality;
 
     public InvGameItem(int id)
     {
+        this.quality = Quality.Sturdy;
+        this.itemLevel = 1;
         this.mBaseItemID = id;
     }
 
     public InvGameItem(int id, InvBaseItem bi)
     {
+        this.quality = Quality.Sturdy;
+        this.itemLevel = 1;
         this.mBaseItemID = id;
         this.mBaseItem = bi;
     }
 
-    public enum Quality
+    public List<InvStat> CalculateStats()
     {
-        Broken,
-        Cursed,
-        Damaged,
-        Worn,
-        Sturdy,
-        Polished,
-        Improved,
-        Crafted,
-        Superior,
-        Enchanted,
-        Epic,
-        Legendary,
-        _LastDoNotUse
+        List<InvStat> list = new List<InvStat>();
+        if (this.baseItem != null)
+        {
+            float statMultiplier = this.statMultiplier;
+            List<InvStat> stats = this.baseItem.stats;
+            int num2 = 0;
+            int count = stats.Count;
+            while (num2 < count)
+            {
+                InvStat stat = stats[num2];
+                int num4 = Mathf.RoundToInt(statMultiplier * stat.amount);
+                if (num4 != 0)
+                {
+                    bool flag = false;
+                    int num5 = 0;
+                    int num6 = list.Count;
+                    while (num5 < num6)
+                    {
+                        InvStat stat2 = list[num5];
+                        if ((stat2.id == stat.id) && (stat2.modifier == stat.modifier))
+                        {
+                            stat2.amount += num4;
+                            flag = true;
+                            break;
+                        }
+                        num5++;
+                    }
+                    if (!flag)
+                    {
+                        InvStat item = new InvStat {
+                            id = stat.id,
+                            amount = num4,
+                            modifier = stat.modifier
+                        };
+                        list.Add(item);
+                    }
+                }
+                num2++;
+            }
+            list.Sort(new Comparison<InvStat>(InvStat.CompareArmor));
+        }
+        return list;
     }
 
     public InvBaseItem baseItem
@@ -66,58 +96,46 @@ public class InvGameItem
     {
         get
         {
-            Color result = Color.white;
+            Color white = Color.white;
             switch (this.quality)
             {
-                case InvGameItem.Quality.Broken:
-                    result = new Color(0.4f, 0.2f, 0.2f);
-                    break;
+                case Quality.Broken:
+                    return new Color(0.4f, 0.2f, 0.2f);
 
-                case InvGameItem.Quality.Cursed:
-                    result = Color.red;
-                    break;
+                case Quality.Cursed:
+                    return Color.red;
 
-                case InvGameItem.Quality.Damaged:
-                    result = new Color(0.4f, 0.4f, 0.4f);
-                    break;
+                case Quality.Damaged:
+                    return new Color(0.4f, 0.4f, 0.4f);
 
-                case InvGameItem.Quality.Worn:
-                    result = new Color(0.7f, 0.7f, 0.7f);
-                    break;
+                case Quality.Worn:
+                    return new Color(0.7f, 0.7f, 0.7f);
 
-                case InvGameItem.Quality.Sturdy:
-                    result = new Color(1f, 1f, 1f);
-                    break;
+                case Quality.Sturdy:
+                    return new Color(1f, 1f, 1f);
 
-                case InvGameItem.Quality.Polished:
-                    result = NGUIMath.HexToColor(3774856959u);
-                    break;
+                case Quality.Polished:
+                    return NGUIMath.HexToColor(0xe0ffbeff);
 
-                case InvGameItem.Quality.Improved:
-                    result = NGUIMath.HexToColor(2480359935u);
-                    break;
+                case Quality.Improved:
+                    return NGUIMath.HexToColor(0x93d749ff);
 
-                case InvGameItem.Quality.Crafted:
-                    result = NGUIMath.HexToColor(1325334783u);
-                    break;
+                case Quality.Crafted:
+                    return NGUIMath.HexToColor(0x4eff00ff);
 
-                case InvGameItem.Quality.Superior:
-                    result = NGUIMath.HexToColor(12255231u);
-                    break;
+                case Quality.Superior:
+                    return NGUIMath.HexToColor(0xbaffff);
 
-                case InvGameItem.Quality.Enchanted:
-                    result = NGUIMath.HexToColor(1937178111u);
-                    break;
+                case Quality.Enchanted:
+                    return NGUIMath.HexToColor(0x7376fdff);
 
-                case InvGameItem.Quality.Epic:
-                    result = NGUIMath.HexToColor(2516647935u);
-                    break;
+                case Quality.Epic:
+                    return NGUIMath.HexToColor(0x9600ffff);
 
-                case InvGameItem.Quality.Legendary:
-                    result = NGUIMath.HexToColor(4287627519u);
-                    break;
+                case Quality.Legendary:
+                    return NGUIMath.HexToColor(0xff9000ff);
             }
-            return result;
+            return white;
         }
     }
 
@@ -129,7 +147,7 @@ public class InvGameItem
             {
                 return null;
             }
-            return this.quality.ToString() + " " + this.baseItem.name;
+            return (this.quality.ToString() + " " + this.baseItem.name);
         }
     }
 
@@ -140,102 +158,74 @@ public class InvGameItem
             float num = 0f;
             switch (this.quality)
             {
-                case InvGameItem.Quality.Broken:
+                case Quality.Broken:
                     num = 0f;
                     break;
 
-                case InvGameItem.Quality.Cursed:
+                case Quality.Cursed:
                     num = -1f;
                     break;
 
-                case InvGameItem.Quality.Damaged:
+                case Quality.Damaged:
                     num = 0.25f;
                     break;
 
-                case InvGameItem.Quality.Worn:
+                case Quality.Worn:
                     num = 0.9f;
                     break;
 
-                case InvGameItem.Quality.Sturdy:
+                case Quality.Sturdy:
                     num = 1f;
                     break;
 
-                case InvGameItem.Quality.Polished:
+                case Quality.Polished:
                     num = 1.1f;
                     break;
 
-                case InvGameItem.Quality.Improved:
+                case Quality.Improved:
                     num = 1.25f;
                     break;
 
-                case InvGameItem.Quality.Crafted:
+                case Quality.Crafted:
                     num = 1.5f;
                     break;
 
-                case InvGameItem.Quality.Superior:
+                case Quality.Superior:
                     num = 1.75f;
                     break;
 
-                case InvGameItem.Quality.Enchanted:
+                case Quality.Enchanted:
                     num = 2f;
                     break;
 
-                case InvGameItem.Quality.Epic:
+                case Quality.Epic:
                     num = 2.5f;
                     break;
 
-                case InvGameItem.Quality.Legendary:
+                case Quality.Legendary:
                     num = 3f;
                     break;
             }
-            float num2 = (float)this.itemLevel / 50f;
-            return num * Mathf.Lerp(num2, num2 * num2, 0.5f);
+            float from = ((float) this.itemLevel) / 50f;
+            return (num * Mathf.Lerp(from, from * from, 0.5f));
         }
     }
 
-    public List<InvStat> CalculateStats()
+    public enum Quality
     {
-        List<InvStat> list = new List<InvStat>();
-        if (this.baseItem != null)
-        {
-            float statMultiplier = this.statMultiplier;
-            List<InvStat> stats = this.baseItem.stats;
-            int i = 0;
-            int count = stats.Count;
-            while (i < count)
-            {
-                InvStat invStat = stats[i];
-                int num = Mathf.RoundToInt(statMultiplier * (float)invStat.amount);
-                if (num != 0)
-                {
-                    bool flag = false;
-                    int j = 0;
-                    int count2 = list.Count;
-                    while (j < count2)
-                    {
-                        InvStat invStat2 = list[j];
-                        if (invStat2.id == invStat.id && invStat2.modifier == invStat.modifier)
-                        {
-                            invStat2.amount += num;
-                            flag = true;
-                            break;
-                        }
-                        j++;
-                    }
-                    if (!flag)
-                    {
-                        list.Add(new InvStat
-                        {
-                            id = invStat.id,
-                            amount = num,
-                            modifier = invStat.modifier
-                        });
-                    }
-                }
-                i++;
-            }
-            list.Sort(new Comparison<InvStat>(InvStat.CompareArmor));
-        }
-        return list;
+        Broken,
+        Cursed,
+        Damaged,
+        Worn,
+        Sturdy,
+        Polished,
+        Improved,
+        Crafted,
+        Superior,
+        Enchanted,
+        Epic,
+        Legendary,
+        _LastDoNotUse
     }
 }
+

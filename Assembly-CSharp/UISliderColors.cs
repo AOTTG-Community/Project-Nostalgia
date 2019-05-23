@@ -1,19 +1,11 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
-[RequireComponent(typeof(UISlider))]
-[AddComponentMenu("NGUI/Examples/Slider Colors")]
-[ExecuteInEditMode]
+[RequireComponent(typeof(UISlider)), AddComponentMenu("NGUI/Examples/Slider Colors"), ExecuteInEditMode]
 public class UISliderColors : MonoBehaviour
 {
+    public Color[] colors = new Color[] { Color.red, Color.yellow, Color.green };
     private UISlider mSlider;
-
-    public Color[] colors = new Color[]
-        {
-        Color.red,
-        Color.yellow,
-        Color.green
-    };
-
     public UISprite sprite;
 
     private void Start()
@@ -24,31 +16,30 @@ public class UISliderColors : MonoBehaviour
 
     private void Update()
     {
-        if (this.sprite == null || this.colors.Length == 0)
+        if ((this.sprite != null) && (this.colors.Length != 0))
         {
-            return;
+            float f = this.mSlider.sliderValue * (this.colors.Length - 1);
+            int index = Mathf.FloorToInt(f);
+            Color color = this.colors[0];
+            if (index >= 0)
+            {
+                if ((index + 1) < this.colors.Length)
+                {
+                    float t = f - index;
+                    color = Color.Lerp(this.colors[index], this.colors[index + 1], t);
+                }
+                else if (index < this.colors.Length)
+                {
+                    color = this.colors[index];
+                }
+                else
+                {
+                    color = this.colors[this.colors.Length - 1];
+                }
+            }
+            color.a = this.sprite.color.a;
+            this.sprite.color = color;
         }
-        float num = this.mSlider.sliderValue;
-        num *= (float)(this.colors.Length - 1);
-        int num2 = Mathf.FloorToInt(num);
-        Color color = this.colors[0];
-        if (num2 >= 0)
-        {
-            if (num2 + 1 < this.colors.Length)
-            {
-                float t = num - (float)num2;
-                color = Color.Lerp(this.colors[num2], this.colors[num2 + 1], t);
-            }
-            else if (num2 < this.colors.Length)
-            {
-                color = this.colors[num2];
-            }
-            else
-            {
-                color = this.colors[this.colors.Length - 1];
-            }
-        }
-        color.a = this.sprite.color.a;
-        this.sprite.color = color;
     }
 }
+

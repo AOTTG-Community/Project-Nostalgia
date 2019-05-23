@@ -1,4 +1,6 @@
-﻿public class PhotonPlayerProperty
+using System;
+
+public class PhotonPlayerProperty
 {
     public static string beard_texture_id = "beard_texture_id";
     public static string body_texture = "body_texture";
@@ -37,3 +39,4 @@
     public static string total_dmg = "total_dmg";
     public static string uniform_type = "uniform_type";
 }
+

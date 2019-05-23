@@ -1,6 +1,9 @@
-﻿public enum RespawnMode
+using System;
+
+public enum RespawnMode
 {
     NEVER,
     DEATHMATCH,
     NEWROUND
 }
+

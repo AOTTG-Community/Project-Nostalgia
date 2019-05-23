@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 public class DaylightChange : MonoBehaviour
 {
@@ -6,15 +7,16 @@ public class DaylightChange : MonoBehaviour
     {
         if (base.GetComponent<UIPopupList>().selection == "DAY")
         {
-            IN_GAME_MAIN_CAMERA.DayLight = DayLight.Day;
+            IN_GAME_MAIN_CAMERA.dayLight = DayLight.Day;
         }
         if (base.GetComponent<UIPopupList>().selection == "DAWN")
         {
-            IN_GAME_MAIN_CAMERA.DayLight = DayLight.Dawn;
+            IN_GAME_MAIN_CAMERA.dayLight = DayLight.Dawn;
         }
         if (base.GetComponent<UIPopupList>().selection == "NIGHT")
         {
-            IN_GAME_MAIN_CAMERA.DayLight = DayLight.Night;
+            IN_GAME_MAIN_CAMERA.dayLight = DayLight.Night;
         }
     }
 }
+

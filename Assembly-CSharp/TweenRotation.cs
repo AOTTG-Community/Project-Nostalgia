@@ -1,12 +1,30 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 [AddComponentMenu("NGUI/Tween/Rotation")]
 public class TweenRotation : UITweener
 {
-    private Transform mTrans;
     public Vector3 from;
-
+    private Transform mTrans;
     public Vector3 to;
+
+    public static TweenRotation Begin(GameObject go, float duration, Quaternion rot)
+    {
+        TweenRotation rotation = UITweener.Begin<TweenRotation>(go, duration);
+        rotation.from = rotation.rotation.eulerAngles;
+        rotation.to = rot.eulerAngles;
+        if (duration <= 0f)
+        {
+            rotation.Sample(1f, true);
+            rotation.enabled = false;
+        }
+        return rotation;
+    }
+
+    protected override void OnUpdate(float factor, bool isFinished)
+    {
+        this.cachedTransform.localRotation = Quaternion.Slerp(Quaternion.Euler(this.from), Quaternion.Euler(this.to), factor);
+    }
 
     public Transform cachedTransform
     {
@@ -31,22 +49,5 @@ public class TweenRotation : UITweener
             this.cachedTransform.localRotation = value;
         }
     }
-
-    protected override void OnUpdate(float factor, bool isFinished)
-    {
-        this.cachedTransform.localRotation = Quaternion.Slerp(Quaternion.Euler(this.from), Quaternion.Euler(this.to), factor);
-    }
-
-    public static TweenRotation Begin(GameObject go, float duration, Quaternion rot)
-    {
-        TweenRotation tweenRotation = UITweener.Begin<TweenRotation>(go, duration);
-        tweenRotation.from = tweenRotation.rotation.eulerAngles;
-        tweenRotation.to = rot.eulerAngles;
-        if (duration <= 0f)
-        {
-            tweenRotation.Sample(1f, true);
-            tweenRotation.enabled = false;
-        }
-        return tweenRotation;
-    }
 }
+

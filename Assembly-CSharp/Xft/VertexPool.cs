@@ -1,63 +1,42 @@
-﻿using System.Collections.Generic;
-using UnityEngine;
-
 namespace Xft
 {
+    using System;
+    using System.Collections.Generic;
+    using UnityEngine;
+
     public class VertexPool
     {
-        protected int IndexTotal;
-        protected int IndexUsed;
-        protected List<VertexPool.VertexSegment> SegmentList = new List<VertexPool.VertexSegment>();
-        protected bool VertCountChanged;
-        protected int VertexTotal;
-        protected int VertexUsed;
-        public const int BlockSize = 108;
-
+        public const int BlockSize = 0x6c;
         public float BoundsScheduleTime = 1f;
         public bool ColorChanged;
         public Color[] Colors;
         public float ElapsedTime;
         public bool FirstUpdate = true;
+        protected int IndexTotal;
+        protected int IndexUsed;
         public bool IndiceChanged;
         public int[] Indices;
-        public Material Material;
-        public Mesh Mesh;
+        public UnityEngine.Material Material;
+        public UnityEngine.Mesh Mesh;
+        protected List<VertexSegment> SegmentList = new List<VertexSegment>();
         public bool UV2Changed;
         public bool UVChanged;
         public Vector2[] UVs;
         public Vector2[] UVs2;
         public bool VertChanged;
+        protected bool VertCountChanged;
+        protected int VertexTotal;
+        protected int VertexUsed;
         public Vector3[] Vertices;
 
-        public VertexPool(Mesh mesh, Material material)
+        public VertexPool(UnityEngine.Mesh mesh, UnityEngine.Material material)
         {
-            this.VertexTotal = (this.VertexUsed = 0);
+            this.VertexTotal = this.VertexUsed = 0;
             this.VertCountChanged = false;
             this.Mesh = mesh;
             this.Material = material;
             this.InitArrays();
-            this.IndiceChanged = (this.ColorChanged = (this.UVChanged = (this.UV2Changed = (this.VertChanged = true))));
-        }
-
-        private void InitDefaultShaderParam(Vector2[] uv2)
-        {
-            for (int i = 0; i < uv2.Length; i++)
-            {
-                uv2[i].x = 1f;
-                uv2[i].y = 0f;
-            }
-        }
-
-        protected void InitArrays()
-        {
-            this.Vertices = new Vector3[4];
-            this.UVs = new Vector2[4];
-            this.UVs2 = new Vector2[4];
-            this.Colors = new Color[4];
-            this.Indices = new int[6];
-            this.VertexTotal = 4;
-            this.IndexTotal = 6;
-            this.InitDefaultShaderParam(this.UVs2);
+            this.IndiceChanged = this.ColorChanged = this.UVChanged = this.UV2Changed = this.VertChanged = true;
         }
 
         public void EnlargeArrays(int count, int icount)
@@ -65,12 +44,12 @@ namespace Xft
             Vector3[] vertices = this.Vertices;
             this.Vertices = new Vector3[this.Vertices.Length + count];
             vertices.CopyTo(this.Vertices, 0);
-            Vector2[] uvs = this.UVs;
+            Vector2[] uVs = this.UVs;
             this.UVs = new Vector2[this.UVs.Length + count];
-            uvs.CopyTo(this.UVs, 0);
-            Vector2[] uvs2 = this.UVs2;
+            uVs.CopyTo(this.UVs, 0);
+            Vector2[] vectorArray3 = this.UVs2;
             this.UVs2 = new Vector2[this.UVs2.Length + count];
-            uvs2.CopyTo(this.UVs2, 0);
+            vectorArray3.CopyTo(this.UVs2, 0);
             this.InitDefaultShaderParam(this.UVs2);
             Color[] colors = this.Colors;
             this.Colors = new Color[this.Colors.Length + count];
@@ -86,37 +65,58 @@ namespace Xft
             this.UV2Changed = true;
         }
 
-        public Material GetMaterial()
+        public UnityEngine.Material GetMaterial()
         {
             return this.Material;
         }
 
-        public VertexPool.VertexSegment GetRopeVertexSeg(int maxcount)
+        public VertexSegment GetRopeVertexSeg(int maxcount)
         {
             return this.GetVertices(maxcount * 2, (maxcount - 1) * 6);
         }
 
-        public VertexPool.VertexSegment GetVertices(int vcount, int icount)
+        public VertexSegment GetVertices(int vcount, int icount)
         {
-            int num = 0;
+            int count = 0;
             int num2 = 0;
-            if (this.VertexUsed + vcount >= this.VertexTotal)
+            if ((this.VertexUsed + vcount) >= this.VertexTotal)
             {
-                num = (vcount / 108 + 1) * 108;
+                count = ((vcount / 0x6c) + 1) * 0x6c;
             }
-            if (this.IndexUsed + icount >= this.IndexTotal)
+            if ((this.IndexUsed + icount) >= this.IndexTotal)
             {
-                num2 = (icount / 108 + 1) * 108;
+                num2 = ((icount / 0x6c) + 1) * 0x6c;
             }
             this.VertexUsed += vcount;
             this.IndexUsed += icount;
-            if (num != 0 || num2 != 0)
+            if ((count != 0) || (num2 != 0))
             {
-                this.EnlargeArrays(num, num2);
-                this.VertexTotal += num;
+                this.EnlargeArrays(count, num2);
+                this.VertexTotal += count;
                 this.IndexTotal += num2;
             }
-            return new VertexPool.VertexSegment(this.VertexUsed - vcount, vcount, this.IndexUsed - icount, icount, this);
+            return new VertexSegment(this.VertexUsed - vcount, vcount, this.IndexUsed - icount, icount, this);
+        }
+
+        protected void InitArrays()
+        {
+            this.Vertices = new Vector3[4];
+            this.UVs = new Vector2[4];
+            this.UVs2 = new Vector2[4];
+            this.Colors = new Color[4];
+            this.Indices = new int[6];
+            this.VertexTotal = 4;
+            this.IndexTotal = 6;
+            this.InitDefaultShaderParam(this.UVs2);
+        }
+
+        private void InitDefaultShaderParam(Vector2[] uv2)
+        {
+            for (int i = 0; i < uv2.Length; i++)
+            {
+                uv2[i].x = 1f;
+                uv2[i].y = 0f;
+            }
         }
 
         public void LateUpdate()
@@ -143,7 +143,7 @@ namespace Xft
                 this.Mesh.triangles = this.Indices;
             }
             this.ElapsedTime += Time.deltaTime;
-            if (this.ElapsedTime > this.BoundsScheduleTime || this.FirstUpdate)
+            if ((this.ElapsedTime > this.BoundsScheduleTime) || this.FirstUpdate)
             {
                 this.RecalculateBounds();
                 this.ElapsedTime = 0f;
@@ -184,7 +184,7 @@ namespace Xft
 
             public void ClearIndices()
             {
-                for (int i = this.IndexStart; i < this.IndexStart + this.IndexCount; i++)
+                for (int i = this.IndexStart; i < (this.IndexStart + this.IndexCount); i++)
                 {
                     this.Pool.Indices[i] = 0;
                 }
@@ -193,3 +193,4 @@ namespace Xft
         }
     }
 }
+

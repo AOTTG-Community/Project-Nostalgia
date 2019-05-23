@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 [ExecuteInEditMode]
 public class UISlicedSprite : UISprite
@@ -11,3 +11,4 @@ public class UISlicedSprite : UISprite
         }
     }
 }
+

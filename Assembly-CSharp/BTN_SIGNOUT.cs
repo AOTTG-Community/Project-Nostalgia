@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 public class BTN_SIGNOUT : MonoBehaviour
 {
@@ -12,3 +13,4 @@ public class BTN_SIGNOUT : MonoBehaviour
         this.logincomponent.GetComponent<LoginFengKAI>().logout();
     }
 }
+

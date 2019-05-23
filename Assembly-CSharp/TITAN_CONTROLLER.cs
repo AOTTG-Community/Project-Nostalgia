@@ -1,10 +1,10 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 public class TITAN_CONTROLLER : MonoBehaviour
 {
     public Camera currentCamera;
     public FengCustomInputs inputManager;
-
     public bool isAttackDown;
     public bool isAttackIIDown;
     public bool isJumpDown;
@@ -14,7 +14,9 @@ public class TITAN_CONTROLLER : MonoBehaviour
 
     private void Start()
     {
-        if (IN_GAME_MAIN_CAMERA.GameType == GameType.Single)
+        this.inputManager = GameObject.Find("InputManagerController").GetComponent<FengCustomInputs>();
+        this.currentCamera = GameObject.Find("MainCamera").GetComponent<Camera>();
+        if (IN_GAME_MAIN_CAMERA.gametype == GAMETYPE.SINGLE)
         {
             base.enabled = false;
         }
@@ -23,11 +25,12 @@ public class TITAN_CONTROLLER : MonoBehaviour
     private void Update()
     {
         int num;
-        if (FengCustomInputs.Main.isInput[InputCode.up])
+        int num2;
+        if (this.inputManager.isInput[InputCode.up])
         {
             num = 1;
         }
-        else if (FengCustomInputs.Main.isInput[InputCode.down])
+        else if (this.inputManager.isInput[InputCode.down])
         {
             num = -1;
         }
@@ -35,12 +38,11 @@ public class TITAN_CONTROLLER : MonoBehaviour
         {
             num = 0;
         }
-        int num2;
-        if (FengCustomInputs.Main.isInput[InputCode.left])
+        if (this.inputManager.isInput[InputCode.left])
         {
             num2 = -1;
         }
-        else if (FengCustomInputs.Main.isInput[InputCode.right])
+        else if (this.inputManager.isInput[InputCode.right])
         {
             num2 = 1;
         }
@@ -48,13 +50,13 @@ public class TITAN_CONTROLLER : MonoBehaviour
         {
             num2 = 0;
         }
-        if (num2 != 0 || num != 0)
+        if ((num2 != 0) || (num != 0))
         {
-            float y = IN_GAME_MAIN_CAMERA.MainCamera.transform.rotation.eulerAngles.y;
-            float num3 = Mathf.Atan2((float)num, (float)num2) * 57.29578f;
-            num3 = -num3 + 90f;
-            float num4 = y + num3;
-            this.targetDirection = num4;
+            float y = this.currentCamera.transform.rotation.eulerAngles.y;
+            float num5 = Mathf.Atan2((float) num, (float) num2) * 57.29578f;
+            num5 = -num5 + 90f;
+            float num3 = y + num5;
+            this.targetDirection = num3;
         }
         else
         {
@@ -64,22 +66,23 @@ public class TITAN_CONTROLLER : MonoBehaviour
         this.isJumpDown = false;
         this.isAttackIIDown = false;
         this.isSuicide = false;
-        if (FengCustomInputs.Main.isInputDown[InputCode.attack0])
+        if (this.inputManager.isInputDown[InputCode.attack0])
         {
             this.isAttackDown = true;
         }
-        if (FengCustomInputs.Main.isInputDown[InputCode.attack1])
+        if (this.inputManager.isInputDown[InputCode.attack1])
         {
             this.isAttackIIDown = true;
         }
-        if (FengCustomInputs.Main.isInputDown[InputCode.bothRope])
+        if (this.inputManager.isInputDown[InputCode.bothRope])
         {
             this.isJumpDown = true;
         }
-        if (FengCustomInputs.Main.isInputDown[InputCode.restart])
+        if (this.inputManager.isInputDown[InputCode.restart])
         {
             this.isSuicide = true;
         }
-        this.isWALKDown = FengCustomInputs.Main.isInput[InputCode.jump];
+        this.isWALKDown = this.inputManager.isInput[InputCode.jump];
     }
 }
+

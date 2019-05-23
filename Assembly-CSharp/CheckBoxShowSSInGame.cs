@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 public class CheckBoxShowSSInGame : MonoBehaviour
 {
@@ -6,17 +7,16 @@ public class CheckBoxShowSSInGame : MonoBehaviour
 
     private void OnActivate(bool yes)
     {
-        if (!this.init)
+        if (this.init)
         {
-            return;
-        }
-        if (yes)
-        {
-            PlayerPrefs.SetInt("showSSInGame", 1);
-        }
-        else
-        {
-            PlayerPrefs.SetInt("showSSInGame", 0);
+            if (yes)
+            {
+                PlayerPrefs.SetInt("showSSInGame", 1);
+            }
+            else
+            {
+                PlayerPrefs.SetInt("showSSInGame", 0);
+            }
         }
     }
 
@@ -41,3 +41,4 @@ public class CheckBoxShowSSInGame : MonoBehaviour
         }
     }
 }
+

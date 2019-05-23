@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 public class BTN_SAVE_CC : MonoBehaviour
 {
@@ -9,3 +10,4 @@ public class BTN_SAVE_CC : MonoBehaviour
         this.manager.GetComponent<CustomCharacterManager>().SaveData();
     }
 }
+

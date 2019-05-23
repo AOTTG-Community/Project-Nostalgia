@@ -1,19 +1,76 @@
-﻿using UnityEngine;
+using System;
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+using UnityEngine;
 
 public class CharacterCreateAnimationControl : MonoBehaviour
 {
+    [CompilerGenerated]
+    private static Dictionary<string, int> f__switchmap0;
     private string currentAnimation;
-
     private float interval = 10f;
-
     private HERO_SETUP setup;
-
     private float timeElapsed;
 
     private void play(string id)
     {
         this.currentAnimation = id;
         base.animation.Play(id);
+    }
+
+    public void playAttack(string id)
+    {
+        string key = id;
+        if (key != null)
+        {
+            int num;
+            if (f__switchmap0 == null)
+            {
+                Dictionary<string, int> dictionary = new Dictionary<string, int>(7);
+                dictionary.Add("mikasa", 0);
+                dictionary.Add("levi", 1);
+                dictionary.Add("sasha", 2);
+                dictionary.Add("jean", 3);
+                dictionary.Add("marco", 4);
+                dictionary.Add("armin", 5);
+                dictionary.Add("petra", 6);
+                f__switchmap0 = dictionary;
+            }
+            if (f__switchmap0.TryGetValue(key, out num))
+            {
+                switch (num)
+                {
+                    case 0:
+                        this.currentAnimation = "attack3_1";
+                        break;
+
+                    case 1:
+                        this.currentAnimation = "attack5";
+                        break;
+
+                    case 2:
+                        this.currentAnimation = "special_sasha";
+                        break;
+
+                    case 3:
+                        this.currentAnimation = "grabbed_jean";
+                        break;
+
+                    case 4:
+                        this.currentAnimation = "special_marco_0";
+                        break;
+
+                    case 5:
+                        this.currentAnimation = "special_armin";
+                        break;
+
+                    case 6:
+                        this.currentAnimation = "special_petra";
+                        break;
+                }
+            }
+        }
+        base.animation.Play(this.currentAnimation);
     }
 
     private void Start()
@@ -23,83 +80,9 @@ public class CharacterCreateAnimationControl : MonoBehaviour
         this.play(this.currentAnimation);
     }
 
-    private void Update()
-    {
-        if (this.currentAnimation == "stand" || this.currentAnimation == "stand_levi")
-        {
-            this.timeElapsed += Time.deltaTime;
-            if (this.timeElapsed > this.interval)
-            {
-                this.timeElapsed = 0f;
-                if (UnityEngine.Random.Range(1, 1000) < 350)
-                {
-                    this.play("salute");
-                }
-                else if (UnityEngine.Random.Range(1, 1000) < 350)
-                {
-                    this.play("supply");
-                }
-                else
-                {
-                    this.play("dodge");
-                }
-            }
-            return;
-        }
-        if (base.animation[this.currentAnimation].normalizedTime >= 1f)
-        {
-            if (this.currentAnimation == "attack3_1")
-            {
-                this.play("attack3_2");
-                return;
-            }
-            if (this.currentAnimation == "special_sasha")
-            {
-                this.play("run_sasha");
-                return;
-            }
-            this.toStand();
-        }
-    }
-
-    public void playAttack(string id)
-    {
-        switch (id)
-        {
-            case "mikasa":
-                this.currentAnimation = "attack3_1";
-                break;
-
-            case "levi":
-                this.currentAnimation = "attack5";
-                break;
-
-            case "sasha":
-                this.currentAnimation = "special_sasha";
-                break;
-
-            case "jean":
-                this.currentAnimation = "grabbed_jean";
-                break;
-
-            case "marco":
-                this.currentAnimation = "special_marco_0";
-                break;
-
-            case "armin":
-                this.currentAnimation = "special_armin";
-                break;
-
-            case "petra":
-                this.currentAnimation = "special_petra";
-                break;
-        }
-        base.animation.Play(this.currentAnimation);
-    }
-
     public void toStand()
     {
-        if (this.setup.myCostume.sex == Sex.Female)
+        if (this.setup.myCostume.sex == SEX.FEMALE)
         {
             this.currentAnimation = "stand";
         }
@@ -110,4 +93,44 @@ public class CharacterCreateAnimationControl : MonoBehaviour
         base.animation.CrossFade(this.currentAnimation, 0.1f);
         this.timeElapsed = 0f;
     }
+
+    private void Update()
+    {
+        if ((this.currentAnimation == "stand") || (this.currentAnimation == "stand_levi"))
+        {
+            this.timeElapsed += Time.deltaTime;
+            if (this.timeElapsed > this.interval)
+            {
+                this.timeElapsed = 0f;
+                if (UnityEngine.Random.Range(1, 0x3e8) < 350)
+                {
+                    this.play("salute");
+                }
+                else if (UnityEngine.Random.Range(1, 0x3e8) < 350)
+                {
+                    this.play("supply");
+                }
+                else
+                {
+                    this.play("dodge");
+                }
+            }
+        }
+        else if (base.animation[this.currentAnimation].normalizedTime >= 1f)
+        {
+            if (this.currentAnimation == "attack3_1")
+            {
+                this.play("attack3_2");
+            }
+            else if (this.currentAnimation == "special_sasha")
+            {
+                this.play("run_sasha");
+            }
+            else
+            {
+                this.toStand();
+            }
+        }
+    }
 }
+

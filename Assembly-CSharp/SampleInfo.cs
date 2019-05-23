@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 public class SampleInfo : MonoBehaviour
 {
@@ -14,3 +15,4 @@ public class SampleInfo : MonoBehaviour
         GUILayout.EndHorizontal();
     }
 }
+

@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 [AddComponentMenu("NGUI/Examples/Drag and Drop Root")]
 public class DragDropRoot : MonoBehaviour
@@ -7,6 +8,7 @@ public class DragDropRoot : MonoBehaviour
 
     private void Awake()
     {
-        DragDropRoot.root = base.transform;
+        root = base.transform;
     }
 }
+

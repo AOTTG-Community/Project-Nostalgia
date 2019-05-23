@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 public class BTN_LEADERBOARD_QUIT : MonoBehaviour
 {
@@ -11,3 +12,4 @@ public class BTN_LEADERBOARD_QUIT : MonoBehaviour
         NGUITools.SetActive(this.leaderboard, false);
     }
 }
+

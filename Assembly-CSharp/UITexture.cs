@@ -1,32 +1,62 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
-[AddComponentMenu("NGUI/UI/Texture")]
-[ExecuteInEditMode]
+[AddComponentMenu("NGUI/UI/Texture"), ExecuteInEditMode]
 public class UITexture : UIWidget
 {
     private bool mCreatingMat;
-
     private Material mDynamicMat;
-
     private int mPMA = -1;
-
-    [HideInInspector]
-    [SerializeField]
+    [HideInInspector, SerializeField]
     private Rect mRect = new Rect(0f, 0f, 1f, 1f);
-
-    [SerializeField]
-    [HideInInspector]
+    [SerializeField, HideInInspector]
     private Shader mShader;
-
-    [SerializeField]
-    [HideInInspector]
+    [SerializeField, HideInInspector]
     private Texture mTexture;
+
+    public override void MakePixelPerfect()
+    {
+        Texture mainTexture = this.mainTexture;
+        if (mainTexture != null)
+        {
+            Vector3 localScale = base.cachedTransform.localScale;
+            localScale.x = mainTexture.width * this.uvRect.width;
+            localScale.y = mainTexture.height * this.uvRect.height;
+            localScale.z = 1f;
+            base.cachedTransform.localScale = localScale;
+        }
+        base.MakePixelPerfect();
+    }
+
+    private void OnDestroy()
+    {
+        NGUITools.Destroy(this.mDynamicMat);
+    }
+
+    public override void OnFill(BetterList<Vector3> verts, BetterList<Vector2> uvs, BetterList<Color32> cols)
+    {
+        Color c = base.color;
+        c.a *= base.mPanel.alpha;
+        Color32 item = !this.premultipliedAlpha ? c : NGUITools.ApplyPMA(c);
+        verts.Add(new Vector3(1f, 0f, 0f));
+        verts.Add(new Vector3(1f, -1f, 0f));
+        verts.Add(new Vector3(0f, -1f, 0f));
+        verts.Add(new Vector3(0f, 0f, 0f));
+        uvs.Add(new Vector2(this.mRect.xMax, this.mRect.yMax));
+        uvs.Add(new Vector2(this.mRect.xMax, this.mRect.yMin));
+        uvs.Add(new Vector2(this.mRect.xMin, this.mRect.yMin));
+        uvs.Add(new Vector2(this.mRect.xMin, this.mRect.yMax));
+        cols.Add(item);
+        cols.Add(item);
+        cols.Add(item);
+        cols.Add(item);
+    }
 
     public bool hasDynamicMaterial
     {
         get
         {
-            return this.mDynamicMat != null;
+            return (this.mDynamicMat != null);
         }
     }
 
@@ -42,24 +72,24 @@ public class UITexture : UIWidget
     {
         get
         {
-            return (!(this.mTexture != null)) ? base.mainTexture : this.mTexture;
+            return ((this.mTexture == null) ? base.mainTexture : this.mTexture);
         }
         set
         {
-            if (this.mPanel != null && this.mMat != null)
+            if ((base.mPanel != null) && (base.mMat != null))
             {
-                this.mPanel.RemoveWidget(this);
+                base.mPanel.RemoveWidget(this);
             }
-            if (this.mMat == null)
+            if (base.mMat == null)
             {
                 this.mDynamicMat = new Material(this.shader);
                 this.mDynamicMat.hideFlags = HideFlags.DontSave;
-                this.mMat = this.mDynamicMat;
+                base.mMat = this.mDynamicMat;
             }
-            this.mPanel = null;
-            this.mTex = value;
+            base.mPanel = null;
+            base.mTex = value;
             this.mTexture = value;
-            this.mMat.mainTexture = value;
+            base.mMat.mainTexture = value;
             if (base.enabled)
             {
                 base.CreatePanel();
@@ -71,7 +101,7 @@ public class UITexture : UIWidget
     {
         get
         {
-            if (!this.mCreatingMat && this.mMat == null)
+            if (!this.mCreatingMat && (base.mMat == null))
             {
                 this.mCreatingMat = true;
                 if (this.mainTexture != null)
@@ -88,11 +118,11 @@ public class UITexture : UIWidget
                 }
                 this.mCreatingMat = false;
             }
-            return this.mMat;
+            return base.mMat;
         }
         set
         {
-            if (this.mDynamicMat != value && this.mDynamicMat != null)
+            if ((this.mDynamicMat != value) && (this.mDynamicMat != null))
             {
                 NGUITools.Destroy(this.mDynamicMat);
                 this.mDynamicMat = null;
@@ -109,9 +139,9 @@ public class UITexture : UIWidget
             if (this.mPMA == -1)
             {
                 Material material = this.material;
-                this.mPMA = ((!(material != null) || !(material.shader != null) || !material.shader.name.Contains("Premultiplied")) ? 0 : 1);
+                this.mPMA = (((material == null) || (material.shader == null)) || !material.shader.name.Contains("Premultiplied")) ? 0 : 1;
             }
-            return this.mPMA == 1;
+            return (this.mPMA == 1);
         }
     }
 
@@ -163,42 +193,5 @@ public class UITexture : UIWidget
             }
         }
     }
-
-    private void OnDestroy()
-    {
-        NGUITools.Destroy(this.mDynamicMat);
-    }
-
-    public override void MakePixelPerfect()
-    {
-        Texture mainTexture = this.mainTexture;
-        if (mainTexture != null)
-        {
-            Vector3 localScale = base.cachedTransform.localScale;
-            localScale.x = (float)mainTexture.width * this.uvRect.width;
-            localScale.y = (float)mainTexture.height * this.uvRect.height;
-            localScale.z = 1f;
-            base.cachedTransform.localScale = localScale;
-        }
-        base.MakePixelPerfect();
-    }
-
-    public override void OnFill(BetterList<Vector3> verts, BetterList<Vector2> uvs, BetterList<Color32> cols)
-    {
-        Color color = base.color;
-        color.a *= this.mPanel.alpha;
-        Color32 item = (!this.premultipliedAlpha) ? color : NGUITools.ApplyPMA(color);
-        verts.Add(new Vector3(1f, 0f, 0f));
-        verts.Add(new Vector3(1f, -1f, 0f));
-        verts.Add(new Vector3(0f, -1f, 0f));
-        verts.Add(new Vector3(0f, 0f, 0f));
-        uvs.Add(new Vector2(this.mRect.xMax, this.mRect.yMax));
-        uvs.Add(new Vector2(this.mRect.xMax, this.mRect.yMin));
-        uvs.Add(new Vector2(this.mRect.xMin, this.mRect.yMin));
-        uvs.Add(new Vector2(this.mRect.xMin, this.mRect.yMax));
-        cols.Add(item);
-        cols.Add(item);
-        cols.Add(item);
-        cols.Add(item);
-    }
 }
+

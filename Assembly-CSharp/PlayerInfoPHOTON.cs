@@ -1,4 +1,7 @@
-﻿public class PlayerInfoPHOTON
+using System;
+using UnityEngine;
+
+public class PlayerInfoPHOTON
 {
     public int airKills;
     public int assistancePt;
@@ -24,7 +27,7 @@
 
     public void initAsGuest()
     {
-        this.name = "GUEST" + UnityEngine.Random.Range(0, 100000);
+        this.name = "GUEST" + UnityEngine.Random.Range(0, 0x186a0);
         this.kills = 0;
         this.die = 0;
         this.maxDamage = 0;
@@ -44,3 +47,4 @@
         this.totalNonAIKills = 0;
     }
 }
+

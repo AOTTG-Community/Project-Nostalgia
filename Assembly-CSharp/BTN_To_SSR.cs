@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 public class BTN_To_SSR : MonoBehaviour
 {
@@ -7,3 +8,4 @@ public class BTN_To_SSR : MonoBehaviour
         Application.LoadLevel("SnapShot");
     }
 }
+

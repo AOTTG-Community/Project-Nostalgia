@@ -1,19 +1,10 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 [AddComponentMenu("NGUI/Interaction/Input Validator"), RequireComponent(typeof(UIInput))]
 public class UIInputValidator : MonoBehaviour
 {
     public Validation logic;
-
-    public enum Validation
-    {
-        None,
-        Integer,
-        Float,
-        Alphanumeric,
-        Username,
-        Name
-    }
 
     private void Start()
     {
@@ -71,7 +62,7 @@ public class UIInputValidator : MonoBehaviour
         {
             if ((ch >= 'A') && (ch <= 'Z'))
             {
-                return (char)((ch - 'A') + 0x61);
+                return (char) ((ch - 'A') + 0x61);
             }
             if ((ch >= 'a') && (ch <= 'z'))
             {
@@ -89,7 +80,7 @@ public class UIInputValidator : MonoBehaviour
             {
                 if (ch2 == ' ')
                 {
-                    return (char)((ch - 'a') + 0x41);
+                    return (char) ((ch - 'a') + 0x41);
                 }
                 return ch;
             }
@@ -97,7 +88,7 @@ public class UIInputValidator : MonoBehaviour
             {
                 if ((ch2 != ' ') && (ch2 != '\''))
                 {
-                    return (char)((ch - 'A') + 0x61);
+                    return (char) ((ch - 'A') + 0x61);
                 }
                 return ch;
             }
@@ -115,4 +106,15 @@ public class UIInputValidator : MonoBehaviour
         }
         return '\0';
     }
+
+    public enum Validation
+    {
+        None,
+        Integer,
+        Float,
+        Alphanumeric,
+        Username,
+        Name
+    }
 }
+

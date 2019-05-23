@@ -1,4 +1,4 @@
-﻿using Optimization.Caching;
+using System;
 using UnityEngine;
 
 public class CheckHitGround : MonoBehaviour
@@ -7,23 +7,26 @@ public class CheckHitGround : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        switch (other.gameObject.layer)
+        if (other.gameObject.layer == LayerMask.NameToLayer("Ground"))
         {
-            case Layers.GroundN:
-            case Layers.EnemyAABBN:
-                isGrounded = true;
-                break;
+            this.isGrounded = true;
+        }
+        if (other.gameObject.layer == LayerMask.NameToLayer("EnemyAABB"))
+        {
+            this.isGrounded = true;
         }
     }
 
     private void OnTriggerStay(Collider other)
     {
-        switch (other.gameObject.layer)
+        if (other.gameObject.layer == LayerMask.NameToLayer("Ground"))
         {
-            case Layers.GroundN:
-            case Layers.EnemyAABBN:
-                this.isGrounded = true;
-                break;
+            this.isGrounded = true;
+        }
+        if (other.gameObject.layer == LayerMask.NameToLayer("EnemyAABB"))
+        {
+            this.isGrounded = true;
         }
     }
 }
+

@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 public class BTN_RESULT_TO_MAIN : MonoBehaviour
 {
@@ -9,12 +10,13 @@ public class BTN_RESULT_TO_MAIN : MonoBehaviour
         {
             PhotonNetwork.Disconnect();
         }
-        IN_GAME_MAIN_CAMERA.GameType = GameType.Stop;
-        FengGameManagerMKII.FGM.GameStart = false;
+        IN_GAME_MAIN_CAMERA.gametype = GAMETYPE.STOP;
+        GameObject.Find("MultiplayerManager").GetComponent<FengGameManagerMKII>().gameStart = false;
         Screen.lockCursor = false;
         Screen.showCursor = true;
-        FengCustomInputs.Main.menuOn = false;
-        UnityEngine.Object.Destroy(FengGameManagerMKII.FGM);
+        GameObject.Find("InputManagerController").GetComponent<FengCustomInputs>().menuOn = false;
+        UnityEngine.Object.Destroy(GameObject.Find("MultiplayerManager"));
         Application.LoadLevel("menu");
     }
 }
+

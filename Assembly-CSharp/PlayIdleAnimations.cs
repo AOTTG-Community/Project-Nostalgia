@@ -1,11 +1,12 @@
-﻿using System.Collections.Generic;
+using System;
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 [AddComponentMenu("NGUI/Examples/Play Idle Animations")]
 public class PlayIdleAnimations : MonoBehaviour
 {
     private Animation mAnim;
-
     private List<AnimationClip> mBreaks = new List<AnimationClip>();
     private AnimationClip mIdle;
     private int mLastIndex;
@@ -21,19 +22,31 @@ public class PlayIdleAnimations : MonoBehaviour
         }
         else
         {
-            foreach (object obj in this.mAnim)
+            IEnumerator enumerator = this.mAnim.GetEnumerator();
+            try
             {
-                AnimationState animationState = (AnimationState)obj;
-                if (animationState.clip.name == "idle")
+                while (enumerator.MoveNext())
                 {
-                    animationState.layer = 0;
-                    this.mIdle = animationState.clip;
-                    this.mAnim.Play(this.mIdle.name);
+                    AnimationState current = (AnimationState) enumerator.Current;
+                    if (current.clip.name == "idle")
+                    {
+                        current.layer = 0;
+                        this.mIdle = current.clip;
+                        this.mAnim.Play(this.mIdle.name);
+                    }
+                    else if (current.clip.name.StartsWith("idle"))
+                    {
+                        current.layer = 1;
+                        this.mBreaks.Add(current.clip);
+                    }
                 }
-                else if (animationState.clip.name.StartsWith("idle"))
+            }
+            finally
+            {
+                IDisposable disposable = enumerator as IDisposable;
+                if (disposable != null)
                 {
-                    animationState.layer = 1;
-                    this.mBreaks.Add(animationState.clip);
+	                disposable.Dispose();
                 }
             }
             if (this.mBreaks.Count == 0)
@@ -49,9 +62,9 @@ public class PlayIdleAnimations : MonoBehaviour
         {
             if (this.mBreaks.Count == 1)
             {
-                AnimationClip animationClip = this.mBreaks[0];
-                this.mNextBreak = Time.time + animationClip.length + UnityEngine.Random.Range(5f, 15f);
-                this.mAnim.CrossFade(animationClip.name);
+                AnimationClip clip = this.mBreaks[0];
+                this.mNextBreak = (Time.time + clip.length) + UnityEngine.Random.Range((float) 5f, (float) 15f);
+                this.mAnim.CrossFade(clip.name);
             }
             else
             {
@@ -65,10 +78,11 @@ public class PlayIdleAnimations : MonoBehaviour
                     }
                 }
                 this.mLastIndex = num;
-                AnimationClip animationClip2 = this.mBreaks[num];
-                this.mNextBreak = Time.time + animationClip2.length + UnityEngine.Random.Range(2f, 8f);
-                this.mAnim.CrossFade(animationClip2.name);
+                AnimationClip clip2 = this.mBreaks[num];
+                this.mNextBreak = (Time.time + clip2.length) + UnityEngine.Random.Range((float) 2f, (float) 8f);
+                this.mAnim.CrossFade(clip2.name);
             }
         }
     }
 }
+

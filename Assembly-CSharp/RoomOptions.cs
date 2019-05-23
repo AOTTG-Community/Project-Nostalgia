@@ -1,4 +1,5 @@
-﻿using ExitGames.Client.Photon;
+using ExitGames.Client.Photon;
+using System;
 
 public class RoomOptions
 {
@@ -9,3 +10,4 @@ public class RoomOptions
     public bool isVisible = true;
     public int maxPlayers;
 }
+

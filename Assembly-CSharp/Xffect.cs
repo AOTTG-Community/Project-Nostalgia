@@ -1,4 +1,5 @@
-﻿using Optimization.Caching;
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -6,26 +7,128 @@ using UnityEngine;
 public class Xffect : MonoBehaviour
 {
     private List<EffectLayer> EflList = new List<EffectLayer>();
-    private Dictionary<string, VertexPool> MatDic = new Dictionary<string, VertexPool>();
     protected float ElapsedTime;
     public float LifeTime = -1f;
+    private Dictionary<string, VertexPool> MatDic = new Dictionary<string, VertexPool>();
+
+    public void Active()
+    {
+        IEnumerator enumerator = base.transform.GetEnumerator();
+        try
+        {
+            while (enumerator.MoveNext())
+            {
+                Transform current = (Transform) enumerator.Current;
+                current.gameObject.active = true;
+            }
+        }
+        finally
+        {
+            IDisposable disposable = enumerator as IDisposable;
+            if (disposable != null)
+            {
+	            disposable.Dispose();
+            }
+        }
+        base.gameObject.active = true;
+        this.ElapsedTime = 0f;
+    }
 
     private void Awake()
     {
         this.Initialize();
     }
 
+    public void DeActive()
+    {
+        IEnumerator enumerator = base.transform.GetEnumerator();
+        try
+        {
+            while (enumerator.MoveNext())
+            {
+                Transform current = (Transform) enumerator.Current;
+                current.gameObject.active = false;
+            }
+        }
+        finally
+        {
+            IDisposable disposable = enumerator as IDisposable;
+            if (disposable != null)
+            {
+	            disposable.Dispose();
+            }
+        }
+        base.gameObject.active = false;
+    }
+
+    public void Initialize()
+    {
+        if (this.EflList.Count <= 0)
+        {
+            IEnumerator enumerator = base.transform.GetEnumerator();
+            try
+            {
+                while (enumerator.MoveNext())
+                {
+                    Transform current = (Transform) enumerator.Current;
+                    EffectLayer component = (EffectLayer) current.GetComponent(typeof(EffectLayer));
+                    if ((component != null) && (component.Material != null))
+                    {
+                        MeshFilter filter;
+                        MeshRenderer renderer;
+                        Material material = component.Material;
+                        this.EflList.Add(component);
+                        Transform transform2 = base.transform.Find("mesh " + material.name);
+                        if (transform2 != null)
+                        {
+                            filter = (MeshFilter) transform2.GetComponent(typeof(MeshFilter));
+                            renderer = (MeshRenderer) transform2.GetComponent(typeof(MeshRenderer));
+                            filter.mesh.Clear();
+                            this.MatDic[material.name] = new VertexPool(filter.mesh, material);
+                        }
+                        if (!this.MatDic.ContainsKey(material.name))
+                        {
+                            GameObject obj2 = new GameObject("mesh " + material.name) {
+                                transform = { parent = base.transform }
+                            };
+                            obj2.AddComponent("MeshFilter");
+                            obj2.AddComponent("MeshRenderer");
+                            filter = (MeshFilter) obj2.GetComponent(typeof(MeshFilter));
+                            renderer = (MeshRenderer) obj2.GetComponent(typeof(MeshRenderer));
+                            renderer.castShadows = false;
+                            renderer.receiveShadows = false;
+                            renderer.renderer.material = material;
+                            this.MatDic[material.name] = new VertexPool(filter.mesh, material);
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                IDisposable disposable = enumerator as IDisposable;
+                if (disposable != null)
+                {
+	                disposable.Dispose();
+                }
+            }
+            foreach (EffectLayer layer2 in this.EflList)
+            {
+                layer2.Vertexpool = this.MatDic[layer2.Material.name];
+            }
+        }
+    }
+
     private void LateUpdate()
     {
-        foreach (KeyValuePair<string, VertexPool> keyValuePair in this.MatDic)
+        foreach (KeyValuePair<string, VertexPool> pair in this.MatDic)
         {
-            keyValuePair.Value.LateUpdate();
+            pair.Value.LateUpdate();
         }
-        if (this.ElapsedTime > this.LifeTime && this.LifeTime >= 0f)
+        if ((this.ElapsedTime > this.LifeTime) && (this.LifeTime >= 0f))
         {
-            foreach (EffectLayer effectLayer in this.EflList)
+            foreach (EffectLayer layer in this.EflList)
             {
-                effectLayer.Reset();
+                layer.Reset();
             }
             this.DeActive();
             this.ElapsedTime = 0f;
@@ -36,121 +139,70 @@ public class Xffect : MonoBehaviour
     {
     }
 
+    public void SetClient(Transform client)
+    {
+        foreach (EffectLayer layer in this.EflList)
+        {
+            layer.ClientTransform = client;
+        }
+    }
+
+    public void SetDirectionAxis(Vector3 axis)
+    {
+        foreach (EffectLayer layer in this.EflList)
+        {
+            layer.OriVelocityAxis = axis;
+        }
+    }
+
+    public void SetEmitPosition(Vector3 pos)
+    {
+        foreach (EffectLayer layer in this.EflList)
+        {
+            layer.EmitPoint = pos;
+        }
+    }
+
     private void Start()
     {
-        base.transform.position = Vectors.zero;
+        base.transform.position = Vector3.zero;
         base.transform.rotation = Quaternion.identity;
-        base.transform.localScale = Vectors.one;
-        foreach (object obj in base.transform)
+        base.transform.localScale = Vector3.one;
+        IEnumerator enumerator = base.transform.GetEnumerator();
+        try
         {
-            Transform transform = (Transform)obj;
-            transform.transform.position = Vectors.zero;
-            transform.transform.rotation = Quaternion.identity;
-            transform.transform.localScale = Vectors.one;
+            while (enumerator.MoveNext())
+            {
+                Transform current = (Transform) enumerator.Current;
+                current.transform.position = Vector3.zero;
+                current.transform.rotation = Quaternion.identity;
+                current.transform.localScale = Vector3.one;
+            }
         }
-        foreach (EffectLayer effectLayer in this.EflList)
+        finally
         {
-            effectLayer.StartCustom();
+            IDisposable disposable = enumerator as IDisposable;
+            if (disposable != null)
+            {
+	            disposable.Dispose();
+            }
+        }
+        foreach (EffectLayer layer in this.EflList)
+        {
+            layer.StartCustom();
         }
     }
 
     private void Update()
     {
         this.ElapsedTime += Time.deltaTime;
-        foreach (EffectLayer effectLayer in this.EflList)
+        foreach (EffectLayer layer in this.EflList)
         {
-            if (this.ElapsedTime > effectLayer.StartTime)
+            if (this.ElapsedTime > layer.StartTime)
             {
-                effectLayer.FixedUpdateCustom();
+                layer.FixedUpdateCustom();
             }
-        }
-    }
-
-    public void Active()
-    {
-        foreach (object obj in base.transform)
-        {
-            Transform transform = (Transform)obj;
-            transform.gameObject.SetActive(true);
-        }
-        base.gameObject.SetActive(true);
-        this.ElapsedTime = 0f;
-    }
-
-    public void DeActive()
-    {
-        foreach (object obj in base.transform)
-        {
-            Transform transform = (Transform)obj;
-            transform.gameObject.SetActive(false);
-        }
-        base.gameObject.SetActive(false);
-    }
-
-    public void Initialize()
-    {
-        if (this.EflList.Count > 0)
-        {
-            return;
-        }
-        foreach (object obj in base.transform)
-        {
-            Transform transform = (Transform)obj;
-            EffectLayer effectLayer = (EffectLayer)transform.GetComponent(typeof(EffectLayer));
-            if (!(effectLayer == null) && !(effectLayer.Material == null))
-            {
-                Material material = effectLayer.Material;
-                this.EflList.Add(effectLayer);
-                Transform transform2 = base.transform.Find("mesh " + material.name);
-                if (transform2 != null)
-                {
-                    MeshFilter meshFilter = (MeshFilter)transform2.GetComponent(typeof(MeshFilter));
-                    MeshRenderer meshRenderer = (MeshRenderer)transform2.GetComponent(typeof(MeshRenderer));
-                    meshFilter.mesh.Clear();
-                    this.MatDic[material.name] = new VertexPool(meshFilter.mesh, material);
-                }
-                if (!this.MatDic.ContainsKey(material.name))
-                {
-                    GameObject gameObject = new GameObject("mesh " + material.name);
-                    gameObject.transform.parent = base.transform;
-                    gameObject.AddComponent("MeshFilter");
-                    gameObject.AddComponent("MeshRenderer");
-                    MeshFilter meshFilter = (MeshFilter)gameObject.GetComponent(typeof(MeshFilter));
-                    MeshRenderer meshRenderer = (MeshRenderer)gameObject.GetComponent(typeof(MeshRenderer));
-                    meshRenderer.castShadows = false;
-                    meshRenderer.receiveShadows = false;
-                    meshRenderer.renderer.material = material;
-                    this.MatDic[material.name] = new VertexPool(meshFilter.mesh, material);
-                }
-            }
-        }
-        foreach (EffectLayer effectLayer2 in this.EflList)
-        {
-            effectLayer2.Vertexpool = this.MatDic[effectLayer2.Material.name];
-        }
-    }
-
-    public void SetClient(Transform client)
-    {
-        foreach (EffectLayer effectLayer in this.EflList)
-        {
-            effectLayer.ClientTransform = client;
-        }
-    }
-
-    public void SetDirectionAxis(Vector3 axis)
-    {
-        foreach (EffectLayer effectLayer in this.EflList)
-        {
-            effectLayer.OriVelocityAxis = axis;
-        }
-    }
-
-    public void SetEmitPosition(Vector3 pos)
-    {
-        foreach (EffectLayer effectLayer in this.EflList)
-        {
-            effectLayer.EmitPoint = pos;
         }
     }
 }
+

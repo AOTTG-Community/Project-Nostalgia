@@ -1,10 +1,11 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 public class AnimatedAlpha : MonoBehaviour
 {
+    public float alpha = 1f;
     private UIPanel mPanel;
     private UIWidget mWidget;
-    public float alpha = 1f;
 
     private void Awake()
     {
@@ -25,3 +26,4 @@ public class AnimatedAlpha : MonoBehaviour
         }
     }
 }
+

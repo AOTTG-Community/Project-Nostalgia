@@ -1,19 +1,35 @@
-﻿using Optimization.Caching;
+using System;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
-[AddComponentMenu("NGUI/Internal/Spring Panel")]
-[RequireComponent(typeof(UIPanel))]
+[AddComponentMenu("NGUI/Internal/Spring Panel"), RequireComponent(typeof(UIPanel))]
 public class SpringPanel : IgnoreTimeScale
 {
     private UIDraggablePanel mDrag;
     private UIPanel mPanel;
     private float mThreshold;
     private Transform mTrans;
-    public SpringPanel.OnFinished onFinished;
+    public OnFinished onFinished;
     public float strength = 10f;
-    public Vector3 target = Vectors.zero;
+    public Vector3 target = Vector3.zero;
 
-    public delegate void OnFinished();
+    public static SpringPanel Begin(GameObject go, Vector3 pos, float strength)
+    {
+        SpringPanel component = go.GetComponent<SpringPanel>();
+        if (component == null)
+        {
+            component = go.AddComponent<SpringPanel>();
+        }
+        component.target = pos;
+        component.strength = strength;
+        component.onFinished = null;
+        if (!component.enabled)
+        {
+            component.mThreshold = 0f;
+            component.enabled = true;
+        }
+        return component;
+    }
 
     private void Start()
     {
@@ -27,48 +43,34 @@ public class SpringPanel : IgnoreTimeScale
         float deltaTime = base.UpdateRealTimeDelta();
         if (this.mThreshold == 0f)
         {
-            this.mThreshold = (this.target - this.mTrans.localPosition).magnitude * 0.005f;
+            Vector3 vector5 = this.target - this.mTrans.localPosition;
+            this.mThreshold = vector5.magnitude * 0.005f;
         }
         bool flag = false;
         Vector3 localPosition = this.mTrans.localPosition;
-        Vector3 vector = NGUIMath.SpringLerp(this.mTrans.localPosition, this.target, this.strength, deltaTime);
-        if (this.mThreshold >= Vector3.Magnitude(vector - this.target))
+        Vector3 target = NGUIMath.SpringLerp(this.mTrans.localPosition, this.target, this.strength, deltaTime);
+        if (this.mThreshold >= Vector3.Magnitude(target - this.target))
         {
-            vector = this.target;
+            target = this.target;
             base.enabled = false;
             flag = true;
         }
-        this.mTrans.localPosition = vector;
-        Vector3 vector2 = vector - localPosition;
+        this.mTrans.localPosition = target;
+        Vector3 vector3 = target - localPosition;
         Vector4 clipRange = this.mPanel.clipRange;
-        clipRange.x -= vector2.x;
-        clipRange.y -= vector2.y;
+        clipRange.x -= vector3.x;
+        clipRange.y -= vector3.y;
         this.mPanel.clipRange = clipRange;
         if (this.mDrag != null)
         {
             this.mDrag.UpdateScrollbars(false);
         }
-        if (flag && this.onFinished != null)
+        if (flag && (this.onFinished != null))
         {
             this.onFinished();
         }
     }
 
-    public static SpringPanel Begin(GameObject go, Vector3 pos, float strength)
-    {
-        SpringPanel springPanel = go.GetComponent<SpringPanel>();
-        if (springPanel == null)
-        {
-            springPanel = go.AddComponent<SpringPanel>();
-        }
-        springPanel.target = pos;
-        springPanel.strength = strength;
-        springPanel.onFinished = null;
-        if (!springPanel.enabled)
-        {
-            springPanel.mThreshold = 0f;
-            springPanel.enabled = true;
-        }
-        return springPanel;
-    }
+    public delegate void OnFinished();
 }
+

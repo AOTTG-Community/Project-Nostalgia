@@ -1,71 +1,68 @@
-﻿using ExitGames.Client.Photon;
-using Optimization.Caching;
+using ExitGames.Client.Photon;
+using System;
 using UnityEngine;
 
 public class BTN_choose_titan : MonoBehaviour
 {
     private void OnClick()
     {
-        if (IN_GAME_MAIN_CAMERA.GameMode == GameMode.PVP_AHSS)
+        if (IN_GAME_MAIN_CAMERA.gamemode == GAMEMODE.PVP_AHSS)
         {
-            string text = "AHSS";
-            NGUITools.SetActive(FengGameManagerMKII.UIRefer.panels[0], true);
-            FengGameManagerMKII.FGM.NeedChooseSide = false;
-            if (!PhotonNetwork.IsMasterClient && FengGameManagerMKII.FGM.RoundTime > 60f)
+            string id = "AHSS";
+            NGUITools.SetActive(GameObject.Find("UI_IN_GAME").GetComponent<UIReferArray>().panels[0], true);
+            GameObject.Find("MultiplayerManager").GetComponent<FengGameManagerMKII>().needChooseSide = false;
+            if (!PhotonNetwork.isMasterClient && (GameObject.Find("MultiplayerManager").GetComponent<FengGameManagerMKII>().roundTime > 60f))
             {
-                FengGameManagerMKII.FGM.NOTSpawnPlayer(text);
-                FengGameManagerMKII.FGM.BasePV.RPC("restartGameByClient", PhotonTargets.MasterClient, new object[0]);
+                GameObject.Find("MultiplayerManager").GetComponent<FengGameManagerMKII>().NOTSpawnPlayer(id);
+                GameObject.Find("MultiplayerManager").GetComponent<FengGameManagerMKII>().photonView.RPC("restartGameByClient", PhotonTargets.MasterClient, new object[0]);
             }
             else
             {
-                FengGameManagerMKII.FGM.SpawnPlayer(text, "playerRespawn2");
+                GameObject.Find("MultiplayerManager").GetComponent<FengGameManagerMKII>().SpawnPlayer(id, "playerRespawn2");
             }
-            NGUITools.SetActive(FengGameManagerMKII.UIRefer.panels[1], false);
-            NGUITools.SetActive(FengGameManagerMKII.UIRefer.panels[2], false);
-            NGUITools.SetActive(FengGameManagerMKII.UIRefer.panels[3], false);
+            NGUITools.SetActive(GameObject.Find("UI_IN_GAME").GetComponent<UIReferArray>().panels[1], false);
+            NGUITools.SetActive(GameObject.Find("UI_IN_GAME").GetComponent<UIReferArray>().panels[2], false);
+            NGUITools.SetActive(GameObject.Find("UI_IN_GAME").GetComponent<UIReferArray>().panels[3], false);
             IN_GAME_MAIN_CAMERA.usingTitan = false;
-            IN_GAME_MAIN_CAMERA.MainCamera.setHUDposition();
-            Hashtable customProperties = new Hashtable
-            {
-                {
-                    PhotonPlayerProperty.character,
-                    text
-                }
-            };
-            PhotonNetwork.player.SetCustomProperties(customProperties);
+            GameObject.Find("MainCamera").GetComponent<IN_GAME_MAIN_CAMERA>().setHUDposition();
+            Hashtable hashtable2 = new Hashtable();
+            hashtable2.Add(PhotonPlayerProperty.character, id);
+            Hashtable propertiesToSet = hashtable2;
+            PhotonNetwork.player.SetCustomProperties(propertiesToSet);
         }
         else
         {
-            if (IN_GAME_MAIN_CAMERA.GameMode == GameMode.PVP_CAPTURE)
+            if (IN_GAME_MAIN_CAMERA.gamemode == GAMEMODE.PVP_CAPTURE)
             {
-                FengGameManagerMKII.FGM.checkpoint = CacheGameObject.Find("PVPchkPtT");
+                GameObject.Find("MultiplayerManager").GetComponent<FengGameManagerMKII>().checkpoint = GameObject.Find("PVPchkPtT");
             }
-            string selection = CacheGameObject.Find("PopupListCharacterTITAN").GetComponent<UIPopupList>().selection;
+            string selection = GameObject.Find("PopupListCharacterTITAN").GetComponent<UIPopupList>().selection;
             NGUITools.SetActive(base.transform.parent.gameObject, false);
-            NGUITools.SetActive(FengGameManagerMKII.UIRefer.panels[0], true);
-            if ((!PhotonNetwork.IsMasterClient && FengGameManagerMKII.FGM.RoundTime > 60f) || FengGameManagerMKII.FGM.JustSuicide)
+            NGUITools.SetActive(GameObject.Find("UI_IN_GAME").GetComponent<UIReferArray>().panels[0], true);
+            if ((!PhotonNetwork.isMasterClient && (GameObject.Find("MultiplayerManager").GetComponent<FengGameManagerMKII>().roundTime > 60f)) || GameObject.Find("MultiplayerManager").GetComponent<FengGameManagerMKII>().justSuicide)
             {
-                FengGameManagerMKII.FGM.JustSuicide = false;
-                FengGameManagerMKII.FGM.NOTSpawnNonAITitan(selection);
+                GameObject.Find("MultiplayerManager").GetComponent<FengGameManagerMKII>().justSuicide = false;
+                GameObject.Find("MultiplayerManager").GetComponent<FengGameManagerMKII>().NOTSpawnNonAITitan(selection);
             }
             else
             {
-                FengGameManagerMKII.FGM.SpawnNonAITitan(selection, "titanRespawn");
+                GameObject.Find("MultiplayerManager").GetComponent<FengGameManagerMKII>().SpawnNonAITitan(selection, "titanRespawn");
             }
-            FengGameManagerMKII.FGM.NeedChooseSide = false;
-            NGUITools.SetActive(FengGameManagerMKII.UIRefer.panels[1], false);
-            NGUITools.SetActive(FengGameManagerMKII.UIRefer.panels[2], false);
-            NGUITools.SetActive(FengGameManagerMKII.UIRefer.panels[3], false);
+            GameObject.Find("MultiplayerManager").GetComponent<FengGameManagerMKII>().needChooseSide = false;
+            NGUITools.SetActive(GameObject.Find("UI_IN_GAME").GetComponent<UIReferArray>().panels[1], false);
+            NGUITools.SetActive(GameObject.Find("UI_IN_GAME").GetComponent<UIReferArray>().panels[2], false);
+            NGUITools.SetActive(GameObject.Find("UI_IN_GAME").GetComponent<UIReferArray>().panels[3], false);
             IN_GAME_MAIN_CAMERA.usingTitan = true;
-            IN_GAME_MAIN_CAMERA.MainCamera.setHUDposition();
+            GameObject.Find("MainCamera").GetComponent<IN_GAME_MAIN_CAMERA>().setHUDposition();
         }
     }
 
     private void Start()
     {
-        if (!FengGameManagerMKII.Level.TeamTitan)
+        if (!LevelInfo.getInfo(FengGameManagerMKII.level).teamTitan)
         {
             base.gameObject.GetComponent<UIButton>().isEnabled = false;
         }
     }
 }
+

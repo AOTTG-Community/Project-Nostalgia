@@ -1,4 +1,5 @@
-﻿using System.Text;
+using System;
+using System.Text;
 using UnityEngine;
 
 public class SupportLogging : MonoBehaviour
@@ -7,12 +8,12 @@ public class SupportLogging : MonoBehaviour
 
     private void LogBasics()
     {
-        StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.AppendFormat("SupportLogger Info: PUN {0}: ", "1.28");
-        stringBuilder.AppendFormat("AppID: {0}*** GameVersion: {1} ", PhotonNetwork.networkingPeer.mAppId.Substring(0, 8), PhotonNetwork.networkingPeer.mAppVersionPun);
-        stringBuilder.AppendFormat("Server: {0}. Region: {1} ", PhotonNetwork.ServerAddress, PhotonNetwork.networkingPeer.CloudRegion);
-        stringBuilder.AppendFormat("HostType: {0} ", PhotonNetwork.PhotonServerSettings.HostType);
-        Debug.Log(stringBuilder.ToString());
+        StringBuilder builder = new StringBuilder();
+        builder.AppendFormat("SupportLogger Info: PUN {0}: ", "1.28");
+        builder.AppendFormat("AppID: {0}*** GameVersion: {1} ", PhotonNetwork.networkingPeer.mAppId.Substring(0, 8), PhotonNetwork.networkingPeer.mAppVersionPun);
+        builder.AppendFormat("Server: {0}. Region: {1} ", PhotonNetwork.ServerAddress, PhotonNetwork.networkingPeer.CloudRegion);
+        builder.AppendFormat("HostType: {0} ", PhotonNetwork.PhotonServerSettings.HostType);
+        Debug.Log(builder.ToString());
     }
 
     public void LogStats()
@@ -40,13 +41,7 @@ public class SupportLogging : MonoBehaviour
 
     public void OnCreatedRoom()
     {
-        Debug.Log(string.Concat(new object[]
-        {
-            "SupportLogger OnCreatedRoom(",
-            PhotonNetwork.room,
-            "). ",
-            PhotonNetwork.lobby
-        }));
+        Debug.Log(string.Concat(new object[] { "SupportLogger OnCreatedRoom(", PhotonNetwork.room, "). ", PhotonNetwork.lobby }));
     }
 
     public void OnFailedToConnectToPhoton(DisconnectCause cause)
@@ -62,13 +57,7 @@ public class SupportLogging : MonoBehaviour
 
     public void OnJoinedRoom()
     {
-        Debug.Log(string.Concat(new object[]
-        {
-            "SupportLogger OnJoinedRoom(",
-            PhotonNetwork.room,
-            "). ",
-            PhotonNetwork.lobby
-        }));
+        Debug.Log(string.Concat(new object[] { "SupportLogger OnJoinedRoom(", PhotonNetwork.room, "). ", PhotonNetwork.lobby }));
     }
 
     public void OnLeftRoom()
@@ -84,3 +73,4 @@ public class SupportLogging : MonoBehaviour
         }
     }
 }
+

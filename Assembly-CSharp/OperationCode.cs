@@ -1,21 +1,21 @@
-﻿public class OperationCode
+using System;
+
+public class OperationCode
 {
     public const byte Authenticate = 230;
-
-    public const byte ChangeGroups = 248;
-    public const byte CreateGame = 227;
-    public const byte FindFriends = 222;
-    public const byte GetLobbyStats = 221;
-    public const byte GetProperties = 251;
+    public const byte ChangeGroups = 0xf8;
+    public const byte CreateGame = 0xe3;
+    public const byte FindFriends = 0xde;
+    public const byte GetLobbyStats = 0xdd;
+    public const byte GetProperties = 0xfb;
     public const byte GetRegions = 220;
-    public const byte JoinGame = 226;
-    public const byte JoinLobby = 229;
-
-    public const byte JoinRandomGame = 225;
-    public const byte Leave = 254;
-    public const byte LeaveLobby = 228;
-    public const byte RaiseEvent = 253;
-
-    public const byte SetProperties = 252;
-    public const byte WebRpc = 219;
+    public const byte JoinGame = 0xe2;
+    public const byte JoinLobby = 0xe5;
+    public const byte JoinRandomGame = 0xe1;
+    public const byte Leave = 0xfe;
+    public const byte LeaveLobby = 0xe4;
+    public const byte RaiseEvent = 0xfd;
+    public const byte SetProperties = 0xfc;
+    public const byte WebRpc = 0xdb;
 }
+

@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 [AddComponentMenu("NGUI/Examples/Equip Items")]
 public class EquipItems : MonoBehaviour
@@ -7,35 +8,36 @@ public class EquipItems : MonoBehaviour
 
     private void Start()
     {
-        if (this.itemIDs != null && this.itemIDs.Length > 0)
+        if ((this.itemIDs != null) && (this.itemIDs.Length > 0))
         {
-            InvEquipment invEquipment = base.GetComponent<InvEquipment>();
-            if (invEquipment == null)
+            InvEquipment component = base.GetComponent<InvEquipment>();
+            if (component == null)
             {
-                invEquipment = base.gameObject.AddComponent<InvEquipment>();
+                component = base.gameObject.AddComponent<InvEquipment>();
             }
             int max = 12;
-            int i = 0;
-            int num = this.itemIDs.Length;
-            while (i < num)
+            int index = 0;
+            int length = this.itemIDs.Length;
+            while (index < length)
             {
-                int num2 = this.itemIDs[i];
-                InvBaseItem invBaseItem = InvDatabase.FindByID(num2);
-                if (invBaseItem != null)
+                int num4 = this.itemIDs[index];
+                InvBaseItem bi = InvDatabase.FindByID(num4);
+                if (bi != null)
                 {
-                    invEquipment.Equip(new InvGameItem(num2, invBaseItem)
-                    {
-                        quality = (InvGameItem.Quality)UnityEngine.Random.Range(0, max),
-                        itemLevel = NGUITools.RandomRange(invBaseItem.minItemLevel, invBaseItem.maxItemLevel)
-                    });
+                    InvGameItem item = new InvGameItem(num4, bi) {
+                        quality = (InvGameItem.Quality) UnityEngine.Random.Range(0, max),
+                        itemLevel = NGUITools.RandomRange(bi.minItemLevel, bi.maxItemLevel)
+                    };
+                    component.Equip(item);
                 }
                 else
                 {
-                    Debug.LogWarning("Can't resolve the item ID of " + num2);
+                    Debug.LogWarning("Can't resolve the item ID of " + num4);
                 }
-                i++;
+                index++;
             }
         }
         UnityEngine.Object.Destroy(this);
     }
 }
+

@@ -1,6 +1,9 @@
-﻿public enum ServerConnection
+using System;
+
+public enum ServerConnection
 {
     MasterServer,
     GameServer,
     NameServer
 }
+

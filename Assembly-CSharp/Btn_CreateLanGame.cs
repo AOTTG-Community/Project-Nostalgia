@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 public class Btn_CreateLanGame : MonoBehaviour
 {
@@ -6,6 +7,7 @@ public class Btn_CreateLanGame : MonoBehaviour
     {
         PhotonNetwork.Disconnect();
         MonoBehaviour.print("IP:" + Network.player.ipAddress + Network.player.externalIP);
-        PhotonNetwork.ConnectToMaster(Network.player.ipAddress, 5055, FengGameManagerMKII.ApplicationId, UIMainReferences.ConnectField);
+        PhotonNetwork.ConnectToMaster(Network.player.ipAddress, 0x13bf, FengGameManagerMKII.applicationId, UIMainReferences.version);
     }
 }
+

@@ -1,4 +1,6 @@
-﻿public class Affector
+using System;
+
+public class Affector
 {
     protected EffectNode Node;
 
@@ -15,3 +17,4 @@
     {
     }
 }
+

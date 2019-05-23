@@ -1,19 +1,11 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 [AddComponentMenu("NGUI/Examples/Equipment")]
 public class InvEquipment : MonoBehaviour
 {
     private InvAttachmentPoint[] mAttachments;
-
     private InvGameItem[] mItems;
-
-    public InvGameItem[] equippedItems
-    {
-        get
-        {
-            return this.mItems;
-        }
-    }
 
     public InvGameItem Equip(InvGameItem item)
     {
@@ -33,47 +25,47 @@ public class InvEquipment : MonoBehaviour
     {
         if (slot != InvBaseItem.Slot.None)
         {
-            int num = slot - InvBaseItem.Slot.Weapon;
-            if (this.mItems != null && num < this.mItems.Length)
+            int index = ((int) slot) - 1;
+            if ((this.mItems != null) && (index < this.mItems.Length))
             {
-                return this.mItems[num];
+                return this.mItems[index];
             }
         }
         return null;
-    }
-
-    public bool HasEquipped(InvGameItem item)
-    {
-        if (this.mItems != null)
-        {
-            int i = 0;
-            int num = this.mItems.Length;
-            while (i < num)
-            {
-                if (this.mItems[i] == item)
-                {
-                    return true;
-                }
-                i++;
-            }
-        }
-        return false;
     }
 
     public bool HasEquipped(InvBaseItem.Slot slot)
     {
         if (this.mItems != null)
         {
-            int i = 0;
-            int num = this.mItems.Length;
-            while (i < num)
+            int index = 0;
+            int length = this.mItems.Length;
+            while (index < length)
             {
-                InvBaseItem baseItem = this.mItems[i].baseItem;
-                if (baseItem != null && baseItem.slot == slot)
+                InvBaseItem baseItem = this.mItems[index].baseItem;
+                if ((baseItem != null) && (baseItem.slot == slot))
                 {
                     return true;
                 }
-                i++;
+                index++;
+            }
+        }
+        return false;
+    }
+
+    public bool HasEquipped(InvGameItem item)
+    {
+        if (this.mItems != null)
+        {
+            int index = 0;
+            int length = this.mItems.Length;
+            while (index < length)
+            {
+                if (this.mItems[index] == item)
+                {
+                    return true;
+                }
+                index++;
             }
         }
         return false;
@@ -81,50 +73,55 @@ public class InvEquipment : MonoBehaviour
 
     public InvGameItem Replace(InvBaseItem.Slot slot, InvGameItem item)
     {
-        InvBaseItem invBaseItem = (item == null) ? null : item.baseItem;
-        if (slot == InvBaseItem.Slot.None)
+        InvBaseItem item2 = (item == null) ? null : item.baseItem;
+        if (slot != InvBaseItem.Slot.None)
         {
-            if (item != null)
+            if ((item2 != null) && (item2.slot != slot))
             {
-                Debug.LogWarning("Can't equip \"" + item.name + "\" because it doesn't specify an item slot");
+                return item;
             }
-            return item;
-        }
-        if (invBaseItem != null && invBaseItem.slot != slot)
-        {
-            return item;
-        }
-        if (this.mItems == null)
-        {
-            int num = 8;
-            this.mItems = new InvGameItem[num];
-        }
-        InvGameItem result = this.mItems[slot - InvBaseItem.Slot.Weapon];
-        this.mItems[slot - InvBaseItem.Slot.Weapon] = item;
-        if (this.mAttachments == null)
-        {
-            this.mAttachments = base.GetComponentsInChildren<InvAttachmentPoint>();
-        }
-        int i = 0;
-        int num2 = this.mAttachments.Length;
-        while (i < num2)
-        {
-            InvAttachmentPoint invAttachmentPoint = this.mAttachments[i];
-            if (invAttachmentPoint.slot == slot)
+            if (this.mItems == null)
             {
-                GameObject gameObject = invAttachmentPoint.Attach((invBaseItem == null) ? null : invBaseItem.attachment);
-                if (invBaseItem != null && gameObject != null)
+                int num = 8;
+                this.mItems = new InvGameItem[num];
+            }
+            InvGameItem item3 = this.mItems[((int) slot) - 1];
+            this.mItems[((int) slot) - 1] = item;
+            if (this.mAttachments == null)
+            {
+                this.mAttachments = base.GetComponentsInChildren<InvAttachmentPoint>();
+            }
+            int index = 0;
+            int length = this.mAttachments.Length;
+            while (index < length)
+            {
+                InvAttachmentPoint point = this.mAttachments[index];
+                if (point.slot == slot)
                 {
-                    Renderer renderer = gameObject.renderer;
-                    if (renderer != null)
+                    GameObject obj2 = point.Attach((item2 == null) ? null : item2.attachment);
+                    if ((item2 != null) && (obj2 != null))
                     {
-                        renderer.material.color = invBaseItem.color;
+                        Renderer renderer = obj2.renderer;
+                        if (renderer != null)
+                        {
+                            renderer.material.color = item2.color;
+                        }
                     }
                 }
+                index++;
             }
-            i++;
+            return item3;
         }
-        return result;
+        if (item != null)
+        {
+            Debug.LogWarning("Can't equip \"" + item.name + "\" because it doesn't specify an item slot");
+        }
+        return item;
+    }
+
+    public InvGameItem Unequip(InvBaseItem.Slot slot)
+    {
+        return this.Replace(slot, null);
     }
 
     public InvGameItem Unequip(InvGameItem item)
@@ -140,8 +137,12 @@ public class InvEquipment : MonoBehaviour
         return item;
     }
 
-    public InvGameItem Unequip(InvBaseItem.Slot slot)
+    public InvGameItem[] equippedItems
     {
-        return this.Replace(slot, null);
+        get
+        {
+            return this.mItems;
+        }
     }
 }
+

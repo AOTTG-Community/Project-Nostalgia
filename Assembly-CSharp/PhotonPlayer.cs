@@ -1,53 +1,87 @@
-﻿using ExitGames.Client.Photon;
+using ExitGames.Client.Photon;
+using System;
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 public class PhotonPlayer
 {
-    //
-    private string _nameField = string.Empty;
-    public readonly bool IsLocal;
-
-    public PhotonPlayer(bool isLocal, int actorID, string name)
-    {
-        Properties = new Hashtable();
-        this.IsLocal = isLocal;
-        ID = actorID;
-        _nameField = name;
-    }
+    private int actorID;
+    public readonly bool isLocal;
+    private string nameField;
+    public object TagObject;
 
     protected internal PhotonPlayer(bool isLocal, int actorID, Hashtable properties)
     {
-        Properties = new Hashtable();
-        this.IsLocal = isLocal;
-        ID = actorID;
-        InternalCacheProperties(properties);
+        this.actorID = -1;
+        this.nameField = string.Empty;
+        this.customProperties = new Hashtable();
+        this.isLocal = isLocal;
+        this.actorID = actorID;
+        this.InternalCacheProperties(properties);
     }
 
-    //Methods
-    public override bool Equals(object p) => (p as PhotonPlayer)?.ID == ID;
+    public PhotonPlayer(bool isLocal, int actorID, string name)
+    {
+        this.actorID = -1;
+        this.nameField = string.Empty;
+        this.customProperties = new Hashtable();
+        this.isLocal = isLocal;
+        this.actorID = actorID;
+        this.nameField = name;
+    }
+
+    public override bool Equals(object p)
+    {
+        PhotonPlayer player = p as PhotonPlayer;
+        return ((player != null) && (this.GetHashCode() == player.GetHashCode()));
+    }
 
     public static PhotonPlayer Find(int ID)
     {
-        NetworkingPeer.mActors.TryGetValue(ID, out PhotonPlayer player);
-        return player;
+        for (int i = 0; i < PhotonNetwork.playerList.Length; i++)
+        {
+            PhotonPlayer player = PhotonNetwork.playerList[i];
+            if (player.ID == ID)
+            {
+                return player;
+            }
+        }
+        return null;
     }
 
-    public PhotonPlayer Get(int id) => Find(ID);
-
-    public override int GetHashCode() => ID;
-
-    public PhotonPlayer GetNext() => GetNextFor(ID);
-
-    public PhotonPlayer GetNextFor(PhotonPlayer currentPlayer) => currentPlayer == null ? GetNextFor(currentPlayer.ID) : null;
-
-    public PhotonPlayer GetNextFor(int currentPlayerId)
+    public PhotonPlayer Get(int id)
     {
-        if (PhotonNetwork.networkingPeer == null || NetworkingPeer.mActors == null || NetworkingPeer.mActors.Count < 2)
+        return Find(id);
+    }
+
+    public override int GetHashCode()
+    {
+        return this.ID;
+    }
+
+    public PhotonPlayer GetNext()
+    {
+        return this.GetNextFor(this.ID);
+    }
+
+    public PhotonPlayer GetNextFor(PhotonPlayer currentPlayer)
+    {
+        if (currentPlayer == null)
         {
             return null;
         }
-        System.Collections.Generic.Dictionary<int, PhotonPlayer> mActors = NetworkingPeer.mActors;
-        int num = int.MaxValue;
+        return this.GetNextFor(currentPlayer.ID);
+    }
+
+    public PhotonPlayer GetNextFor(int currentPlayerId)
+    {
+        if (((PhotonNetwork.networkingPeer == null) || (PhotonNetwork.networkingPeer.mActors == null)) || (PhotonNetwork.networkingPeer.mActors.Count < 2))
+        {
+            return null;
+        }
+        Dictionary<int, PhotonPlayer> mActors = PhotonNetwork.networkingPeer.mActors;
+        int num = 0x7fffffff;
         int num2 = currentPlayerId;
         foreach (int num3 in mActors.Keys)
         {
@@ -55,292 +89,115 @@ public class PhotonPlayer
             {
                 num2 = num3;
             }
-            else if (num3 > currentPlayerId && num3 < num)
+            else if ((num3 > currentPlayerId) && (num3 < num))
             {
                 num = num3;
             }
         }
-        return (num == int.MaxValue) ? mActors[num2] : mActors[num];
-    }
-
-    internal void InternalChangeLocalID(int newID)
-    {
-        if (!this.IsLocal)
-        {
-            Debug.LogError("ERROR You should never change PhotonPlayer IDs!");
-            return;
-        }
-        ID = newID;
+        return ((num == 0x7fffffff) ? mActors[num2] : mActors[num]);
     }
 
     internal void InternalCacheProperties(Hashtable properties)
     {
-        if (properties == null || properties.Count == 0 || this.Properties.Equals(properties))
+        if (((properties != null) && (properties.Count != 0)) && !this.customProperties.Equals(properties))
         {
-            return;
+            if (properties.ContainsKey((byte) 0xff))
+            {
+                this.nameField = (string) properties[(byte) 0xff];
+            }
+            this.customProperties.MergeStringKeys(properties);
+            this.customProperties.StripKeysWithNullValues();
         }
-        if (properties.ContainsKey(255))
+    }
+
+    internal void InternalChangeLocalID(int newID)
+    {
+        if (!this.isLocal)
         {
-            this._nameField = (string)properties[byte.MaxValue];
+            Debug.LogError("ERROR You should never change PhotonPlayer IDs!");
         }
-        this.Properties.MergeStringKeys(properties);
-        this.Properties.StripKeysWithNullValues();
+        else
+        {
+            this.actorID = newID;
+        }
     }
 
     public void SetCustomProperties(Hashtable propertiesToSet)
     {
-        if (propertiesToSet == null) return;
-        this.Properties.MergeStringKeys(propertiesToSet);
-        this.Properties.StripKeysWithNullValues();
-        Hashtable actorProperties = propertiesToSet.StripToStringKeys();
-        if (ID > 0 && !PhotonNetwork.offlineMode)
+        if (propertiesToSet != null)
         {
-            PhotonNetwork.networkingPeer.OpSetCustomPropertiesOfActor(ID, actorProperties, true, 0);
+            this.customProperties.MergeStringKeys(propertiesToSet);
+            this.customProperties.StripKeysWithNullValues();
+            Hashtable actorProperties = propertiesToSet.StripToStringKeys();
+            if ((this.actorID > 0) && !PhotonNetwork.offlineMode)
+            {
+                PhotonNetwork.networkingPeer.OpSetCustomPropertiesOfActor(this.actorID, actorProperties, true, 0);
+            }
+            object[] parameters = new object[] { this, propertiesToSet };
+            NetworkingPeer.SendMonoMessage(PhotonNetworkingMessage.OnPhotonPlayerPropertiesChanged, parameters);
         }
-        NetworkingPeer.SendMonoMessage(PhotonNetworkingMessage.OnPhotonPlayerPropertiesChanged, new object[] { this, propertiesToSet });
     }
 
     public override string ToString()
     {
-        return string.IsNullOrEmpty(_nameField) ? $"#{this.ID:00}{((!IsMasterClient) ? string.Empty : "(master)")}" : $"'{_nameField}'{((!IsMasterClient) ? string.Empty : "(master)")}";
+        if (string.IsNullOrEmpty(this.name))
+        {
+            return string.Format("#{0:00}{1}", this.ID, !this.isMasterClient ? string.Empty : "(master)");
+        }
+        return string.Format("'{0}'{1}", this.name, !this.isMasterClient ? string.Empty : "(master)");
     }
 
     public string ToStringFull()
     {
-        return $"#{this.ID:00} '{_nameField}' {this.Properties.ToStringFull()}";
+        return string.Format("#{0:00} '{1}' {2}", this.ID, this.name, this.customProperties.ToStringFull());
     }
 
-    //Properties
-    public Hashtable AllProperties
+    public Hashtable allProperties
     {
         get
         {
-            Hashtable hashtable = new Hashtable();
-            hashtable.Merge(Properties);
-            hashtable[byte.MaxValue] = _nameField;
-            return hashtable;
+            Hashtable target = new Hashtable();
+            target.Merge(this.customProperties);
+            target[(byte) 0xff] = this.name;
+            return target;
         }
     }
 
-    public string Character
+    public Hashtable customProperties { get; private set; }
+
+    public int ID
     {
-        get => Properties[PhotonPlayerProperty.character] as string ?? "Levi";
-        set
+        get
         {
-            if (Properties == null) return;
-            SetCustomProperties(new Hashtable() { { PhotonPlayerProperty.character, value } });
+            return this.actorID;
         }
     }
 
-    public Hashtable Properties { get; private set; }
-
-    public bool Dead
+    public bool isMasterClient
     {
-        get => Properties != null && Properties[PhotonPlayerProperty.dead] is bool dead && dead;
-        set
+        get
         {
-            if (Properties == null) return;
-            SetCustomProperties(new Hashtable() { { PhotonPlayerProperty.dead, value } });
+            return (PhotonNetwork.networkingPeer.mMasterClient == this);
         }
     }
 
-    public int Deaths
+    public string name
     {
-        get => Properties == null || !(Properties[PhotonPlayerProperty.deaths] is int deaths) ? -1 : deaths;
-        set
+        get
         {
-            if (Properties == null) return;
-            SetCustomProperties(new Hashtable() { { PhotonPlayerProperty.deaths, value } });
+            return this.nameField;
         }
-    }
-
-    public string GuildName
-    {
-        get => Properties == null ? "Unknown" : Properties[PhotonPlayerProperty.guildName] as string ?? "Unknown";
         set
         {
-            if (Properties == null) return;
-            SetCustomProperties(new Hashtable() { { PhotonPlayerProperty.guildName, value } });
-        }
-    }
-
-    public int ID { get; private set; }
-
-    public bool IsMasterClient => NetworkingPeer.mMasterClient.ID == ID;//.IsLocal;//ReferenceEquals(this, NetworkingPeer.mMasterClient);
-
-    public bool IsTitan
-    {
-        get => Properties != null && Properties[PhotonPlayerProperty.isTitan] is int tit && tit == 2;
-        set
-        {
-            if (Properties == null) return;
-            SetCustomProperties(new Hashtable() { { PhotonPlayerProperty.isTitan, value ? 2 : 1 } });
-        }
-    }
-
-    public int Kills
-    {
-        get => Properties == null || !(Properties[PhotonPlayerProperty.kills] is int kills) ? -1 : kills;
-        set
-        {
-            if (Properties == null) return;
-            SetCustomProperties(new Hashtable() { { PhotonPlayerProperty.kills, value } });
-        }
-    }
-
-    public int Max_Dmg
-    {
-        get => Properties == null || !(Properties[PhotonPlayerProperty.max_dmg] is int max) ? -1 : max;
-        set
-        {
-            if (Properties == null) return;
-            SetCustomProperties(new Hashtable() { { PhotonPlayerProperty.max_dmg, value } });
-        }
-    }
-
-    public string Name
-    {
-        get => _nameField;
-        set
-        {
-            if (!this.IsLocal)
+            if (!this.isLocal)
             {
                 Debug.LogError("Error: Cannot change the name of a remote player!");
-                return;
             }
-            this._nameField = value;
-        }
-    }
-
-    public float RCBombA
-    {
-        get
-        {
-            object obj;
-            if ((obj = this.Properties["RCBombA"]) is float)
+            else
             {
-                return (float)obj;
+                this.nameField = value;
             }
-            return 0f;
-        }
-        set
-        {
-            this.SetCustomProperties(new Hashtable
-            {
-                {
-                    "RCBombA",
-                    value
-                }
-            });
         }
     }
-
-    public float RCBombB
-    {
-        get
-        {
-            object obj;
-            if ((obj = this.Properties["RCBombB"]) is float)
-            {
-                return (float)obj;
-            }
-            return 0f;
-        }
-        set
-        {
-            this.SetCustomProperties(new Hashtable
-            {
-                {
-                    "RCBombB",
-                    value
-                }
-            });
-        }
-    }
-
-    public float RCBombG
-    {
-        get
-        {
-            object obj;
-            if ((obj = this.Properties["RCBombG"]) is float)
-            {
-                return (float)obj;
-            }
-            return 0f;
-        }
-        set
-        {
-            this.SetCustomProperties(new Hashtable
-            {
-                {
-                    "RCBombG",
-                    value
-                }
-            });
-        }
-    }
-
-    public float RCBombR
-    {
-        get
-        {
-            object obj;
-            if ((obj = this.Properties["RCBombR"]) is float)
-            {
-                return (float)obj;
-            }
-            return 0f;
-        }
-        set
-        {
-            this.SetCustomProperties(new Hashtable
-            {
-                {
-                    "RCBombR",
-                    value
-                }
-            });
-        }
-    }
-
-    public int RCteam
-    {
-        get => Properties == null || !(Properties["RCteam"] is int team) ? 1 : team; set
-        {
-            if (Properties == null) return;
-            SetCustomProperties(new Hashtable() { { "RCteam", value } });
-        }
-    }
-
-    public int Team
-    {
-        get => Properties == null || !(Properties[PhotonPlayerProperty.team] is int team) ? 1 : team;
-        set
-        {
-            if (Properties == null) return;
-            SetCustomProperties(new Hashtable() { { PhotonPlayerProperty.team, value } });
-        }
-    }
-
-    public int Total_Dmg
-    {
-        get => Properties == null || !(Properties[PhotonPlayerProperty.total_dmg] is int total) ? -1 : total;
-        set
-        {
-            if (Properties == null) return;
-            SetCustomProperties(new Hashtable() { { PhotonPlayerProperty.total_dmg, value } });
-        }
-    }
-
-    public string UIName
-    {
-        get => Properties == null ? "Unknown" : Properties[PhotonPlayerProperty.name] as string ?? "Unknown";
-        set
-        {
-            if (Properties == null) return;
-            SetCustomProperties(new Hashtable() { { PhotonPlayerProperty.name, value } });
-        }
-    }
-
 }
+

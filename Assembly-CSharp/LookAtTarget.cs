@@ -1,11 +1,11 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 [AddComponentMenu("NGUI/Examples/Look At Target")]
 public class LookAtTarget : MonoBehaviour
 {
-    private Transform mTrans;
     public int level;
-
+    private Transform mTrans;
     public float speed = 8f;
     public Transform target;
 
@@ -14,8 +14,7 @@ public class LookAtTarget : MonoBehaviour
         if (this.target != null)
         {
             Vector3 forward = this.target.position - this.mTrans.position;
-            float magnitude = forward.magnitude;
-            if (magnitude > 0.001f)
+            if (forward.magnitude > 0.001f)
             {
                 Quaternion to = Quaternion.LookRotation(forward);
                 this.mTrans.rotation = Quaternion.Slerp(this.mTrans.rotation, to, Mathf.Clamp01(this.speed * Time.deltaTime));
@@ -28,3 +27,4 @@ public class LookAtTarget : MonoBehaviour
         this.mTrans = base.transform;
     }
 }
+

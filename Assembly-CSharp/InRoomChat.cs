@@ -1,158 +1,126 @@
-﻿using Optimization;
-using Optimization.Caching;
+using Photon;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class InRoomChat : Photon.MonoBehaviour
 {
     private bool AlignBottom = true;
-    public static InRoomChat Chat;
-    private static  string chatString = "";
-    private string inputLine = string.Empty;
-    private static int minIndex = 0;
-    private Vector2 scrollPos = Vectors.v2zero;
     public static readonly string ChatRPC = "Chat";
     public static Rect GuiRect = new Rect(0f, 100f, 300f, 470f);
-
     public static Rect GuiRect2 = new Rect(30f, 575f, 300f, 25f);
-
-    public static List<string> messages = new List<string>();
+    private string inputLine = string.Empty;
     public bool IsVisible = true;
+    public static List<string> messages = new List<string>();
+    private Vector2 scrollPos = Vector2.zero;
+
+    public void addLINE(string newLine)
+    {
+        messages.Add(newLine);
+    }
 
     public void AddLine(string newLine)
     {
         messages.Add(newLine);
-        if (messages.Count > 10) minIndex++;
-        chatString = "";
-        for(int i = minIndex; i < messages.Count; i++)
-        {
-            chatString += messages[i] + (i == messages.Count - 1 ? "" : "\n");
-        }
-    }
-
-    private void Awake()
-    {
-        Chat = this;
-    }
-
-    public static void Clear()
-    {
-        messages.Clear();
-        chatString = string.Empty;
     }
 
     public void OnGUI()
     {
-        if (!this.IsVisible || PhotonNetwork.connectionStateDetailed != PeerState.Joined)
+        if (this.IsVisible && (PhotonNetwork.connectionStateDetailed == global::PeerState.Joined))
         {
-            return;
-        }
-        if (Event.current.type == EventType.KeyDown && (Event.current.keyCode == KeyCode.KeypadEnter || Event.current.keyCode == KeyCode.Return))
-        {
-            if (!inputLine.IsNullOrWhiteSpace())
+            if ((Event.current.type == EventType.KeyDown) && ((Event.current.keyCode == KeyCode.KeypadEnter) || (Event.current.keyCode == KeyCode.Return)))
             {
-                if (this.inputLine == "\t")
+                if (!string.IsNullOrEmpty(this.inputLine))
                 {
-                    inputLine = string.Empty;
-                    GUI.FocusControl(string.Empty);
-                    return;
-                }
-                if (RCManager.RCEvents.ContainsKey("OnChatInput"))
-                {
-                    string key = (string)RCManager.RCVariableNames["OnChatInput"];
-                    if (RCManager.stringVariables.ContainsKey(key))
+                    if (this.inputLine == "\t")
                     {
-                        RCManager.stringVariables[key] = this.inputLine;
+                        this.inputLine = string.Empty;
+                        GUI.FocusControl(string.Empty);
+                        return;
+                    }
+                    if ((this.inputLine == "/restart") && PhotonNetwork.isMasterClient)
+                    {
+                        this.inputLine = string.Empty;
+                        GUI.FocusControl(string.Empty);
+                        GameObject.Find("MultiplayerManager").GetComponent<FengGameManagerMKII>().restartGame(false);
+                        return;
+                    }
+                    if ((this.inputLine.Length <= 7) || !(this.inputLine.Substring(0, 7) == "/kick #"))
+                    {
+                        object[] parameters = new object[] { this.inputLine, LoginFengKAI.player.name };
+                        GameObject.Find("MultiplayerManager").GetComponent<FengGameManagerMKII>().photonView.RPC("Chat", PhotonTargets.All, parameters);
+                    }
+                    else if (this.inputLine.Remove(0, 7) == PhotonNetwork.masterClient.ID.ToString())
+                    {
+                        GameObject.Find("Chatroom").GetComponent<InRoomChat>().addLINE("error:can't kick master client.");
+                    }
+                    else if (this.inputLine.Remove(0, 7) == PhotonNetwork.player.ID.ToString())
+                    {
+                        GameObject.Find("Chatroom").GetComponent<InRoomChat>().addLINE("error:can't kick yourself.");
                     }
                     else
                     {
-                        RCManager.stringVariables.Add(key, this.inputLine);
-                    }
-                    ((RCEvent)RCManager.RCEvents["OnChatInput"]).checkEvent();
-                }
-                if (!inputLine.StartsWith("/"))
-                {
-                    FengGameManagerMKII.FGM.BasePV.RPC("Chat", PhotonTargets.All, new object[] { this.inputLine, LoginFengKAI.player.name });
-                }
-                else
-                {
-                    string[] args = inputLine.Remove(0, 1).ToLower().Split(' ');
-                    switch (args[0])
-                    {
-                        case "restart":
-                            FengGameManagerMKII.FGM.RestartGame(false);
-                            FengGameManagerMKII.FGM.BasePV.RPC("Chat", PhotonTargets.All, new object[] { "<color=#A8FF24>MasterClient has restarted the game!</color>", "" });
-                            break;
-
-                        case "kick":
+                        bool flag = false;
+                        foreach (PhotonPlayer player in PhotonNetwork.playerList)
+                        {
+                            if (player.ID.ToString() == this.inputLine.Remove(0, 7))
                             {
-                                int ID;
-                                if (!PhotonNetwork.IsMasterClient)
-                                {
-                                    AddLine("<color=red><b>Error: </b></color>Not MC!");
-                                    break;
-                                }
-                                else if (!int.TryParse(args[1], out ID))
-                                {
-                                    AddLine("<color=red><b>Error: </b></color>Invalid input.");
-                                    break;
-                                }
-                                PhotonPlayer player = PhotonPlayer.Find(ID);
-                                if (player == null)
-                                {
-                                    AddLine("<color=red><b>Error: </b></color>No such player.");
-                                    break;
-                                }
-                                PhotonNetwork.CloseConnection(player);
-                                FengGameManagerMKII.FGM.BasePV.RPC("Chat", PhotonTargets.All, new object[] { $"<color=#A8FF24>Player [{ID}] {player.UIName.ToRGBA()} has been kicked!</color>", "" });
+                                flag = true;
+                                break;
                             }
-                            break;
+                        }
+                        if (!flag)
+                        {
+                            GameObject.Find("Chatroom").GetComponent<InRoomChat>().addLINE("error:no such player.");
+                        }
+                        else
+                        {
+                            object[] objArray1 = new object[] { this.inputLine, LoginFengKAI.player.name };
+                            GameObject.Find("MultiplayerManager").GetComponent<FengGameManagerMKII>().photonView.RPC("Chat", PhotonTargets.All, objArray1);
+                        }
                     }
+                    this.inputLine = string.Empty;
+                    GUI.FocusControl(string.Empty);
+                    return;
                 }
-                inputLine = string.Empty;
-                GUI.FocusControl(string.Empty);
-                return;
-            }
-            else
-            {
                 this.inputLine = "\t";
                 GUI.FocusControl("ChatInput");
             }
+            GUI.SetNextControlName(string.Empty);
+            GUILayout.BeginArea(GuiRect);
+            GUILayout.FlexibleSpace();
+            string text = string.Empty;
+            if (messages.Count < 10)
+            {
+                for (int i = 0; i < messages.Count; i++)
+                {
+                    text = text + messages[i] + "\n";
+                }
+            }
+            else
+            {
+                for (int j = messages.Count - 10; j < messages.Count; j++)
+                {
+                    text = text + messages[j] + "\n";
+                }
+            }
+            GUILayout.Label(text, new GUILayoutOption[0]);
+            GUILayout.EndArea();
+            GUILayout.BeginArea(GuiRect2);
+            GUILayout.BeginHorizontal(new GUILayoutOption[0]);
+            GUI.SetNextControlName("ChatInput");
+            this.inputLine = GUILayout.TextField(this.inputLine, new GUILayoutOption[0]);
+            GUILayout.EndHorizontal();
+            GUILayout.EndArea();
         }
-        GUI.SetNextControlName(string.Empty);
-        GUILayout.BeginArea(GuiRect);
-        GUILayout.FlexibleSpace();
-        //string text = string.Empty;
-        //if (InRoomChat.messages.Count < 10)
-        //{
-        //    for (int j = 0; j < InRoomChat.messages.Count; j++)
-        //    {
-        //        text = text + InRoomChat.messages[j] + "\n";
-        //    }
-        //}
-        //else
-        //{
-        //    for (int k = InRoomChat.messages.Count - 10; k < InRoomChat.messages.Count; k++)
-        //    {
-        //        text = text + InRoomChat.messages[k] + "\n";
-        //    }
-        //}
-        GUILayout.Label(chatString, new GUILayoutOption[0]);
-        GUILayout.EndArea();
-        GUILayout.BeginArea(InRoomChat.GuiRect2);
-        GUILayout.BeginHorizontal(new GUILayoutOption[0]);
-        GUI.SetNextControlName("ChatInput");
-        this.inputLine = GUILayout.TextField(this.inputLine, new GUILayoutOption[0]);
-        GUILayout.EndHorizontal();
-        GUILayout.EndArea();
     }
 
     public void setPosition()
     {
         if (this.AlignBottom)
         {
-            InRoomChat.GuiRect = new Rect(0f, (float)(Screen.height - 500), 300f, 470f);
-            InRoomChat.GuiRect2 = new Rect(30f, (float)(Screen.height - 300 + 275), 300f, 25f);
+            GuiRect = new Rect(0f, (float) (Screen.height - 500), 300f, 470f);
+            GuiRect2 = new Rect(30f, (float) ((Screen.height - 300) + 0x113), 300f, 25f);
         }
     }
 
@@ -161,3 +129,4 @@ public class InRoomChat : Photon.MonoBehaviour
         this.setPosition();
     }
 }
+

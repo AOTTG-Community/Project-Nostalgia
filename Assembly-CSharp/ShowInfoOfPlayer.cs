@@ -1,14 +1,15 @@
-﻿using Optimization.Caching;
+using Photon;
+using System;
 using UnityEngine;
 
 [RequireComponent(typeof(PhotonView))]
 public class ShowInfoOfPlayer : Photon.MonoBehaviour
 {
+    public bool DisableOnOwnObjects;
+    public Font font;
     private const int FontSize3D = 0;
     private GameObject textGo;
     private TextMesh tm;
-    public bool DisableOnOwnObjects;
-    public Font font;
 
     private void OnDisable()
     {
@@ -30,7 +31,7 @@ public class ShowInfoOfPlayer : Photon.MonoBehaviour
     {
         if (this.font == null)
         {
-            this.font = (Font)Resources.FindObjectsOfTypeAll(typeof(Font))[0];
+            this.font = (Font) Resources.FindObjectsOfTypeAll(typeof(Font))[0];
             Debug.LogWarning("No font defined. Found font: " + this.font);
         }
         if (this.tm == null)
@@ -38,15 +39,14 @@ public class ShowInfoOfPlayer : Photon.MonoBehaviour
             this.textGo = new GameObject("3d text");
             this.textGo.transform.localScale = new Vector3(0.2f, 0.2f, 0.2f);
             this.textGo.transform.parent = base.gameObject.transform;
-            this.textGo.transform.localPosition = Vectors.zero;
-            MeshRenderer meshRenderer = this.textGo.AddComponent<MeshRenderer>();
-            meshRenderer.material = this.font.material;
+            this.textGo.transform.localPosition = Vector3.zero;
+            this.textGo.AddComponent<MeshRenderer>().material = this.font.material;
             this.tm = this.textGo.AddComponent<TextMesh>();
             this.tm.font = this.font;
             this.tm.fontSize = 0;
             this.tm.anchor = TextAnchor.MiddleCenter;
         }
-        if (!this.DisableOnOwnObjects && BasePV.IsMine)
+        if (!this.DisableOnOwnObjects && base.photonView.isMine)
         {
             base.enabled = false;
         }
@@ -61,26 +61,31 @@ public class ShowInfoOfPlayer : Photon.MonoBehaviour
             {
                 this.textGo.SetActive(false);
             }
-            return;
-        }
-        PhotonPlayer owner = BasePV.owner;
-        if (owner != null)
-        {
-            this.tm.text = ((!string.IsNullOrEmpty(owner.Name)) ? owner.Name : "n/a");
-        }
-        else if (BasePV.isSceneView)
-        {
-            if (!this.DisableOnOwnObjects && BasePV.IsMine)
-            {
-                base.enabled = false;
-                this.textGo.SetActive(false);
-                return;
-            }
-            this.tm.text = "scn";
         }
         else
         {
-            this.tm.text = "n/a";
+            PhotonPlayer owner = base.photonView.owner;
+            if (owner != null)
+            {
+                this.tm.text = !string.IsNullOrEmpty(owner.name) ? owner.name : "n/a";
+            }
+            else if (base.photonView.isSceneView)
+            {
+                if (!this.DisableOnOwnObjects && base.photonView.isMine)
+                {
+                    base.enabled = false;
+                    this.textGo.SetActive(false);
+                }
+                else
+                {
+                    this.tm.text = "scn";
+                }
+            }
+            else
+            {
+                this.tm.text = "n/a";
+            }
         }
     }
 }
+

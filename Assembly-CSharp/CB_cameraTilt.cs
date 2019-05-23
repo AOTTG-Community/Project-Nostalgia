@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 public class CB_cameraTilt : MonoBehaviour
 {
@@ -11,7 +12,7 @@ public class CB_cameraTilt : MonoBehaviour
             this.init = true;
             if (PlayerPrefs.HasKey("cameraTilt"))
             {
-                base.gameObject.GetComponent<UICheckbox>().isChecked = (PlayerPrefs.GetInt("cameraTilt") == 1);
+                base.gameObject.GetComponent<UICheckbox>().isChecked = PlayerPrefs.GetInt("cameraTilt") == 1;
             }
             else
             {
@@ -20,8 +21,9 @@ public class CB_cameraTilt : MonoBehaviour
         }
         else
         {
-            PlayerPrefs.SetInt("cameraTilt", (!result) ? 0 : 1);
+            PlayerPrefs.SetInt("cameraTilt", !result ? 0 : 1);
         }
         IN_GAME_MAIN_CAMERA.cameraTilt = PlayerPrefs.GetInt("cameraTilt");
     }
 }
+

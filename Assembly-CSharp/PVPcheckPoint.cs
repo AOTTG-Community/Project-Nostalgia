@@ -1,59 +1,36 @@
-﻿using Optimization.Caching;
+using Photon;
+using System;
 using System.Collections;
 using UnityEngine;
 
 public class PVPcheckPoint : Photon.MonoBehaviour
 {
     private bool annie;
-    private float getPtsInterval = 20f;
-    private float getPtsTimer;
-    private float hitTestR = 15f;
-    private bool playerOn;
-    private float spawnTitanTimer;
-    private GameObject supply;
-    private float syncInterval = 0.6f;
-    private float syncTimer;
-    private bool titanOn;
-    public static ArrayList chkPts;
     public GameObject[] chkPtNextArr;
     public GameObject[] chkPtPreviousArr;
+    public static ArrayList chkPts;
+    private float getPtsInterval = 20f;
+    private float getPtsTimer;
     public bool hasAnnie;
+    private float hitTestR = 15f;
     public GameObject humanCyc;
     public float humanPt;
     public float humanPtMax = 40f;
     public int id;
     public bool isBase;
     public int normalTitanRate = 70;
+    private bool playerOn;
     public float size = 1f;
+    private float spawnTitanTimer;
     public CheckPointState state;
+    private GameObject supply;
+    private float syncInterval = 0.6f;
+    private float syncTimer;
     public GameObject titanCyc;
     public float titanInterval = 30f;
+    private bool titanOn;
     public float titanPt;
     public float titanPtMax = 40f;
-
-    public GameObject chkPtNext
-    {
-        get
-        {
-            if (this.chkPtNextArr.Length <= 0)
-            {
-                return null;
-            }
-            return this.chkPtNextArr[UnityEngine.Random.Range(0, this.chkPtNextArr.Length)];
-        }
-    }
-
-    public GameObject chkPtPrevious
-    {
-        get
-        {
-            if (this.chkPtPreviousArr.Length <= 0)
-            {
-                return null;
-            }
-            return this.chkPtPreviousArr[UnityEngine.Random.Range(0, this.chkPtPreviousArr.Length)];
-        }
-    }
 
     [RPC]
     private void changeHumanPt(float pt)
@@ -86,42 +63,40 @@ public class PVPcheckPoint : Photon.MonoBehaviour
 
     private void checkIfBeingCapture()
     {
+        int num;
         this.playerOn = false;
         this.titanOn = false;
-        GameObject[] array = GameObject.FindGameObjectsWithTag("Player");
-        GameObject[] array2 = GameObject.FindGameObjectsWithTag("titan");
-        for (int i = 0; i < array.Length; i++)
+        GameObject[] objArray = GameObject.FindGameObjectsWithTag("Player");
+        GameObject[] objArray2 = GameObject.FindGameObjectsWithTag("titan");
+        for (num = 0; num < objArray.Length; num++)
         {
-            if (Vector3.Distance(array[i].transform.position, base.transform.position) < this.hitTestR)
+            if (Vector3.Distance(objArray[num].transform.position, base.transform.position) < this.hitTestR)
             {
                 this.playerOn = true;
-                if (this.state == CheckPointState.Human && array[i].GetPhotonView().IsMine)
+                if ((this.state == CheckPointState.Human) && objArray[num].GetPhotonView().isMine)
                 {
-                    if (FengGameManagerMKII.FGM.checkpoint != base.gameObject)
+                    if (GameObject.Find("MultiplayerManager").GetComponent<FengGameManagerMKII>().checkpoint != base.gameObject)
                     {
-                        FengGameManagerMKII.FGM.checkpoint = base.gameObject;
-                        CacheGameObject.Find("Chatroom").GetComponent<InRoomChat>().AddLine("<color=#A8FF24>Respawn point changed to point" + this.id + "</color>");
+                        GameObject.Find("MultiplayerManager").GetComponent<FengGameManagerMKII>().checkpoint = base.gameObject;
+                        GameObject.Find("Chatroom").GetComponent<InRoomChat>().addLINE("<color=#A8FF24>Respawn point changed to point" + this.id + "</color>");
                     }
                     break;
                 }
             }
         }
-        for (int i = 0; i < array2.Length; i++)
+        for (num = 0; num < objArray2.Length; num++)
         {
-            if (Vector3.Distance(array2[i].transform.position, base.transform.position) < this.hitTestR + 5f)
+            if ((Vector3.Distance(objArray2[num].transform.position, base.transform.position) < (this.hitTestR + 5f)) && ((objArray2[num].GetComponent<TITAN>() == null) || !objArray2[num].GetComponent<TITAN>().hasDie))
             {
-                if (!array2[i].GetComponent<TITAN>() || !array2[i].GetComponent<TITAN>().hasDie)
+                this.titanOn = true;
+                if (((this.state == CheckPointState.Titan) && objArray2[num].GetPhotonView().isMine) && ((objArray2[num].GetComponent<TITAN>() != null) && objArray2[num].GetComponent<TITAN>().nonAI))
                 {
-                    this.titanOn = true;
-                    if (this.state == CheckPointState.Titan && array2[i].GetPhotonView().IsMine && array2[i].GetComponent<TITAN>() && array2[i].GetComponent<TITAN>().nonAI)
+                    if (GameObject.Find("MultiplayerManager").GetComponent<FengGameManagerMKII>().checkpoint != base.gameObject)
                     {
-                        if (FengGameManagerMKII.FGM.checkpoint != base.gameObject)
-                        {
-                            FengGameManagerMKII.FGM.checkpoint = base.gameObject;
-                            CacheGameObject.Find("Chatroom").GetComponent<InRoomChat>().AddLine("<color=#A8FF24>Respawn point changed to point" + this.id + "</color>");
-                        }
-                        break;
+                        GameObject.Find("MultiplayerManager").GetComponent<FengGameManagerMKII>().checkpoint = base.gameObject;
+                        GameObject.Find("Chatroom").GetComponent<InRoomChat>().addLINE("<color=#A8FF24>Respawn point changed to point" + this.id + "</color>");
                     }
+                    break;
                 }
             }
         }
@@ -129,9 +104,9 @@ public class PVPcheckPoint : Photon.MonoBehaviour
 
     private bool checkIfHumanWins()
     {
-        for (int i = 0; i < PVPcheckPoint.chkPts.Count; i++)
+        for (int i = 0; i < chkPts.Count; i++)
         {
-            if ((PVPcheckPoint.chkPts[i] as PVPcheckPoint).state != CheckPointState.Human)
+            if ((chkPts[i] as PVPcheckPoint).state != CheckPointState.Human)
             {
                 return false;
             }
@@ -141,9 +116,9 @@ public class PVPcheckPoint : Photon.MonoBehaviour
 
     private bool checkIfTitanWins()
     {
-        for (int i = 0; i < PVPcheckPoint.chkPts.Count; i++)
+        for (int i = 0; i < chkPts.Count; i++)
         {
-            if ((PVPcheckPoint.chkPts[i] as PVPcheckPoint).state != CheckPointState.Titan)
+            if ((chkPts[i] as PVPcheckPoint).state != CheckPointState.Titan)
             {
                 return false;
             }
@@ -153,12 +128,26 @@ public class PVPcheckPoint : Photon.MonoBehaviour
 
     private float getHeight(Vector3 pt)
     {
-        RaycastHit raycastHit;
-        if (Physics.Raycast(pt, -Vectors.up, out raycastHit, 1000f, Layers.Ground.value))
+        RaycastHit hit;
+        LayerMask mask2 = ((int) 1) << LayerMask.NameToLayer("Ground");
+        if (Physics.Raycast(pt, -Vector3.up, out hit, 1000f, mask2.value))
         {
-            return raycastHit.point.y;
+            return hit.point.y;
         }
         return 0f;
+    }
+
+    public string getStateString()
+    {
+        if (this.state == CheckPointState.Human)
+        {
+            return ("[" + ColorSet.color_human + "]H[-]");
+        }
+        if (this.state == CheckPointState.Titan)
+        {
+            return ("[" + ColorSet.color_titan_player + "]T[-]");
+        }
+        return ("[" + ColorSet.color_D + "]_[-]");
     }
 
     private void humanGetsPoint()
@@ -169,19 +158,18 @@ public class PVPcheckPoint : Photon.MonoBehaviour
             this.titanPt = 0f;
             this.syncPts();
             this.state = CheckPointState.Human;
-            BasePV.RPC("changeState", PhotonTargets.All, new object[]
+            object[] parameters = new object[] { 1 };
+            base.photonView.RPC("changeState", PhotonTargets.All, parameters);
+            if (LevelInfo.getInfo(FengGameManagerMKII.level).mapName != "The City I")
             {
-                1
-            });
-            if (FengGameManagerMKII.Level.MapName != "The City I")
-            {
-                this.supply = Optimization.Caching.Pool.NetworkEnable("aot_supply", base.transform.position - Vectors.up * (base.transform.position.y - this.getHeight(base.transform.position)), base.transform.rotation, 0);
+                this.supply = PhotonNetwork.Instantiate("aot_supply", base.transform.position - ((Vector3) (Vector3.up * (base.transform.position.y - this.getHeight(base.transform.position)))), base.transform.rotation, 0);
             }
-            FengGameManagerMKII.FGM.PVPhumanScore += 2;
-            FengGameManagerMKII.FGM.CheckPVPpts();
+            FengGameManagerMKII component = GameObject.Find("MultiplayerManager").GetComponent<FengGameManagerMKII>();
+            component.PVPhumanScore += 2;
+            GameObject.Find("MultiplayerManager").GetComponent<FengGameManagerMKII>().checkPVPpts();
             if (this.checkIfHumanWins())
             {
-                FengGameManagerMKII.FGM.GameWin();
+                GameObject.Find("MultiplayerManager").GetComponent<FengGameManagerMKII>().gameWin();
             }
         }
         else
@@ -202,10 +190,8 @@ public class PVPcheckPoint : Photon.MonoBehaviour
                 if (this.state != CheckPointState.Titan)
                 {
                     this.state = CheckPointState.Non;
-                    BasePV.RPC("changeState", PhotonTargets.Others, new object[]
-                    {
-                        0
-                    });
+                    object[] parameters = new object[] { 0 };
+                    base.photonView.RPC("changeState", PhotonTargets.Others, parameters);
                 }
             }
         }
@@ -213,78 +199,75 @@ public class PVPcheckPoint : Photon.MonoBehaviour
 
     private void newTitan()
     {
-        TITAN tit = FengGameManagerMKII.FGM.SpawnTitan(this.normalTitanRate, base.transform.position - Vectors.up * (base.transform.position.y - this.getHeight(base.transform.position)), base.transform.rotation, false);
-        if (FengGameManagerMKII.Level.MapName == "The City I")
+        GameObject obj2 = GameObject.Find("MultiplayerManager").GetComponent<FengGameManagerMKII>().spawnTitan(this.normalTitanRate, base.transform.position - ((Vector3) (Vector3.up * (base.transform.position.y - this.getHeight(base.transform.position)))), base.transform.rotation, false);
+        if (LevelInfo.getInfo(FengGameManagerMKII.level).mapName == "The City I")
         {
-            tit.chaseDistance = 120f;
+            obj2.GetComponent<TITAN>().chaseDistance = 120f;
         }
         else
         {
-            tit.chaseDistance = 200f;
+            obj2.GetComponent<TITAN>().chaseDistance = 200f;
         }
-        tit.PVPfromCheckPt = this;
+        obj2.GetComponent<TITAN>().PVPfromCheckPt = this;
     }
 
     private void Start()
     {
-        if (IN_GAME_MAIN_CAMERA.GameType == GameType.Single)
+        if (IN_GAME_MAIN_CAMERA.gametype == GAMETYPE.SINGLE)
         {
             UnityEngine.Object.Destroy(base.gameObject);
-            return;
         }
-        if (IN_GAME_MAIN_CAMERA.GameMode != GameMode.PVP_CAPTURE)
+        else if (IN_GAME_MAIN_CAMERA.gamemode != GAMEMODE.PVP_CAPTURE)
         {
-            if (BasePV.IsMine)
+            if (base.photonView.isMine)
             {
                 UnityEngine.Object.Destroy(base.gameObject);
             }
             UnityEngine.Object.Destroy(base.gameObject);
-            return;
         }
-        PVPcheckPoint.chkPts.Add(this);
-        IComparer comparer = new IComparerPVPchkPtID();
-        PVPcheckPoint.chkPts.Sort(comparer);
-        if (this.humanPt == this.humanPtMax)
+        else
         {
-            this.state = CheckPointState.Human;
-            if (BasePV.IsMine && FengGameManagerMKII.Level.MapName != "The City I")
+            chkPts.Add(this);
+            IComparer comparer = new IComparerPVPchkPtID();
+            chkPts.Sort(comparer);
+            if (this.humanPt == this.humanPtMax)
             {
-                this.supply = Optimization.Caching.Pool.NetworkEnable("aot_supply", base.transform.position - Vectors.up * (base.transform.position.y - this.getHeight(base.transform.position)), base.transform.rotation, 0);
+                this.state = CheckPointState.Human;
+                if (base.photonView.isMine && (LevelInfo.getInfo(FengGameManagerMKII.level).mapName != "The City I"))
+                {
+                    this.supply = PhotonNetwork.Instantiate("aot_supply", base.transform.position - ((Vector3) (Vector3.up * (base.transform.position.y - this.getHeight(base.transform.position)))), base.transform.rotation, 0);
+                }
             }
-        }
-        else if (BasePV.IsMine && !this.hasAnnie)
-        {
-            if (UnityEngine.Random.Range(0, 100) < 50)
+            else if (base.photonView.isMine && !this.hasAnnie)
             {
-                int num = UnityEngine.Random.Range(1, 2);
-                for (int i = 0; i < num; i++)
+                if (UnityEngine.Random.Range(0, 100) < 50)
+                {
+                    int num = UnityEngine.Random.Range(1, 2);
+                    for (int i = 0; i < num; i++)
+                    {
+                        this.newTitan();
+                    }
+                }
+                if (this.isBase)
                 {
                     this.newTitan();
                 }
             }
-            if (this.isBase)
+            if (this.titanPt == this.titanPtMax)
             {
-                this.newTitan();
+                this.state = CheckPointState.Titan;
             }
+            this.hitTestR = 15f * this.size;
+            base.transform.localScale = new Vector3(this.size, this.size, this.size);
         }
-        if (this.titanPt == this.titanPtMax)
-        {
-            this.state = CheckPointState.Titan;
-        }
-        this.hitTestR = 15f * this.size;
-        base.transform.localScale = new Vector3(this.size, this.size, this.size);
     }
 
     private void syncPts()
     {
-        BasePV.RPC("changeTitanPt", PhotonTargets.Others, new object[]
-        {
-            this.titanPt
-        });
-        BasePV.RPC("changeHumanPt", PhotonTargets.Others, new object[]
-        {
-            this.humanPt
-        });
+        object[] parameters = new object[] { this.titanPt };
+        base.photonView.RPC("changeTitanPt", PhotonTargets.Others, parameters);
+        object[] objArray2 = new object[] { this.humanPt };
+        base.photonView.RPC("changeHumanPt", PhotonTargets.Others, objArray2);
     }
 
     private void titanGetsPoint()
@@ -294,27 +277,26 @@ public class PVPcheckPoint : Photon.MonoBehaviour
             this.titanPt = this.titanPtMax;
             this.humanPt = 0f;
             this.syncPts();
-            if (this.state == CheckPointState.Human && this.supply != null)
+            if ((this.state == CheckPointState.Human) && (this.supply != null))
             {
                 PhotonNetwork.Destroy(this.supply);
             }
             this.state = CheckPointState.Titan;
-            BasePV.RPC("changeState", PhotonTargets.All, new object[]
-            {
-                2
-            });
-            FengGameManagerMKII.FGM.PVPtitanScore += 2;
-            FengGameManagerMKII.FGM.CheckPVPpts();
+            object[] parameters = new object[] { 2 };
+            base.photonView.RPC("changeState", PhotonTargets.All, parameters);
+            FengGameManagerMKII component = GameObject.Find("MultiplayerManager").GetComponent<FengGameManagerMKII>();
+            component.PVPtitanScore += 2;
+            GameObject.Find("MultiplayerManager").GetComponent<FengGameManagerMKII>().checkPVPpts();
             if (this.checkIfTitanWins())
             {
-                FengGameManagerMKII.FGM.GameLose();
+                GameObject.Find("MultiplayerManager").GetComponent<FengGameManagerMKII>().gameLose();
             }
             if (this.hasAnnie)
             {
                 if (!this.annie)
                 {
                     this.annie = true;
-                    Optimization.Caching.Pool.NetworkEnable("FEMALE_TITAN", base.transform.position - Vectors.up * (base.transform.position.y - this.getHeight(base.transform.position)), base.transform.rotation, 0);
+                    PhotonNetwork.Instantiate("FEMALE_TITAN", base.transform.position - ((Vector3) (Vector3.up * (base.transform.position.y - this.getHeight(base.transform.position)))), base.transform.rotation, 0);
                 }
                 else
                 {
@@ -344,10 +326,8 @@ public class PVPcheckPoint : Photon.MonoBehaviour
                 if (this.state != CheckPointState.Human)
                 {
                     this.state = CheckPointState.Non;
-                    BasePV.RPC("changeState", PhotonTargets.All, new object[]
-                    {
-                        0
-                    });
+                    object[] parameters = new object[] { 0 };
+                    base.photonView.RPC("changeState", PhotonTargets.All, parameters);
                 }
             }
         }
@@ -355,13 +335,13 @@ public class PVPcheckPoint : Photon.MonoBehaviour
 
     private void Update()
     {
-        float num = this.humanPt / this.humanPtMax;
+        float x = this.humanPt / this.humanPtMax;
         float num2 = this.titanPt / this.titanPtMax;
-        if (!BasePV.IsMine)
+        if (!base.photonView.isMine)
         {
-            num = this.humanPt / this.humanPtMax;
+            x = this.humanPt / this.humanPtMax;
             num2 = this.titanPt / this.titanPtMax;
-            this.humanCyc.transform.localScale = new Vector3(num, num, 1f);
+            this.humanCyc.transform.localScale = new Vector3(x, x, 1f);
             this.titanCyc.transform.localScale = new Vector3(num2, num2, 1f);
             this.syncTimer += Time.deltaTime;
             if (this.syncTimer > this.syncInterval)
@@ -369,107 +349,123 @@ public class PVPcheckPoint : Photon.MonoBehaviour
                 this.syncTimer = 0f;
                 this.checkIfBeingCapture();
             }
-            return;
         }
-        if (this.state == CheckPointState.Non)
+        else
         {
-            if (this.playerOn && !this.titanOn)
+            if (this.state == CheckPointState.Non)
             {
-                this.humanGetsPoint();
-                this.titanLosePoint();
-            }
-            else if (this.titanOn && !this.playerOn)
-            {
-                this.titanGetsPoint();
-                this.humanLosePoint();
-            }
-            else
-            {
-                this.humanLosePoint();
-                this.titanLosePoint();
-            }
-        }
-        else if (this.state == CheckPointState.Human)
-        {
-            if (this.titanOn && !this.playerOn)
-            {
-                this.titanGetsPoint();
-            }
-            else
-            {
-                this.titanLosePoint();
-            }
-            this.getPtsTimer += Time.deltaTime;
-            if (this.getPtsTimer > this.getPtsInterval)
-            {
-                this.getPtsTimer = 0f;
-                if (!this.isBase)
+                if (this.playerOn && !this.titanOn)
                 {
-                    FengGameManagerMKII.FGM.PVPhumanScore++;
+                    this.humanGetsPoint();
+                    this.titanLosePoint();
                 }
-                FengGameManagerMKII.FGM.CheckPVPpts();
-            }
-        }
-        else if (this.state == CheckPointState.Titan)
-        {
-            if (this.playerOn && !this.titanOn)
-            {
-                this.humanGetsPoint();
-            }
-            else
-            {
-                this.humanLosePoint();
-            }
-            this.getPtsTimer += Time.deltaTime;
-            if (this.getPtsTimer > this.getPtsInterval)
-            {
-                this.getPtsTimer = 0f;
-                if (!this.isBase)
+                else if (this.titanOn && !this.playerOn)
                 {
-                    FengGameManagerMKII.FGM.PVPtitanScore++;
+                    this.titanGetsPoint();
+                    this.humanLosePoint();
                 }
-                FengGameManagerMKII.FGM.CheckPVPpts();
-            }
-            this.spawnTitanTimer += Time.deltaTime;
-            if (this.spawnTitanTimer > this.titanInterval)
-            {
-                this.spawnTitanTimer = 0f;
-                if (FengGameManagerMKII.Level.MapName == "The City I")
+                else
                 {
-                    if (GameObject.FindGameObjectsWithTag("titan").Length < 12)
+                    this.humanLosePoint();
+                    this.titanLosePoint();
+                }
+            }
+            else if (this.state == CheckPointState.Human)
+            {
+                if (this.titanOn && !this.playerOn)
+                {
+                    this.titanGetsPoint();
+                }
+                else
+                {
+                    this.titanLosePoint();
+                }
+                this.getPtsTimer += Time.deltaTime;
+                if (this.getPtsTimer > this.getPtsInterval)
+                {
+                    this.getPtsTimer = 0f;
+                    if (!this.isBase)
+                    {
+                        FengGameManagerMKII component = GameObject.Find("MultiplayerManager").GetComponent<FengGameManagerMKII>();
+                        component.PVPhumanScore++;
+                    }
+                    GameObject.Find("MultiplayerManager").GetComponent<FengGameManagerMKII>().checkPVPpts();
+                }
+            }
+            else if (this.state == CheckPointState.Titan)
+            {
+                if (this.playerOn && !this.titanOn)
+                {
+                    this.humanGetsPoint();
+                }
+                else
+                {
+                    this.humanLosePoint();
+                }
+                this.getPtsTimer += Time.deltaTime;
+                if (this.getPtsTimer > this.getPtsInterval)
+                {
+                    this.getPtsTimer = 0f;
+                    if (!this.isBase)
+                    {
+                        FengGameManagerMKII local2 = GameObject.Find("MultiplayerManager").GetComponent<FengGameManagerMKII>();
+                        local2.PVPtitanScore++;
+                    }
+                    GameObject.Find("MultiplayerManager").GetComponent<FengGameManagerMKII>().checkPVPpts();
+                }
+                this.spawnTitanTimer += Time.deltaTime;
+                if (this.spawnTitanTimer > this.titanInterval)
+                {
+                    this.spawnTitanTimer = 0f;
+                    if (LevelInfo.getInfo(FengGameManagerMKII.level).mapName == "The City I")
+                    {
+                        if (GameObject.FindGameObjectsWithTag("titan").Length < 12)
+                        {
+                            this.newTitan();
+                        }
+                    }
+                    else if (GameObject.FindGameObjectsWithTag("titan").Length < 20)
                     {
                         this.newTitan();
                     }
                 }
-                else if (GameObject.FindGameObjectsWithTag("titan").Length < 20)
-                {
-                    this.newTitan();
-                }
             }
+            this.syncTimer += Time.deltaTime;
+            if (this.syncTimer > this.syncInterval)
+            {
+                this.syncTimer = 0f;
+                this.checkIfBeingCapture();
+                this.syncPts();
+            }
+            x = this.humanPt / this.humanPtMax;
+            num2 = this.titanPt / this.titanPtMax;
+            this.humanCyc.transform.localScale = new Vector3(x, x, 1f);
+            this.titanCyc.transform.localScale = new Vector3(num2, num2, 1f);
         }
-        this.syncTimer += Time.deltaTime;
-        if (this.syncTimer > this.syncInterval)
-        {
-            this.syncTimer = 0f;
-            this.checkIfBeingCapture();
-            this.syncPts();
-        }
-        num = this.humanPt / this.humanPtMax;
-        num2 = this.titanPt / this.titanPtMax;
-        this.humanCyc.transform.localScale = new Vector3(num, num, 1f);
-        this.titanCyc.transform.localScale = new Vector3(num2, num2, 1f);
     }
 
-    public string getStateString()
+    public GameObject chkPtNext
     {
-        if (this.state == CheckPointState.Human)
+        get
         {
-            return "[" + ColorSet.color_human + "]H[-]";
+            if (this.chkPtNextArr.Length <= 0)
+            {
+                return null;
+            }
+            return this.chkPtNextArr[UnityEngine.Random.Range(0, this.chkPtNextArr.Length)];
         }
-        if (this.state == CheckPointState.Titan)
+    }
+
+    public GameObject chkPtPrevious
+    {
+        get
         {
-            return "[" + ColorSet.color_titan_player + "]T[-]";
+            if (this.chkPtPreviousArr.Length <= 0)
+            {
+                return null;
+            }
+            return this.chkPtPreviousArr[UnityEngine.Random.Range(0, this.chkPtPreviousArr.Length)];
         }
-        return "[" + ColorSet.color_D + "]_[-]";
     }
 }
+

@@ -1,46 +1,45 @@
-﻿using System;
-using System.IO;
-using System.IO.Compression;
-using System.Text;
-
 namespace CompressString
 {
+    using System;
+    using System.IO;
+    using System.IO.Compression;
+    using System.Text;
+
     internal static class StringCompressor
     {
         public static string CompressString(string text)
         {
             byte[] bytes = Encoding.UTF8.GetBytes(text);
-            MemoryStream memoryStream = new MemoryStream();
-            using (GZipStream gzipStream = new GZipStream(memoryStream, CompressionMode.Compress, true))
+            MemoryStream compressedStream = new MemoryStream();
+            using (GZipStream stream2 = new GZipStream(compressedStream, CompressionMode.Compress, true))
             {
-                gzipStream.Write(bytes, 0, bytes.Length);
+                stream2.Write(bytes, 0, bytes.Length);
             }
-            memoryStream.Position = 0L;
-            byte[] array = new byte[memoryStream.Length];
-            memoryStream.Read(array, 0, array.Length);
-            byte[] array2 = new byte[array.Length + 4];
-            Buffer.BlockCopy(array, 0, array2, 4, array.Length);
-            Buffer.BlockCopy(BitConverter.GetBytes(bytes.Length), 0, array2, 0, 4);
-            return Convert.ToBase64String(array2);
+            compressedStream.Position = 0L;
+            byte[] buffer = new byte[compressedStream.Length];
+            compressedStream.Read(buffer, 0, buffer.Length);
+            byte[] dst = new byte[buffer.Length + 4];
+            Buffer.BlockCopy(buffer, 0, dst, 4, buffer.Length);
+            Buffer.BlockCopy(BitConverter.GetBytes(bytes.Length), 0, dst, 0, 4);
+            return Convert.ToBase64String(dst);
         }
 
         public static string DecompressString(string compressedText)
         {
-            byte[] array = Convert.FromBase64String(compressedText);
-            string @string;
-            using (MemoryStream memoryStream = new MemoryStream())
+            byte[] buffer = Convert.FromBase64String(compressedText);
+            using (MemoryStream stream = new MemoryStream())
             {
-                int num = BitConverter.ToInt32(array, 0);
-                memoryStream.Write(array, 4, array.Length - 4);
-                byte[] array2 = new byte[num];
-                memoryStream.Position = 0L;
-                using (GZipStream gzipStream = new GZipStream(memoryStream, CompressionMode.Decompress))
+                int num = BitConverter.ToInt32(buffer, 0);
+                stream.Write(buffer, 4, buffer.Length - 4);
+                byte[] dest = new byte[num];
+                stream.Position = 0L;
+                using (GZipStream stream2 = new GZipStream(stream, CompressionMode.Decompress))
                 {
-                    gzipStream.Read(array2, 0, array2.Length);
+                    stream2.Read(dest, 0, dest.Length);
                 }
-                @string = Encoding.UTF8.GetString(array2);
+                return Encoding.UTF8.GetString(dest);
             }
-            return @string;
         }
     }
 }
+

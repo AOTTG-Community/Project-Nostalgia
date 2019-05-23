@@ -1,21 +1,12 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 public class AttractionForceAffector : Affector
 {
     private AnimationCurve AttractionCurve;
-
     private float Magnitude;
-
-    private bool UseCurve;
-
     protected Vector3 Position;
-
-    public AttractionForceAffector(AnimationCurve curve, Vector3 pos, EffectNode node) : base(node)
-    {
-        this.AttractionCurve = curve;
-        this.Position = pos;
-        this.UseCurve = true;
-    }
+    private bool UseCurve;
 
     public AttractionForceAffector(float magnitude, Vector3 pos, EffectNode node) : base(node)
     {
@@ -24,28 +15,36 @@ public class AttractionForceAffector : Affector
         this.UseCurve = false;
     }
 
+    public AttractionForceAffector(AnimationCurve curve, Vector3 pos, EffectNode node) : base(node)
+    {
+        this.AttractionCurve = curve;
+        this.Position = pos;
+        this.UseCurve = true;
+    }
+
     public override void Update()
     {
         Vector3 vector;
-        if (this.Node.SyncClient)
+        float magnitude;
+        if (base.Node.SyncClient)
         {
-            vector = this.Position - this.Node.GetLocalPosition();
+            vector = this.Position - base.Node.GetLocalPosition();
         }
         else
         {
-            vector = this.Node.ClientTrans.position + this.Position - this.Node.GetLocalPosition();
+            vector = (base.Node.ClientTrans.position + this.Position) - base.Node.GetLocalPosition();
         }
-        float elapsedTime = this.Node.GetElapsedTime();
-        float num;
+        float elapsedTime = base.Node.GetElapsedTime();
         if (this.UseCurve)
         {
-            num = this.AttractionCurve.Evaluate(elapsedTime);
+            magnitude = this.AttractionCurve.Evaluate(elapsedTime);
         }
         else
         {
-            num = this.Magnitude;
+            magnitude = this.Magnitude;
         }
-        float d = num;
-        this.Node.Velocity += vector.normalized * d * Time.deltaTime;
+        float num3 = magnitude;
+        base.Node.Velocity += (Vector3) ((vector.normalized * num3) * Time.deltaTime);
     }
 }
+

@@ -1,186 +1,183 @@
-﻿using System;
+//TODO: Fix and uncomment
+
+#if false
+using System;
 
 public static class CLZF2
 {
-    private static readonly long[] HashTable = new long[CLZF2.HSIZE];
-
-    private static readonly uint HLOG = 14u;
-
-    private static readonly uint HSIZE = 16384u;
-
-    private static readonly uint MAX_LIT = 32u;
-
-    private static readonly uint MAX_OFF = 8192u;
-
-    private static readonly uint MAX_REF = 264u;
+    private static readonly long[] HashTable = new long[HSIZE];
+    private static readonly uint HLOG = 14;
+    private static readonly uint HSIZE = 0x4000;
+    private static readonly uint MAX_LIT = 0x20;
+    private static readonly uint MAX_OFF = 0x2000;
+    private static readonly uint MAX_REF = 0x108;
 
     public static byte[] Compress(byte[] inputBytes)
     {
         int num = inputBytes.Length * 2;
-        byte[] src = new byte[num];
-        int num2;
-        for (num2 = CLZF2.lzf_compress(inputBytes, ref src); num2 == 0; num2 = CLZF2.lzf_compress(inputBytes, ref src))
+        byte[] output = new byte[num];
+        int count = lzf_compress(inputBytes, ref output);
+        while (count == 0)
         {
             num *= 2;
-            src = new byte[num];
+            output = new byte[num];
+            count = lzf_compress(inputBytes, ref output);
         }
-        byte[] array = new byte[num2];
-        Buffer.BlockCopy(src, 0, array, 0, num2);
-        return array;
+        byte[] dst = new byte[count];
+        Buffer.BlockCopy(output, 0, dst, 0, count);
+        return dst;
     }
 
     public static byte[] Decompress(byte[] inputBytes)
     {
         int num = inputBytes.Length * 2;
-        byte[] src = new byte[num];
-        int num2;
-        for (num2 = CLZF2.lzf_decompress(inputBytes, ref src); num2 == 0; num2 = CLZF2.lzf_decompress(inputBytes, ref src))
+        byte[] output = new byte[num];
+        int count = lzf_decompress(inputBytes, ref output);
+        while (count == 0)
         {
             num *= 2;
-            src = new byte[num];
+            output = new byte[num];
+            count = lzf_decompress(inputBytes, ref output);
         }
-        byte[] array = new byte[num2];
-        Buffer.BlockCopy(src, 0, array, 0, num2);
-        return array;
+        byte[] dst = new byte[count];
+        Buffer.BlockCopy(output, 0, dst, 0, count);
+        return dst;
     }
 
     public static int lzf_compress(byte[] input, ref byte[] output)
     {
-        int num = input.Length;
+        int length = input.Length;
         int num2 = output.Length;
-        Array.Clear(CLZF2.HashTable, 0, (int)CLZF2.HSIZE);
-        uint num3 = 0u;
-        uint num4 = 0u;
-        uint num5 = (uint)((int)input[(int)((UIntPtr)num3)] << 8 | (int)input[(int)((UIntPtr)(num3 + 1u))]);
-        int num6 = 0;
-        for (; ; )
+        Array.Clear(HashTable, 0, (int) HSIZE);
+        uint index = 0;
+        uint num5 = 0;
+        uint num7 = (uint) ((input[index] << 8) | input[(int) ((IntPtr) (index + 1))]);
+        int num9 = 0;
+    Label_0035:
+        while (index < (length - 2))
         {
-            if ((ulong)num3 < (ulong)((long)(num - 2)))
+            long num8;
+            num7 = (num7 << 8) | input[(int) ((IntPtr) (index + 2))];
+            long num3 = ((num7 ^ (num7 << 5)) >> ((0x18 - HLOG) - (num7 * 5))) & (HSIZE - 1);
+            long num6 = HashTable[(int) ((IntPtr) num3)];
+            HashTable[(int) ((IntPtr) num3)] = index;
+            if (((((num8 = (index - num6) - 1L) >= MAX_OFF) || ((index + 4) >= length)) || ((num6 <= 0L) || (input[(int) ((IntPtr) num6)] != input[index]))) || ((input[(int) ((IntPtr) (num6 + 1L))] != input[(int) ((IntPtr) (index + 1))]) || (input[(int) ((IntPtr) (num6 + 2L))] != input[(int) ((IntPtr) (index + 2))])))
             {
-                num5 = (num5 << 8 | (uint)input[(int)((UIntPtr)(num3 + 2u))]);
-                long num7 = (long)((ulong)((num5 ^ num5 << 5) >> (int)(24u - CLZF2.HLOG - num5 * 5u) & CLZF2.HSIZE - 1u));
-                long num8 = CLZF2.HashTable[(int)(checked((IntPtr)num7))];
-                CLZF2.HashTable[(int)(checked((IntPtr)num7))] = (long)((ulong)num3);
-                long num9;
-                if ((num9 = (long)((ulong)num3 - (ulong)num8 - 1UL)) < (long)((ulong)CLZF2.MAX_OFF) && (ulong)(num3 + 4u) < (ulong)((long)num) && num8 > 0L && input[(int)(checked((IntPtr)num8))] == input[(int)((UIntPtr)num3)] && input[(int)(checked((IntPtr)(unchecked(num8 + 1L))))] == input[(int)((UIntPtr)(num3 + 1u))] && input[(int)(checked((IntPtr)(unchecked(num8 + 2L))))] == input[(int)((UIntPtr)(num3 + 2u))])
-                {
-                    uint num10 = 2u;
-                    uint num11 = (uint)(num - (int)num3 - (int)num10);
-                    num11 = ((num11 <= CLZF2.MAX_REF) ? num11 : CLZF2.MAX_REF);
-                    if ((ulong)num4 + (ulong)((long)num6) + 1UL + 3UL >= (ulong)((long)num2))
-                    {
-                        break;
-                    }
-                    do
-                    {
-                        num10 += 1u;
-                    }
-                    while (num10 < num11 && input[(int)(checked((IntPtr)(unchecked(num8 + (long)((ulong)num10)))))] == input[(int)((UIntPtr)(num3 + num10))]);
-                    if (num6 != 0)
-                    {
-                        output[(int)((UIntPtr)(num4++))] = (byte)(num6 - 1);
-                        num6 = -num6;
-                        do
-                        {
-                            output[(int)((UIntPtr)(num4++))] = input[(int)(checked((IntPtr)(unchecked((ulong)num3 + (ulong)((long)num6)))))];
-                        }
-                        while (++num6 != 0);
-                    }
-                    num10 -= 2u;
-                    num3 += 1u;
-                    if (num10 < 7u)
-                    {
-                        output[(int)((UIntPtr)(num4++))] = (byte)((num9 >> 8) + (long)((ulong)((ulong)num10 << 5)));
-                    }
-                    else
-                    {
-                        output[(int)((UIntPtr)(num4++))] = (byte)((num9 >> 8) + 224L);
-                        output[(int)((UIntPtr)(num4++))] = (byte)(num10 - 7u);
-                    }
-                    output[(int)((UIntPtr)(num4++))] = (byte)num9;
-                    num3 += num10 - 1u;
-                    num5 = (uint)((int)input[(int)((UIntPtr)num3)] << 8 | (int)input[(int)((UIntPtr)(num3 + 1u))]);
-                    num5 = (num5 << 8 | (uint)input[(int)((UIntPtr)(num3 + 2u))]);
-                    CLZF2.HashTable[(int)((UIntPtr)((num5 ^ num5 << 5) >> (int)(24u - CLZF2.HLOG - num5 * 5u) & CLZF2.HSIZE - 1u))] = (long)((ulong)num3);
-                    num3 += 1u;
-                    num5 = (num5 << 8 | (uint)input[(int)((UIntPtr)(num3 + 2u))]);
-                    CLZF2.HashTable[(int)((UIntPtr)((num5 ^ num5 << 5) >> (int)(24u - CLZF2.HLOG - num5 * 5u) & CLZF2.HSIZE - 1u))] = (long)((ulong)num3);
-                    num3 += 1u;
-                    continue;
-                }
+                goto Label_0280;
             }
-            else if ((ulong)num3 == (ulong)((long)num))
-            {
-                goto Block_13;
-            }
-            num6++;
-            num3 += 1u;
-            if ((long)num6 == (long)((ulong)CLZF2.MAX_LIT))
-            {
-                if ((ulong)(num4 + 1u + CLZF2.MAX_LIT) >= (ulong)((long)num2))
-                {
-                    return 0;
-                }
-                output[(int)((UIntPtr)(num4++))] = (byte)(CLZF2.MAX_LIT - 1u);
-                num6 = -num6;
-                do
-                {
-                    output[(int)((UIntPtr)(num4++))] = input[(int)(checked((IntPtr)(unchecked((ulong)num3 + (ulong)((long)num6)))))];
-                }
-                while (++num6 != 0);
-            }
-        }
-        return 0;
-        Block_13:
-        if (num6 != 0)
-        {
-            if ((ulong)num4 + (ulong)((long)num6) + 1UL >= (ulong)((long)num2))
+            uint num10 = 2;
+            uint num11 = (((uint) length) - index) - num10;
+            num11 = (num11 <= MAX_REF) ? num11 : MAX_REF;
+            if ((((num5 + num9) + ((ulong) 1L)) + ((ulong) 3L)) >= num2)
             {
                 return 0;
             }
-            output[(int)((UIntPtr)(num4++))] = (byte)(num6 - 1);
-            num6 = -num6;
             do
             {
-                output[(int)((UIntPtr)(num4++))] = input[(int)(checked((IntPtr)(unchecked((ulong)num3 + (ulong)((long)num6)))))];
+                num10++;
             }
-            while (++num6 != 0);
+            while ((num10 < num11) && (input[(int) ((IntPtr) (num6 + num10))] == input[index + num10]));
+            if (num9 != 0)
+            {
+                output[num5++] = (byte) (num9 - 1);
+                num9 = -num9;
+                do
+                {
+                    output[num5++] = input[(int) ((IntPtr) (index + num9))];
+                }
+                while (++num9 != 0);
+            }
+            num10 -= 2;
+            index++;
+            if (num10 < 7)
+            {
+                output[num5++] = (byte) ((num8 >> 8) + (num10 << 5));
+            }
+            else
+            {
+                output[num5++] = (byte) ((num8 >> 8) + 0xe0L);
+                output[num5++] = (byte) (num10 - 7);
+            }
+            output[num5++] = (byte) num8;
+            index += num10 - 1;
+            num7 = (uint) ((input[index] << 8) | input[(int) ((IntPtr) (index + 1))]);
+            num7 = (num7 << 8) | input[(int) ((IntPtr) (index + 2))];
+            HashTable[(int) ((IntPtr) (((num7 ^ (num7 << 5)) >> ((0x18 - HLOG) - (num7 * 5))) & (HSIZE - 1)))] = index;
+            index++;
+            num7 = (num7 << 8) | input[(int) ((IntPtr) (index + 2))];
+            HashTable[(int) ((IntPtr) (((num7 ^ (num7 << 5)) >> ((0x18 - HLOG) - (num7 * 5))) & (HSIZE - 1)))] = index;
+            index++;
         }
-        return (int)num4;
+        if (index == length)
+        {
+            if (num9 != 0)
+            {
+                if (((num5 + num9) + ((ulong) 1L)) >= num2)
+                {
+                    return 0;
+                }
+                output[num5++] = (byte) (num9 - 1);
+                num9 = -num9;
+                do
+                {
+                    output[num5++] = input[(int) ((IntPtr) (index + num9))];
+                }
+                while (++num9 != 0);
+            }
+            return (int) num5;
+        }
+    Label_0280:
+        num9++;
+        index++;
+        if (num9 == MAX_LIT)
+        {
+            if (((num5 + 1) + MAX_LIT) >= num2)
+            {
+                return 0;
+            }
+            output[num5++] = (byte) (MAX_LIT - 1);
+            num9 = -num9;
+            do
+            {
+                output[num5++] = input[(int) ((IntPtr) (index + num9))];
+            }
+            while (++num9 != 0);
+        }
+        goto Label_0035;
     }
 
     public static int lzf_decompress(byte[] input, ref byte[] output)
     {
-        int num = input.Length;
+        int length = input.Length;
         int num2 = output.Length;
-        uint num3 = 0u;
-        uint num4 = 0u;
-        for (; ; )
+        uint num3 = 0;
+        uint num4 = 0;
+        do
         {
-            uint num5 = (uint)input[(int)((UIntPtr)(num3++))];
-            if (num5 < 32u)
+            uint num5 = input[num3++];
+            if (num5 < 0x20)
             {
-                num5 += 1u;
-                if ((ulong)(num4 + num5) > (ulong)((long)num2))
+                num5++;
+                if ((num4 + num5) > num2)
                 {
-                    break;
+                    return 0;
                 }
                 do
                 {
-                    output[(int)((UIntPtr)(num4++))] = input[(int)((UIntPtr)(num3++))];
+                    output[num4++] = input[num3++];
                 }
-                while ((num5 -= 1u) != 0u);
+                while (--num5 != 0);
             }
             else
             {
                 uint num6 = num5 >> 5;
-                int num7 = (int)(num4 - ((num5 & 31u) << 8) - 1u);
-                if (num6 == 7u)
+                int num7 = ((int) (num4 - ((num5 & 0x1f) << 8))) - 1;
+                if (num6 == 7)
                 {
-                    num6 += (uint)input[(int)((UIntPtr)(num3++))];
+                    num6 += input[num3++];
                 }
-                num7 -= (int)input[(int)((UIntPtr)(num3++))];
-                if ((ulong)(num4 + num6 + 2u) > (ulong)((long)num2))
+                num7 -= input[num3++];
+                if (((num4 + num6) + 2) > num2)
                 {
                     return 0;
                 }
@@ -188,19 +185,17 @@ public static class CLZF2
                 {
                     return 0;
                 }
-                output[(int)((UIntPtr)(num4++))] = output[num7++];
-                output[(int)((UIntPtr)(num4++))] = output[num7++];
+                output[num4++] = output[num7++];
+                output[num4++] = output[num7++];
                 do
                 {
-                    output[(int)((UIntPtr)(num4++))] = output[num7++];
+                    output[num4++] = output[num7++];
                 }
-                while ((num6 -= 1u) != 0u);
-            }
-            if ((ulong)num3 >= (ulong)((long)num))
-            {
-                return (int)num4;
+                while (--num6 != 0);
             }
         }
-        return 0;
+        while (num3 < length);
+        return (int) num4;
     }
 }
+#endif

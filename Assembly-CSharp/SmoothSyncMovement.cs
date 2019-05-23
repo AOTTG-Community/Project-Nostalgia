@@ -1,69 +1,51 @@
-﻿using Optimization.Caching;
-using System;
 using Photon;
+using System;
 using UnityEngine;
 
-class SmoothSyncMovement : Photon.MonoBehaviour, IPunObservable
+public class SmoothSyncMovement : Photon.MonoBehaviour
 {
-    private Rigidbody baseR;
-    private Transform baseT;
-    private Vector3 correctPlayerPos = Vectors.zero;
+    private Vector3 correctPlayerPos = Vector3.zero;
     private Quaternion correctPlayerRot = Quaternion.identity;
-    private Vector3 correctPlayerVelocity = Vectors.zero;
-    public Quaternion CorrectCameraRot;
-    public bool Disabled;
-    public bool PhotonCamera;
+    private Vector3 correctPlayerVelocity = Vector3.zero;
+    public bool disabled;
     public float SmoothingDelay = 5f;
-
 
     public void Awake()
     {
-        if (base.BasePV == null || base.BasePV.observed != this)
+        if ((base.photonView == null) || (base.photonView.observed != this))
         {
             Debug.LogWarning(this + " is not observed by this object's photonView! OnPhotonSerializeView() in this class won't be used.");
         }
-        if (IN_GAME_MAIN_CAMERA.GameType == GameType.Single)
+        if (IN_GAME_MAIN_CAMERA.gametype == GAMETYPE.SINGLE)
         {
             base.enabled = false;
         }
-        baseT = transform;
-        baseR = rigidbody;
     }
 
     public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
     {
         if (stream.isWriting)
         {
-            stream.SendNext(baseT.position);
-            stream.SendNext(baseT.rotation);
-            stream.SendNext(baseR.velocity);
-            if (PhotonCamera)
-            {
-                stream.SendNext(IN_GAME_MAIN_CAMERA.MainT.rotation);
-            }
+            stream.SendNext(base.transform.position);
+            stream.SendNext(base.transform.rotation);
+            stream.SendNext(base.rigidbody.velocity);
         }
         else
         {
-            this.correctPlayerPos = (Vector3)stream.ReceiveNext();
-            this.correctPlayerRot = (Quaternion)stream.ReceiveNext();
-            this.correctPlayerVelocity = (Vector3)stream.ReceiveNext();
-            if (PhotonCamera)
-            {
-                CorrectCameraRot = (Quaternion)stream.ReceiveNext();
-            }
+            this.correctPlayerPos = (Vector3) stream.ReceiveNext();
+            this.correctPlayerRot = (Quaternion) stream.ReceiveNext();
+            this.correctPlayerVelocity = (Vector3) stream.ReceiveNext();
         }
     }
 
     public void Update()
     {
-        if (Disabled || BasePV.IsMine) return;
-        var dt = Time.deltaTime;
-        if (baseT != null)
+        if (!this.disabled && !base.photonView.isMine)
         {
-            baseT.position = Vector3.Lerp(baseT.position, this.correctPlayerPos, dt * this.SmoothingDelay);
-            baseT.rotation = Quaternion.Lerp(baseT.rotation, this.correctPlayerRot, dt * this.SmoothingDelay);
+            base.transform.position = Vector3.Lerp(base.transform.position, this.correctPlayerPos, Time.deltaTime * this.SmoothingDelay);
+            base.transform.rotation = Quaternion.Lerp(base.transform.rotation, this.correctPlayerRot, Time.deltaTime * this.SmoothingDelay);
+            base.rigidbody.velocity = this.correctPlayerVelocity;
         }
-        if (baseR != null) baseR.velocity = this.correctPlayerVelocity;
     }
-
 }
+

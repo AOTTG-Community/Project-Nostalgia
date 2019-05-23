@@ -1,30 +1,14 @@
-﻿using Optimization.Caching;
+using System;
 using UnityEngine;
 
 public class UIGeometry
 {
+    public BetterList<Color32> cols = new BetterList<Color32>();
     private Vector3 mRtpNormal;
     private Vector4 mRtpTan;
     private BetterList<Vector3> mRtpVerts = new BetterList<Vector3>();
-    public BetterList<Color32> cols = new BetterList<Color32>();
     public BetterList<Vector2> uvs = new BetterList<Vector2>();
     public BetterList<Vector3> verts = new BetterList<Vector3>();
-
-    public bool hasTransformed
-    {
-        get
-        {
-            return this.mRtpVerts != null && this.mRtpVerts.size > 0 && this.mRtpVerts.size == this.verts.size;
-        }
-    }
-
-    public bool hasVertices
-    {
-        get
-        {
-            return this.verts.size > 0;
-        }
-    }
 
     public void ApplyOffset(Vector3 pivotOffset)
     {
@@ -39,15 +23,15 @@ public class UIGeometry
         if (this.verts.size > 0)
         {
             this.mRtpVerts.Clear();
-            int i = 0;
+            int num = 0;
             int size = this.verts.size;
-            while (i < size)
+            while (num < size)
             {
-                this.mRtpVerts.Add(widgetToPanel.MultiplyPoint3x4(this.verts[i]));
-                i++;
+                this.mRtpVerts.Add(widgetToPanel.MultiplyPoint3x4(this.verts[num]));
+                num++;
             }
-            this.mRtpNormal = widgetToPanel.MultiplyVector(Vectors.back).normalized;
-            Vector3 normalized = widgetToPanel.MultiplyVector(Vectors.right).normalized;
+            this.mRtpNormal = widgetToPanel.MultiplyVector(Vector3.back).normalized;
+            Vector3 normalized = widgetToPanel.MultiplyVector(Vector3.right).normalized;
             this.mRtpTan = new Vector4(normalized.x, normalized.y, normalized.z, -1f);
         }
         else
@@ -66,7 +50,7 @@ public class UIGeometry
 
     public void WriteToBuffers(BetterList<Vector3> v, BetterList<Vector2> u, BetterList<Color32> c, BetterList<Vector3> n, BetterList<Vector4> t)
     {
-        if (this.mRtpVerts != null && this.mRtpVerts.size > 0)
+        if ((this.mRtpVerts != null) && (this.mRtpVerts.size > 0))
         {
             if (n == null)
             {
@@ -90,4 +74,21 @@ public class UIGeometry
             }
         }
     }
+
+    public bool hasTransformed
+    {
+        get
+        {
+            return (((this.mRtpVerts != null) && (this.mRtpVerts.size > 0)) && (this.mRtpVerts.size == this.verts.size));
+        }
+    }
+
+    public bool hasVertices
+    {
+        get
+        {
+            return (this.verts.size > 0);
+        }
+    }
 }
+
