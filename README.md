@@ -10,13 +10,8 @@
 [![Contributors][contributors-shield]]()
 
 
-<br />
-<p align="center">
-  <a href="https://github.com/othneildrew/Best-README-Template">
-    <img src="logo.jpg" alt="Logo" width="900" height="500">
-  </a>
   
-  <h3 align="center">BRS Project: Nostalgia</h3>
+  <h3 align="center">Project Nostalgia</h3>
 
   <p align="center">
     Cuz we're all retarded enough to keep the game alive!
