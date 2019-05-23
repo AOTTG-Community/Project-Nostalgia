@@ -1,0 +1,29 @@
+I:\AOT\Aot modding\Astora\NewProject\Photon3Unity3D\bin\Release\Photon3Unity3D.dll
+I:\AOT\Aot modding\Astora\NewProject\Photon3Unity3D\bin\Release\Photon3Unity3D.pdb
+I:\AOT\Aot modding\Astora\AoTTG_Data\Managed\Photon3Unity3D.dll
+I:\AOT\Aot modding\Astora\AoTTG_Data\Managed\Photon3Unity3D.pdb
+I:\AOT\Aot modding\Astora\NewProject\Photon3Unity3D\obj\Release\Photon3Unity3D.csproj.CoreCompileInputs.cache
+I:\AOT\Aot modding\Astora\NewProject\Photon3Unity3D\obj\Release\Photon3Unity3D.csproj.CopyComplete
+I:\AOT\Aot modding\Astora\NewProject\Photon3Unity3D\obj\Release\Photon3Unity3D.dll
+I:\AOT\Aot modding\Astora\NewProject\Photon3Unity3D\obj\Release\Photon3Unity3D.pdb
+I:\AOT\Aot modding\Astora\NewProject\Photon3Unity3D\obj\Release\Photon3Unity3D.csprojResolveAssemblyReference.cache
+I:\AOT\Optimized Vanilla by Order\Project\Photon3Unity3D\obj\Release\Photon3Unity3D.csproj.CoreCompileInputs.cache
+I:\AOT\Optimized Vanilla by Order\Project\Photon3Unity3D\obj\Release\Photon3Unity3D.dll
+I:\AOT\Optimized Vanilla by Order\Project\Photon3Unity3D\obj\Release\Photon3Unity3D.pdb
+I:\AOT\Optimized Vanilla by Order\Project\Resources\Photon3Unity3D.dll
+I:\AOT\Optimized Vanilla by Order\Project\Resources\Photon3Unity3D.pdb
+I:\AOT\Optimized Vanilla by Order\Project\Photon3Unity3D\obj\Release\Photon3Unity3D.csproj.CopyComplete
+I:\AOT\Optimized Vanilla by Order\Project\Photon3Unity3D\obj\Release\Photon3Unity3D.csprojResolveAssemblyReference.cache
+I:\AOT\Optimized Vanilla by Order\Clear Optimized source\Resources\Photon3Unity3D.dll
+I:\AOT\Optimized Vanilla by Order\Clear Optimized source\Resources\Photon3Unity3D.pdb
+I:\AOT\Optimized Vanilla by Order\Clear Optimized source\Photon3Unity3D\obj\Release\Photon3Unity3D.csproj.CoreCompileInputs.cache
+I:\AOT\Optimized Vanilla by Order\Clear Optimized source\Photon3Unity3D\obj\Release\Photon3Unity3D.csproj.CopyComplete
+I:\AOT\Optimized Vanilla by Order\Clear Optimized source\Photon3Unity3D\obj\Release\Photon3Unity3D.dll
+I:\AOT\Optimized Vanilla by Order\Clear Optimized source\Photon3Unity3D\obj\Release\Photon3Unity3D.pdb
+E:\AOT\Optimized Vanilla by Order\Project\Resources\Photon3Unity3D.dll
+E:\AOT\Optimized Vanilla by Order\Project\Resources\Photon3Unity3D.pdb
+E:\AOT\Optimized Vanilla by Order\Project\Photon3Unity3D\obj\Release\Photon3Unity3D.csprojAssemblyReference.cache
+E:\AOT\Optimized Vanilla by Order\Project\Photon3Unity3D\obj\Release\Photon3Unity3D.csproj.CoreCompileInputs.cache
+E:\AOT\Optimized Vanilla by Order\Project\Photon3Unity3D\obj\Release\Photon3Unity3D.csproj.CopyComplete
+E:\AOT\Optimized Vanilla by Order\Project\Photon3Unity3D\obj\Release\Photon3Unity3D.dll
+E:\AOT\Optimized Vanilla by Order\Project\Photon3Unity3D\obj\Release\Photon3Unity3D.pdb

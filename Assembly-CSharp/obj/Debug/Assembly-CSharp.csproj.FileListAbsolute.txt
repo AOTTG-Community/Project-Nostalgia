@@ -1,0 +1,16 @@
+I:\AOT\Optimized Vanilla by Order\Clear Optimized source\Assembly-CSharp\obj\Debug\Assembly-CSharp.csprojAssemblyReference.cache
+I:\AOT\Optimized Vanilla by Order\Clear Optimized source\Assembly-CSharp\obj\Debug\Assembly-CSharp.csproj.CoreCompileInputs.cache
+I:\AOT\Optimized Vanilla by Order\Clear Optimized source\Assembly-CSharp\bin\Debug\Assembly-CSharp.dll
+I:\AOT\Optimized Vanilla by Order\Clear Optimized source\Assembly-CSharp\bin\Debug\Assembly-CSharp.pdb
+I:\AOT\Optimized Vanilla by Order\Clear Optimized source\Assembly-CSharp\bin\Debug\Assembly-CSharp-firstpass.dll
+I:\AOT\Optimized Vanilla by Order\Clear Optimized source\Assembly-CSharp\bin\Debug\Assembly-UnityScript-firstpass.dll
+I:\AOT\Optimized Vanilla by Order\Clear Optimized source\Assembly-CSharp\bin\Debug\Assembly-UnityScript.dll
+I:\AOT\Optimized Vanilla by Order\Clear Optimized source\Assembly-CSharp\bin\Debug\Photon3Unity3D.dll
+I:\AOT\Optimized Vanilla by Order\Clear Optimized source\Assembly-CSharp\bin\Debug\UnityEngine.dll
+I:\AOT\Optimized Vanilla by Order\Clear Optimized source\Assembly-CSharp\bin\Debug\UnityEngine.UI.dll
+I:\AOT\Optimized Vanilla by Order\Clear Optimized source\Assembly-CSharp\bin\Debug\UnityScript.Lang.dll
+I:\AOT\Optimized Vanilla by Order\Clear Optimized source\Assembly-CSharp\bin\Debug\Boo.Lang.dll
+I:\AOT\Optimized Vanilla by Order\Clear Optimized source\Assembly-CSharp\bin\Debug\Photon3Unity3D.pdb
+I:\AOT\Optimized Vanilla by Order\Clear Optimized source\Assembly-CSharp\obj\Debug\Assembly-CSharp.csproj.CopyComplete
+I:\AOT\Optimized Vanilla by Order\Clear Optimized source\Assembly-CSharp\obj\Debug\Assembly-CSharp.dll
+I:\AOT\Optimized Vanilla by Order\Clear Optimized source\Assembly-CSharp\obj\Debug\Assembly-CSharp.pdb

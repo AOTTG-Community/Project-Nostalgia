@@ -1,0 +1,17 @@
+I:\AOT\Aot modding\Astora\NewProject\Photon3Unity3D\obj\Debug\Photon3Unity3D.csprojResolveAssemblyReference.cache
+I:\AOT\Aot modding\Astora\NewProject\Photon3Unity3D\obj\Debug\Photon3Unity3D.csproj.CoreCompileInputs.cache
+I:\AOT\Optimized Vanilla by Order\Clear Optimized source\Photon3Unity3D\bin\Debug\Photon3Unity3D.dll
+I:\AOT\Optimized Vanilla by Order\Clear Optimized source\Photon3Unity3D\bin\Debug\Photon3Unity3D.pdb
+I:\AOT\Optimized Vanilla by Order\Clear Optimized source\Photon3Unity3D\bin\Debug\Assembly-CSharp.dll
+I:\AOT\Optimized Vanilla by Order\Clear Optimized source\Photon3Unity3D\bin\Debug\UnityEngine.dll
+I:\AOT\Optimized Vanilla by Order\Clear Optimized source\Photon3Unity3D\bin\Debug\UnityEngine.UI.dll
+I:\AOT\Optimized Vanilla by Order\Clear Optimized source\Photon3Unity3D\bin\Debug\Assembly-CSharp-firstpass.dll
+I:\AOT\Optimized Vanilla by Order\Clear Optimized source\Photon3Unity3D\bin\Debug\Assembly-UnityScript-firstpass.dll
+I:\AOT\Optimized Vanilla by Order\Clear Optimized source\Photon3Unity3D\bin\Debug\Boo.Lang.dll
+I:\AOT\Optimized Vanilla by Order\Clear Optimized source\Photon3Unity3D\bin\Debug\UnityScript.Lang.dll
+I:\AOT\Optimized Vanilla by Order\Clear Optimized source\Photon3Unity3D\bin\Debug\Mono.Security.dll
+I:\AOT\Optimized Vanilla by Order\Clear Optimized source\Photon3Unity3D\bin\Debug\Assembly-CSharp.pdb
+I:\AOT\Optimized Vanilla by Order\Clear Optimized source\Photon3Unity3D\obj\Debug\Photon3Unity3D.csproj.CoreCompileInputs.cache
+I:\AOT\Optimized Vanilla by Order\Clear Optimized source\Photon3Unity3D\obj\Debug\Photon3Unity3D.csproj.CopyComplete
+I:\AOT\Optimized Vanilla by Order\Clear Optimized source\Photon3Unity3D\obj\Debug\Photon3Unity3D.dll
+I:\AOT\Optimized Vanilla by Order\Clear Optimized source\Photon3Unity3D\obj\Debug\Photon3Unity3D.pdb
