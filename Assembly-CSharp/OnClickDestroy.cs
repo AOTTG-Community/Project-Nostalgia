@@ -1,9 +1,18 @@
-﻿using UnityEngine;
+using Photon;
+using System;
+using UnityEngine;
 
 [RequireComponent(typeof(PhotonView))]
 public class OnClickDestroy : Photon.MonoBehaviour
 {
     public bool DestroyByRpc;
+
+    [RPC]
+    public void DestroyRpc()
+    {
+        UnityEngine.Object.Destroy(base.gameObject);
+        PhotonNetwork.UnAllocateViewID(base.photonView.viewID);
+    }
 
     private void OnClick()
     {
@@ -13,14 +22,8 @@ public class OnClickDestroy : Photon.MonoBehaviour
         }
         else
         {
-            BasePV.RPC("DestroyRpc", PhotonTargets.AllBuffered, new object[0]);
+            base.photonView.RPC("DestroyRpc", PhotonTargets.AllBuffered, new object[0]);
         }
     }
-
-    [RPC]
-    public void DestroyRpc()
-    {
-        UnityEngine.Object.Destroy(base.gameObject);
-        PhotonNetwork.UnAllocateViewID(BasePV.viewID);
-    }
 }
+

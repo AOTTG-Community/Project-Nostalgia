@@ -1,13 +1,15 @@
-﻿public class PhotonMessageInfo
+using System;
+
+public class PhotonMessageInfo
 {
-    private int timeInt;
     public PhotonView photonView;
     public PhotonPlayer sender;
+    private int timeInt;
 
     public PhotonMessageInfo()
     {
         this.sender = PhotonNetwork.player;
-        this.timeInt = (int)(PhotonNetwork.time * 1000.0);
+        this.timeInt = (int) (PhotonNetwork.time * 1000.0);
         this.photonView = null;
     }
 
@@ -18,16 +20,17 @@
         this.photonView = view;
     }
 
-    public double timestamp
-    {
-        get
-        {
-            return this.timeInt / 1000.0;
-        }
-    }
-
     public override string ToString()
     {
         return string.Format("[PhotonMessageInfo: player='{1}' timestamp={0}]", this.timestamp, this.sender);
     }
+
+    public double timestamp
+    {
+        get
+        {
+            return (((double) this.timeInt) / 1000.0);
+        }
+    }
 }
+

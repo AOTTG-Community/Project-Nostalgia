@@ -1,4 +1,6 @@
-﻿public enum CreateStat
+using System;
+
+public enum CreateStat
 {
     SPD,
     GAS,
@@ -6,3 +8,4 @@
     ACL,
     Skill
 }
+

@@ -1,4 +1,6 @@
-﻿public enum CreatePart
+using System;
+
+public enum CreatePart
 {
     Sex,
     Eye,
@@ -11,3 +13,4 @@
     Division,
     Preset
 }
+

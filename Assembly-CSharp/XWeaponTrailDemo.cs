@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 using Xft;
 
 public class XWeaponTrailDemo : MonoBehaviour
@@ -57,3 +58,4 @@ public class XWeaponTrailDemo : MonoBehaviour
         this.SimpleTrail.Init();
     }
 }
+

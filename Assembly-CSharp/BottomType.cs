@@ -1,5 +1,8 @@
-﻿public enum BottomType
+using System;
+
+public enum BottomType
 {
     Die,
     Teleport
 }
+

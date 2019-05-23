@@ -1,15 +1,19 @@
-﻿public class KickState
+using System;
+using System.Collections;
+
+public class KickState
 {
+    public int id;
     private int kickCount;
     private string kickers;
-    public int id;
+    private ArrayList kickers2;
     public string name;
 
     public void addKicker(string n)
     {
         if (!this.kickers.Contains(n))
         {
-            this.kickers += n;
+            this.kickers = this.kickers + n;
             this.kickCount++;
         }
     }
@@ -26,3 +30,4 @@
         this.kickCount = 0;
     }
 }
+

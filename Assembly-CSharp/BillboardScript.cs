@@ -1,4 +1,4 @@
-﻿using Optimization.Caching;
+using System;
 using UnityEngine;
 
 public class BillboardScript : MonoBehaviour
@@ -9,7 +9,8 @@ public class BillboardScript : MonoBehaviour
 
     public void Update()
     {
-        base.transform.LookAt(IN_GAME_MAIN_CAMERA.BaseCamera.transform.position);
-        base.transform.Rotate(Vectors.left * -90f);
+        base.transform.LookAt(Camera.main.transform.position);
+        base.transform.Rotate((Vector3) (Vector3.left * -90f));
     }
 }
+

@@ -1,16 +1,47 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
-[AddComponentMenu("NGUI/UI/Localize")]
-[RequireComponent(typeof(UIWidget))]
+[AddComponentMenu("NGUI/UI/Localize"), RequireComponent(typeof(UIWidget))]
 public class UILocalize : MonoBehaviour
 {
+    public string key;
     private string mLanguage;
     private bool mStarted;
-    public string key;
+
+    public void Localize()
+    {
+        Localization instance = Localization.instance;
+        UIWidget component = base.GetComponent<UIWidget>();
+        UILabel label = component as UILabel;
+        UISprite sprite = component as UISprite;
+        if ((string.IsNullOrEmpty(this.mLanguage) && string.IsNullOrEmpty(this.key)) && (label != null))
+        {
+            this.key = label.text;
+        }
+        string str = !string.IsNullOrEmpty(this.key) ? instance.Get(this.key) : string.Empty;
+        if (label != null)
+        {
+            UIInput input = NGUITools.FindInParents<UIInput>(label.gameObject);
+            if ((input != null) && (input.label == label))
+            {
+                input.defaultText = str;
+            }
+            else
+            {
+                label.text = str;
+            }
+        }
+        else if (sprite != null)
+        {
+            sprite.spriteName = str;
+            sprite.MakePixelPerfect();
+        }
+        this.mLanguage = instance.currentLanguage;
+    }
 
     private void OnEnable()
     {
-        if (this.mStarted && Localization.instance != null)
+        if (this.mStarted && (Localization.instance != null))
         {
             this.Localize();
         }
@@ -32,35 +63,5 @@ public class UILocalize : MonoBehaviour
             this.Localize();
         }
     }
-
-    public void Localize()
-    {
-        Localization instance = Localization.instance;
-        UIWidget component = base.GetComponent<UIWidget>();
-        UILabel uilabel = component as UILabel;
-        UISprite uisprite = component as UISprite;
-        if (string.IsNullOrEmpty(this.mLanguage) && string.IsNullOrEmpty(this.key) && uilabel != null)
-        {
-            this.key = uilabel.text;
-        }
-        string text = (!string.IsNullOrEmpty(this.key)) ? instance.Get(this.key) : string.Empty;
-        if (uilabel != null)
-        {
-            UIInput uiinput = NGUITools.FindInParents<UIInput>(uilabel.gameObject);
-            if (uiinput != null && uiinput.label == uilabel)
-            {
-                uiinput.defaultText = text;
-            }
-            else
-            {
-                uilabel.text = text;
-            }
-        }
-        else if (uisprite != null)
-        {
-            uisprite.spriteName = text;
-            uisprite.MakePixelPerfect();
-        }
-        this.mLanguage = instance.currentLanguage;
-    }
 }
+

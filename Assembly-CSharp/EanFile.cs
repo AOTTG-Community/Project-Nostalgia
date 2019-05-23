@@ -1,11 +1,11 @@
-﻿using System.IO;
+using System;
+using System.IO;
 
 internal class EanFile
 {
     public int AnimCount;
     public EanAnimation[] Anims;
     public int Header;
-
     public int Reserved;
     public int Version;
 
@@ -23,3 +23,4 @@ internal class EanFile
         }
     }
 }
+

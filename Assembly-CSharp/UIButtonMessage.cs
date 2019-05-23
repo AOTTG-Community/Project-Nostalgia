@@ -1,28 +1,19 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 [AddComponentMenu("NGUI/Interaction/Button Message")]
 public class UIButtonMessage : MonoBehaviour
 {
-    private bool mHighlighted;
-    private bool mStarted;
     public string functionName;
     public bool includeChildren;
+    private bool mHighlighted;
+    private bool mStarted;
     public GameObject target;
-    public UIButtonMessage.Trigger trigger;
-
-    public enum Trigger
-    {
-        OnClick,
-        OnMouseOver,
-        OnMouseOut,
-        OnPress,
-        OnRelease,
-        OnDoubleClick
-    }
+    public Trigger trigger;
 
     private void OnClick()
     {
-        if (base.enabled && this.trigger == UIButtonMessage.Trigger.OnClick)
+        if (base.enabled && (this.trigger == Trigger.OnClick))
         {
             this.Send();
         }
@@ -30,7 +21,7 @@ public class UIButtonMessage : MonoBehaviour
 
     private void OnDoubleClick()
     {
-        if (base.enabled && this.trigger == UIButtonMessage.Trigger.OnDoubleClick)
+        if (base.enabled && (this.trigger == Trigger.OnDoubleClick))
         {
             this.Send();
         }
@@ -48,7 +39,7 @@ public class UIButtonMessage : MonoBehaviour
     {
         if (base.enabled)
         {
-            if ((isOver && this.trigger == UIButtonMessage.Trigger.OnMouseOver) || (!isOver && this.trigger == UIButtonMessage.Trigger.OnMouseOut))
+            if ((isOver && (this.trigger == Trigger.OnMouseOver)) || (!isOver && (this.trigger == Trigger.OnMouseOut)))
             {
                 this.Send();
             }
@@ -58,7 +49,7 @@ public class UIButtonMessage : MonoBehaviour
 
     private void OnPress(bool isPressed)
     {
-        if (base.enabled && ((isPressed && this.trigger == UIButtonMessage.Trigger.OnPress) || (!isPressed && this.trigger == UIButtonMessage.Trigger.OnRelease)))
+        if (base.enabled && ((isPressed && (this.trigger == Trigger.OnPress)) || (!isPressed && (this.trigger == Trigger.OnRelease))))
         {
             this.Send();
         }
@@ -66,29 +57,28 @@ public class UIButtonMessage : MonoBehaviour
 
     private void Send()
     {
-        if (string.IsNullOrEmpty(this.functionName))
+        if (!string.IsNullOrEmpty(this.functionName))
         {
-            return;
-        }
-        if (this.target == null)
-        {
-            this.target = base.gameObject;
-        }
-        if (this.includeChildren)
-        {
-            Transform[] componentsInChildren = this.target.GetComponentsInChildren<Transform>();
-            int i = 0;
-            int num = componentsInChildren.Length;
-            while (i < num)
+            if (this.target == null)
             {
-                Transform transform = componentsInChildren[i];
-                transform.gameObject.SendMessage(this.functionName, base.gameObject, SendMessageOptions.DontRequireReceiver);
-                i++;
+                this.target = base.gameObject;
             }
-        }
-        else
-        {
-            this.target.SendMessage(this.functionName, base.gameObject, SendMessageOptions.DontRequireReceiver);
+            if (this.includeChildren)
+            {
+                Transform[] componentsInChildren = this.target.GetComponentsInChildren<Transform>();
+                int index = 0;
+                int length = componentsInChildren.Length;
+                while (index < length)
+                {
+                    Transform transform = componentsInChildren[index];
+                    transform.gameObject.SendMessage(this.functionName, base.gameObject, SendMessageOptions.DontRequireReceiver);
+                    index++;
+                }
+            }
+            else
+            {
+                this.target.SendMessage(this.functionName, base.gameObject, SendMessageOptions.DontRequireReceiver);
+            }
         }
     }
 
@@ -96,4 +86,15 @@ public class UIButtonMessage : MonoBehaviour
     {
         this.mStarted = true;
     }
+
+    public enum Trigger
+    {
+        OnClick,
+        OnMouseOver,
+        OnMouseOut,
+        OnPress,
+        OnRelease,
+        OnDoubleClick
+    }
 }
+

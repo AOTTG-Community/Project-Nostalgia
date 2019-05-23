@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 public class supplyCheck : MonoBehaviour
 {
@@ -15,24 +16,24 @@ public class supplyCheck : MonoBehaviour
         if (this.elapsedTime > this.stepTime)
         {
             this.elapsedTime -= this.stepTime;
-            GameObject[] array = GameObject.FindGameObjectsWithTag("Player");
-            foreach (GameObject gameObject in array)
+            foreach (GameObject obj2 in GameObject.FindGameObjectsWithTag("Player"))
             {
-                if (gameObject.GetComponent<HERO>() != null)
+                if (obj2.GetComponent<HERO>() != null)
                 {
-                    if (IN_GAME_MAIN_CAMERA.GameType == GameType.Single)
+                    if (IN_GAME_MAIN_CAMERA.gametype == GAMETYPE.SINGLE)
                     {
-                        if (Vector3.Distance(gameObject.transform.position, base.transform.position) < 1.5f)
+                        if (Vector3.Distance(obj2.transform.position, base.transform.position) < 1.5f)
                         {
-                            gameObject.GetComponent<HERO>().getSupply();
+                            obj2.GetComponent<HERO>().getSupply();
                         }
                     }
-                    else if (gameObject.GetPhotonView().IsMine && Vector3.Distance(gameObject.transform.position, base.transform.position) < 1.5f)
+                    else if (obj2.GetPhotonView().isMine && (Vector3.Distance(obj2.transform.position, base.transform.position) < 1.5f))
                     {
-                        gameObject.GetComponent<HERO>().getSupply();
+                        obj2.GetComponent<HERO>().getSupply();
                     }
                 }
             }
         }
     }
 }
+

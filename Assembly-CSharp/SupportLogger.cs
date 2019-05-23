@@ -1,4 +1,4 @@
-﻿using Optimization.Caching;
+using System;
 using UnityEngine;
 
 public class SupportLogger : MonoBehaviour
@@ -7,13 +7,12 @@ public class SupportLogger : MonoBehaviour
 
     public void Start()
     {
-        GameObject gameObject = CacheGameObject.Find("PunSupportLogger");
-        if (gameObject == null)
+        if (GameObject.Find("PunSupportLogger") == null)
         {
-            gameObject = new GameObject("PunSupportLogger");
-            UnityEngine.Object.DontDestroyOnLoad(gameObject);
-            SupportLogging supportLogging = gameObject.AddComponent<SupportLogging>();
-            supportLogging.LogTrafficStats = this.LogTrafficStats;
+            GameObject target = new GameObject("PunSupportLogger");
+            UnityEngine.Object.DontDestroyOnLoad(target);
+            target.AddComponent<SupportLogging>().LogTrafficStats = this.LogTrafficStats;
         }
     }
 }
+

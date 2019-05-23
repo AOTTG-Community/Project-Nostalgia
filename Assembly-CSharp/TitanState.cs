@@ -1,4 +1,6 @@
-﻿public enum TitanState
+using System;
+
+public enum TitanState
 {
     idle,
     attack,
@@ -17,3 +19,4 @@
     sit,
     recover
 }
+

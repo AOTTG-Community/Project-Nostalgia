@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 public class LevelTriggerRacingEnd : MonoBehaviour
 {
@@ -6,20 +7,16 @@ public class LevelTriggerRacingEnd : MonoBehaviour
 
     private void OnTriggerStay(Collider other)
     {
-        if (this.disable)
+        if (!this.disable && (other.gameObject.tag == "Player"))
         {
-            return;
-        }
-        if (other.gameObject.CompareTag("Player"))
-        {
-            if (IN_GAME_MAIN_CAMERA.GameType == GameType.Single)
+            if (IN_GAME_MAIN_CAMERA.gametype == GAMETYPE.SINGLE)
             {
-                FengGameManagerMKII.FGM.GameWin();
+                GameObject.Find("MultiplayerManager").GetComponent<FengGameManagerMKII>().gameWin();
                 this.disable = true;
             }
-            else if (other.gameObject.GetComponent<HERO>().BasePV.IsMine)
+            else if (other.gameObject.GetComponent<HERO>().photonView.isMine)
             {
-                FengGameManagerMKII.FGM.MultiplayerRacingFinsih();
+                GameObject.Find("MultiplayerManager").GetComponent<FengGameManagerMKII>().multiplayerRacingFinsih();
                 this.disable = true;
             }
         }
@@ -30,3 +27,4 @@ public class LevelTriggerRacingEnd : MonoBehaviour
         this.disable = false;
     }
 }
+

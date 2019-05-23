@@ -1,15 +1,15 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 public class LevelTriggerHint : MonoBehaviour
 {
-    private bool on;
     public string content;
-
     public HintType myhint;
+    private bool on;
 
     private void OnTriggerStay(Collider other)
     {
-        if (other.gameObject.CompareTag("Player"))
+        if (other.gameObject.tag == "Player")
         {
             this.on = true;
         }
@@ -17,91 +17,65 @@ public class LevelTriggerHint : MonoBehaviour
 
     private void Start()
     {
-        if (!FengGameManagerMKII.Level.Hint)
+        if (!LevelInfo.getInfo(FengGameManagerMKII.level).hint)
         {
             base.enabled = false;
         }
-        if (this.content != string.Empty)
+        if (this.content == string.Empty)
         {
-            return;
-        }
-        switch (this.myhint)
-        {
-            case HintType.MOVE:
-                this.content = string.Concat(new string[]
+            switch (this.myhint)
+            {
+                case HintType.MOVE:
                 {
-                "Hello soldier!\nWelcome to Attack On Titan Tribute Game!\n Press [F7D358]",
-                FengCustomInputs.Main.inputString[InputCode.up],
-                FengCustomInputs.Main.inputString[InputCode.left],
-                FengCustomInputs.Main.inputString[InputCode.down],
-                FengCustomInputs.Main.inputString[InputCode.right],
-                "[-] to Move."
-                });
-                break;
+                    string[] textArray2 = new string[] { "Hello soldier!\nWelcome to Attack On Titan Tribute Game!\n Press [F7D358]", GameObject.Find("InputManagerController").GetComponent<FengCustomInputs>().inputString[InputCode.up], GameObject.Find("InputManagerController").GetComponent<FengCustomInputs>().inputString[InputCode.left], GameObject.Find("InputManagerController").GetComponent<FengCustomInputs>().inputString[InputCode.down], GameObject.Find("InputManagerController").GetComponent<FengCustomInputs>().inputString[InputCode.right], "[-] to Move." };
+                    this.content = string.Concat(textArray2);
+                    break;
+                }
+                case HintType.TELE:
+                    this.content = "Move to [82FA58]green warp point[-] to proceed.";
+                    break;
 
-            case HintType.TELE:
-                this.content = "Move to [82FA58]green warp point[-] to proceed.";
-                break;
-
-            case HintType.CAMA:
-                this.content = string.Concat(new string[]
+                case HintType.CAMA:
                 {
-                "Press [F7D358]",
-                FengCustomInputs.Main.inputString[InputCode.camera],
-                "[-] to change camera mode\nPress [F7D358]",
-                FengCustomInputs.Main.inputString[InputCode.hideCursor],
-                "[-] to hide or show the cursor."
-                });
-                break;
+                    string[] textArray3 = new string[] { "Press [F7D358]", GameObject.Find("InputManagerController").GetComponent<FengCustomInputs>().inputString[InputCode.camera], "[-] to change camera mode\nPress [F7D358]", GameObject.Find("InputManagerController").GetComponent<FengCustomInputs>().inputString[InputCode.hideCursor], "[-] to hide or show the cursor." };
+                    this.content = string.Concat(textArray3);
+                    break;
+                }
+                case HintType.JUMP:
+                    this.content = "Press [F7D358]" + GameObject.Find("InputManagerController").GetComponent<FengCustomInputs>().inputString[InputCode.jump] + "[-] to Jump.";
+                    break;
 
-            case HintType.JUMP:
-                this.content = "Press [F7D358]" + FengCustomInputs.Main.inputString[InputCode.jump] + "[-] to Jump.";
-                break;
+                case HintType.JUMP2:
+                    this.content = "Press [F7D358]" + GameObject.Find("InputManagerController").GetComponent<FengCustomInputs>().inputString[InputCode.up] + "[-] towards a wall to perform a wall-run.";
+                    break;
 
-            case HintType.JUMP2:
-                this.content = "Press [F7D358]" + FengCustomInputs.Main.inputString[InputCode.up] + "[-] towards a wall to perform a wall-run.";
-                break;
-
-            case HintType.HOOK:
-                this.content = string.Concat(new string[]
+                case HintType.HOOK:
                 {
-                "Press and Hold[F7D358] ",
-                FengCustomInputs.Main.inputString[InputCode.leftRope],
-                "[-] or [F7D358]",
-                FengCustomInputs.Main.inputString[InputCode.rightRope],
-                "[-] to launch your grapple.\nNow Try hooking to the [>3<] box. "
-                });
-                break;
-
-            case HintType.HOOK2:
-                this.content = string.Concat(new string[]
+                    string[] textArray4 = new string[] { "Press and Hold[F7D358] ", GameObject.Find("InputManagerController").GetComponent<FengCustomInputs>().inputString[InputCode.leftRope], "[-] or [F7D358]", GameObject.Find("InputManagerController").GetComponent<FengCustomInputs>().inputString[InputCode.rightRope], "[-] to launch your grapple.\nNow Try hooking to the [>3<] box. " };
+                    this.content = string.Concat(textArray4);
+                    break;
+                }
+                case HintType.HOOK2:
                 {
-                "Press and Hold[F7D358] ",
-                FengCustomInputs.Main.inputString[InputCode.bothRope],
-                "[-] to launch both of your grapples at the same Time.\n\nNow aim between the two black blocks. \nYou will see the mark '<' and '>' appearing on the blocks. \nThen press ",
-                FengCustomInputs.Main.inputString[InputCode.bothRope],
-                " to hook the blocks."
-                });
-                break;
+                    string[] textArray5 = new string[] { "Press and Hold[F7D358] ", GameObject.Find("InputManagerController").GetComponent<FengCustomInputs>().inputString[InputCode.bothRope], "[-] to launch both of your grapples at the same Time.\n\nNow aim between the two black blocks. \nYou will see the mark '<' and '>' appearing on the blocks. \nThen press ", GameObject.Find("InputManagerController").GetComponent<FengCustomInputs>().inputString[InputCode.bothRope], " to hook the blocks." };
+                    this.content = string.Concat(textArray5);
+                    break;
+                }
+                case HintType.SUPPLY:
+                    this.content = "Press [F7D358]" + GameObject.Find("InputManagerController").GetComponent<FengCustomInputs>().inputString[InputCode.reload] + "[-] to reload your blades.\n Move to the supply station to refill your gas and blades.";
+                    break;
 
-            case HintType.SUPPLY:
-                this.content = "Press [F7D358]" + FengCustomInputs.Main.inputString[InputCode.reload] + "[-] to reload your blades.\n Move to the supply station to refill your gas and blades.";
-                break;
+                case HintType.DODGE:
+                    this.content = "Press [F7D358]" + GameObject.Find("InputManagerController").GetComponent<FengCustomInputs>().inputString[InputCode.dodge] + "[-] to Dodge.";
+                    break;
 
-            case HintType.DODGE:
-                this.content = "Press [F7D358]" + FengCustomInputs.Main.inputString[InputCode.dodge] + "[-] to Dodge.";
-                break;
-
-            case HintType.ATTACK:
-                this.content = string.Concat(new string[]
+                case HintType.ATTACK:
                 {
-                "Press [F7D358]",
-                FengCustomInputs.Main.inputString[InputCode.attack0],
-                "[-] to Attack. \nPress [F7D358]",
-                FengCustomInputs.Main.inputString[InputCode.attack1],
-                "[-] to use special attack.\n***You can only kill a titan by slashing his [FA5858]NAPE[-].***\n\n"
-                });
-                break;
+                    string[] textArray1 = new string[] { "Press [F7D358]", GameObject.Find("InputManagerController").GetComponent<FengCustomInputs>().inputString[InputCode.attack0], "[-] to Attack. \nPress [F7D358]", GameObject.Find("InputManagerController").GetComponent<FengCustomInputs>().inputString[InputCode.attack1], "[-] to use special attack.\n***You can only kill a titan by slashing his [FA5858]NAPE[-].***\n\n" };
+                    this.content = string.Concat(textArray1);
+                    break;
+                }
+            }
         }
     }
 
@@ -109,8 +83,9 @@ public class LevelTriggerHint : MonoBehaviour
     {
         if (this.on)
         {
-            FengGameManagerMKII.FGM.ShowHUDInfoCenter(this.content + "\n\n\n\n\n");
+            GameObject.Find("MultiplayerManager").GetComponent<FengGameManagerMKII>().ShowHUDInfoCenter(this.content + "\n\n\n\n\n");
             this.on = false;
         }
     }
 }
+

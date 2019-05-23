@@ -1,79 +1,68 @@
-﻿using Optimization.Caching;
+using Photon;
+using System;
 using UnityEngine;
 
 public class RockThrow : Photon.MonoBehaviour
 {
-    private Transform baseT;
     private bool launched;
     private Vector3 oldP;
     private Vector3 r;
     private Vector3 v;
 
-    private void Awake()
-    {
-        baseT = transform;
-    }
-
     private void explore()
     {
-        GameObject gameObject;
-        if (IN_GAME_MAIN_CAMERA.GameType == GameType.Multi && PhotonNetwork.IsMasterClient)
+        GameObject obj2;
+        if ((IN_GAME_MAIN_CAMERA.gametype == GAMETYPE.MULTIPLAYER) && PhotonNetwork.isMasterClient)
         {
-            gameObject = Pool.NetworkEnable("FX/boom6", baseT.position, baseT.rotation, 0);
-            if (baseT.root.gameObject.GetComponent<EnemyfxIDcontainer>() != null)
+            obj2 = PhotonNetwork.Instantiate("FX/boom6", base.transform.position, base.transform.rotation, 0);
+            if (base.transform.root.gameObject.GetComponent<EnemyfxIDcontainer>() != null)
             {
-                gameObject.GetComponent<EnemyfxIDcontainer>().myOwnerViewID = baseT.root.gameObject.GetComponent<EnemyfxIDcontainer>().myOwnerViewID;
-                gameObject.GetComponent<EnemyfxIDcontainer>().titanName = baseT.root.gameObject.GetComponent<EnemyfxIDcontainer>().titanName;
+                obj2.GetComponent<EnemyfxIDcontainer>().myOwnerViewID = base.transform.root.gameObject.GetComponent<EnemyfxIDcontainer>().myOwnerViewID;
+                obj2.GetComponent<EnemyfxIDcontainer>().titanName = base.transform.root.gameObject.GetComponent<EnemyfxIDcontainer>().titanName;
             }
         }
         else
         {
-            gameObject = Pool.Enable("FX/boom6", baseT.position, baseT.rotation);//(GameObject)UnityEngine.Object.Instantiate(CacheResources.Load("FX/boom6"), baseT.position, baseT.rotation);
+            obj2 = (GameObject) UnityEngine.Object.Instantiate(Resources.Load("FX/boom6"), base.transform.position, base.transform.rotation);
         }
-        gameObject.transform.localScale = baseT.localScale;
-        float num = 1f - Vector3.Distance(IN_GAME_MAIN_CAMERA.BaseCamera.transform.position, gameObject.transform.position) * 0.05f;
-        num = Mathf.Min(1f, num);
-        IN_GAME_MAIN_CAMERA.MainCamera.startShake(num, num, 0.95f);
-        if (IN_GAME_MAIN_CAMERA.GameType == GameType.Single)
+        obj2.transform.localScale = base.transform.localScale;
+        float b = 1f - (Vector3.Distance(GameObject.Find("MainCamera").transform.position, obj2.transform.position) * 0.05f);
+        b = Mathf.Min(1f, b);
+        GameObject.Find("MainCamera").GetComponent<IN_GAME_MAIN_CAMERA>().startShake(b, b, 0.95f);
+        if (IN_GAME_MAIN_CAMERA.gametype == GAMETYPE.SINGLE)
         {
-            Pool.Disable(gameObject);
+            UnityEngine.Object.Destroy(base.gameObject);
         }
         else
         {
-            PhotonNetwork.Destroy(BasePV);
+            PhotonNetwork.Destroy(base.photonView);
         }
     }
 
     private void hitPlayer(GameObject hero)
     {
-        if (hero != null && !hero.GetComponent<HERO>().HasDied() && !hero.GetComponent<HERO>().IsInvincible())
+        if (((hero != null) && !hero.GetComponent<HERO>().HasDied()) && !hero.GetComponent<HERO>().isInvincible())
         {
-            if (IN_GAME_MAIN_CAMERA.GameType == GameType.Single)
+            if (IN_GAME_MAIN_CAMERA.gametype == GAMETYPE.SINGLE)
             {
                 if (!hero.GetComponent<HERO>().isGrabbed)
                 {
-                    hero.GetComponent<HERO>().die(this.v.normalized * 1000f + Vectors.up * 50f, false);
+                    hero.GetComponent<HERO>().die((Vector3) ((this.v.normalized * 1000f) + (Vector3.up * 50f)), false);
                 }
             }
-            else if (IN_GAME_MAIN_CAMERA.GameType == GameType.Multi && !hero.GetComponent<HERO>().HasDied() && !hero.GetComponent<HERO>().isGrabbed)
+            else if (((IN_GAME_MAIN_CAMERA.gametype == GAMETYPE.MULTIPLAYER) && !hero.GetComponent<HERO>().HasDied()) && !hero.GetComponent<HERO>().isGrabbed)
             {
                 hero.GetComponent<HERO>().markDie();
-                int num = -1;
-                string text = string.Empty;
-                if (baseT.root.gameObject.GetComponent<EnemyfxIDcontainer>() != null)
+                int myOwnerViewID = -1;
+                string titanName = string.Empty;
+                if (base.transform.root.gameObject.GetComponent<EnemyfxIDcontainer>() != null)
                 {
-                    num = baseT.root.gameObject.GetComponent<EnemyfxIDcontainer>().myOwnerViewID;
-                    text = baseT.root.gameObject.GetComponent<EnemyfxIDcontainer>().titanName;
+                    myOwnerViewID = base.transform.root.gameObject.GetComponent<EnemyfxIDcontainer>().myOwnerViewID;
+                    titanName = base.transform.root.gameObject.GetComponent<EnemyfxIDcontainer>().titanName;
                 }
-                Debug.Log("rock hit player " + text);
-                hero.GetComponent<HERO>().BasePV.RPC("netDie", PhotonTargets.All, new object[]
-                {
-                    this.v.normalized * 1000f + Vectors.up * 50f,
-                    false,
-                    num,
-                    text,
-                    true
-                });
+                Debug.Log("rock hit player " + titanName);
+                object[] parameters = new object[] { (Vector3) ((this.v.normalized * 1000f) + (Vector3.up * 50f)), false, myOwnerViewID, titanName, true };
+                hero.GetComponent<HERO>().photonView.RPC("netDie", PhotonTargets.All, parameters);
             }
         }
     }
@@ -82,99 +71,101 @@ public class RockThrow : Photon.MonoBehaviour
     private void initRPC(int viewID, Vector3 scale, Vector3 pos, float level)
     {
         GameObject gameObject = PhotonView.Find(viewID).gameObject;
-        Transform parent = gameObject.transform.Find("Amarture/Core/Controller_Body/hip/spine/chest/shoulder_R/upper_arm_R/forearm_R/hand_R/hand_R_001");
-        baseT.localScale = gameObject.transform.localScale;
-        baseT.parent = parent;
-        baseT.localPosition = pos;
+        Transform transform = gameObject.transform.Find("Amarture/Core/Controller_Body/hip/spine/chest/shoulder_R/upper_arm_R/forearm_R/hand_R/hand_R_001");
+        base.transform.localScale = gameObject.transform.localScale;
+        base.transform.parent = transform;
+        base.transform.localPosition = pos;
+    }
+
+    public void launch(Vector3 v1)
+    {
+        this.launched = true;
+        this.oldP = base.transform.position;
+        this.v = v1;
+        if ((IN_GAME_MAIN_CAMERA.gametype == GAMETYPE.MULTIPLAYER) && PhotonNetwork.isMasterClient)
+        {
+            object[] parameters = new object[] { this.v, this.oldP };
+            base.photonView.RPC("launchRPC", PhotonTargets.Others, parameters);
+        }
     }
 
     [RPC]
     private void launchRPC(Vector3 v, Vector3 p)
     {
         this.launched = true;
-        baseT.position = p;
-        this.oldP = p;
-        baseT.parent = null;
+        Vector3 vector = p;
+        base.transform.position = vector;
+        this.oldP = vector;
+        base.transform.parent = null;
         this.launch(v);
     }
 
     private void Start()
     {
-        this.r = new Vector3(UnityEngine.Random.Range(-5f, 5f), UnityEngine.Random.Range(-5f, 5f), UnityEngine.Random.Range(-5f, 5f));
+        this.r = new Vector3(UnityEngine.Random.Range((float) -5f, (float) 5f), UnityEngine.Random.Range((float) -5f, (float) 5f), UnityEngine.Random.Range((float) -5f, (float) 5f));
     }
 
     private void Update()
     {
         if (this.launched)
         {
-            baseT.Rotate(this.r);
-            this.v -= 20f * Vectors.up * Time.deltaTime;
-            baseT.position += this.v * Time.deltaTime;
-            if (IN_GAME_MAIN_CAMERA.GameType == GameType.Multi && !PhotonNetwork.IsMasterClient)
+            base.transform.Rotate(this.r);
+            this.v -= (Vector3) ((20f * Vector3.up) * Time.deltaTime);
+            Transform transform = base.transform;
+            transform.position += (Vector3) (this.v * Time.deltaTime);
+            if ((IN_GAME_MAIN_CAMERA.gametype != GAMETYPE.MULTIPLAYER) || PhotonNetwork.isMasterClient)
             {
-                return;
-            }
-            RaycastHit[] array = Physics.SphereCastAll(baseT.position, 2.5f * baseT.lossyScale.x, baseT.position - this.oldP, Vector3.Distance(baseT.position, this.oldP), Layers.PlayersEnemyAABGround);
-            foreach (RaycastHit raycastHit in array)
-            {
-                if (raycastHit.collider.gameObject.layer == Layers.EnemyAABBN)
+                LayerMask mask = ((int) 1) << LayerMask.NameToLayer("Ground");
+                LayerMask mask2 = ((int) 1) << LayerMask.NameToLayer("Players");
+                LayerMask mask3 = ((int) 1) << LayerMask.NameToLayer("EnemyAABB");
+                LayerMask mask4 = (mask2 | mask) | mask3;
+                foreach (RaycastHit hit in Physics.SphereCastAll(base.transform.position, 2.5f * base.transform.lossyScale.x, base.transform.position - this.oldP, Vector3.Distance(base.transform.position, this.oldP), (int) mask4))
                 {
-                    GameObject gameObject = raycastHit.collider.gameObject.transform.root.gameObject;
-                    if (gameObject.GetComponent<TITAN>() && !gameObject.GetComponent<TITAN>().hasDie)
+                    if (LayerMask.LayerToName(hit.collider.gameObject.layer) == "EnemyAABB")
                     {
-                        gameObject.GetComponent<TITAN>().hitAnkle();
-                        Vector3 position = baseT.position;
-                        if (IN_GAME_MAIN_CAMERA.GameType == GameType.Single)
+                        GameObject gameObject = hit.collider.gameObject.transform.root.gameObject;
+                        if ((gameObject.GetComponent<TITAN>() != null) && !gameObject.GetComponent<TITAN>().hasDie)
                         {
                             gameObject.GetComponent<TITAN>().hitAnkle();
-                        }
-                        else
-                        {
-                            if (baseT.root.gameObject.GetComponent<EnemyfxIDcontainer>() != null && PhotonView.Find(baseT.root.gameObject.GetComponent<EnemyfxIDcontainer>().myOwnerViewID))
+                            Vector3 position = base.transform.position;
+                            if (IN_GAME_MAIN_CAMERA.gametype == GAMETYPE.SINGLE)
                             {
-                                position = PhotonView.Find(baseT.root.gameObject.GetComponent<EnemyfxIDcontainer>().myOwnerViewID).transform.position;
+                                gameObject.GetComponent<TITAN>().hitAnkle();
                             }
-                            gameObject.GetComponent<HERO>().BasePV.RPC("hitAnkleRPC", PhotonTargets.All, new object[0]);
+                            else
+                            {
+                                if ((base.transform.root.gameObject.GetComponent<EnemyfxIDcontainer>() != null) && (PhotonView.Find(base.transform.root.gameObject.GetComponent<EnemyfxIDcontainer>().myOwnerViewID) != null))
+                                {
+                                    position = PhotonView.Find(base.transform.root.gameObject.GetComponent<EnemyfxIDcontainer>().myOwnerViewID).transform.position;
+                                }
+                                gameObject.GetComponent<HERO>().photonView.RPC("hitAnkleRPC", PhotonTargets.All, new object[0]);
+                            }
                         }
+                        this.explore();
                     }
-                    this.explore();
-                }
-                else if (raycastHit.collider.gameObject.layer == Layers.PlayersN)
-                {
-                    GameObject gameObject2 = raycastHit.collider.gameObject.transform.root.gameObject;
-                    if (gameObject2.GetComponent<TITAN_EREN>())
+                    else if (LayerMask.LayerToName(hit.collider.gameObject.layer) == "Players")
                     {
-                        if (!gameObject2.GetComponent<TITAN_EREN>().isHit)
+                        GameObject hero = hit.collider.gameObject.transform.root.gameObject;
+                        if (hero.GetComponent<TITAN_EREN>() != null)
                         {
-                            gameObject2.GetComponent<TITAN_EREN>().hitByTitan();
+                            if (!hero.GetComponent<TITAN_EREN>().isHit)
+                            {
+                                hero.GetComponent<TITAN_EREN>().hitByTitan();
+                            }
+                        }
+                        else if ((hero.GetComponent<HERO>() != null) && !hero.GetComponent<HERO>().isInvincible())
+                        {
+                            this.hitPlayer(hero);
                         }
                     }
-                    else if (gameObject2.GetComponent<HERO>() && !gameObject2.GetComponent<HERO>().IsInvincible())
+                    else if (LayerMask.LayerToName(hit.collider.gameObject.layer) == "Ground")
                     {
-                        this.hitPlayer(gameObject2);
+                        this.explore();
                     }
                 }
-                else if (raycastHit.collider.gameObject.layer == Layers.GroundN)
-                {
-                    this.explore();
-                }
+                this.oldP = base.transform.position;
             }
-            this.oldP = baseT.position;
-        }
-    }
-
-    public void launch(Vector3 v1)
-    {
-        this.launched = true;
-        this.oldP = baseT.position;
-        this.v = v1;
-        if (IN_GAME_MAIN_CAMERA.GameType == GameType.Multi && PhotonNetwork.IsMasterClient)
-        {
-            BasePV.RPC("launchRPC", PhotonTargets.Others, new object[]
-            {
-                this.v,
-                this.oldP
-            });
         }
     }
 }
+

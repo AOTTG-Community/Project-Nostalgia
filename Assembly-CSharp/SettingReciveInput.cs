@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 public class SettingReciveInput : MonoBehaviour
 {
@@ -6,7 +7,7 @@ public class SettingReciveInput : MonoBehaviour
 
     private void OnClick()
     {
-        FengCustomInputs.Main.startListening(this.id);
+        GameObject.Find("InputManagerController").GetComponent<FengCustomInputs>().startListening(this.id);
         base.transform.Find("Label").gameObject.GetComponent<UILabel>().text = "*wait for input";
     }
 
@@ -18,3 +19,4 @@ public class SettingReciveInput : MonoBehaviour
     {
     }
 }
+

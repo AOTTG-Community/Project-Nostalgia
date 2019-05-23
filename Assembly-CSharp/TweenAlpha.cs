@@ -1,13 +1,41 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 [AddComponentMenu("NGUI/Tween/Alpha")]
 public class TweenAlpha : UITweener
 {
-    private UIPanel mPanel;
-    private UIWidget mWidget;
     public float from = 1f;
-
+    private UIPanel mPanel;
+    private Transform mTrans;
+    private UIWidget mWidget;
     public float to = 1f;
+
+    private void Awake()
+    {
+        this.mPanel = base.GetComponent<UIPanel>();
+        if (this.mPanel == null)
+        {
+            this.mWidget = base.GetComponentInChildren<UIWidget>();
+        }
+    }
+
+    public static TweenAlpha Begin(GameObject go, float duration, float alpha)
+    {
+        TweenAlpha alpha2 = UITweener.Begin<TweenAlpha>(go, duration);
+        alpha2.from = alpha2.alpha;
+        alpha2.to = alpha;
+        if (duration <= 0f)
+        {
+            alpha2.Sample(1f, true);
+            alpha2.enabled = false;
+        }
+        return alpha2;
+    }
+
+    protected override void OnUpdate(float factor, bool isFinished)
+    {
+        this.alpha = Mathf.Lerp(this.from, this.to, factor);
+    }
 
     public float alpha
     {
@@ -35,31 +63,5 @@ public class TweenAlpha : UITweener
             }
         }
     }
-
-    private void Awake()
-    {
-        this.mPanel = base.GetComponent<UIPanel>();
-        if (this.mPanel == null)
-        {
-            this.mWidget = base.GetComponentInChildren<UIWidget>();
-        }
-    }
-
-    protected override void OnUpdate(float factor, bool isFinished)
-    {
-        this.alpha = Mathf.Lerp(this.from, this.to, factor);
-    }
-
-    public static TweenAlpha Begin(GameObject go, float duration, float alpha)
-    {
-        TweenAlpha tweenAlpha = UITweener.Begin<TweenAlpha>(go, duration);
-        tweenAlpha.from = tweenAlpha.alpha;
-        tweenAlpha.to = alpha;
-        if (duration <= 0f)
-        {
-            tweenAlpha.Sample(1f, true);
-            tweenAlpha.enabled = false;
-        }
-        return tweenAlpha;
-    }
 }
+

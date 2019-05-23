@@ -1,34 +1,32 @@
-﻿using UnityEngine;
+using System;
+using System.Runtime.CompilerServices;
+using UnityEngine;
 
 [AddComponentMenu("NGUI/Internal/Event Listener")]
 public class UIEventListener : MonoBehaviour
 {
-    public UIEventListener.VoidDelegate onClick;
-    public UIEventListener.VoidDelegate onDoubleClick;
-    public UIEventListener.VectorDelegate onDrag;
-    public UIEventListener.ObjectDelegate onDrop;
-    public UIEventListener.BoolDelegate onHover;
-    public UIEventListener.StringDelegate onInput;
-    public UIEventListener.KeyCodeDelegate onKey;
-    public UIEventListener.BoolDelegate onPress;
-    public UIEventListener.FloatDelegate onScroll;
-    public UIEventListener.BoolDelegate onSelect;
-    public UIEventListener.VoidDelegate onSubmit;
+    public VoidDelegate onClick;
+    public VoidDelegate onDoubleClick;
+    public VectorDelegate onDrag;
+    public ObjectDelegate onDrop;
+    public BoolDelegate onHover;
+    public StringDelegate onInput;
+    public KeyCodeDelegate onKey;
+    public BoolDelegate onPress;
+    public FloatDelegate onScroll;
+    public BoolDelegate onSelect;
+    public VoidDelegate onSubmit;
     public object parameter;
 
-    public delegate void BoolDelegate(GameObject go, bool state);
-
-    public delegate void FloatDelegate(GameObject go, float delta);
-
-    public delegate void KeyCodeDelegate(GameObject go, KeyCode key);
-
-    public delegate void ObjectDelegate(GameObject go, GameObject draggedObject);
-
-    public delegate void StringDelegate(GameObject go, string text);
-
-    public delegate void VectorDelegate(GameObject go, Vector2 delta);
-
-    public delegate void VoidDelegate(GameObject go);
+    public static UIEventListener Get(GameObject go)
+    {
+        UIEventListener component = go.GetComponent<UIEventListener>();
+        if (component == null)
+        {
+            component = go.AddComponent<UIEventListener>();
+        }
+        return component;
+    }
 
     private void OnClick()
     {
@@ -118,13 +116,18 @@ public class UIEventListener : MonoBehaviour
         }
     }
 
-    public static UIEventListener Get(GameObject go)
-    {
-        UIEventListener uieventListener = go.GetComponent<UIEventListener>();
-        if (uieventListener == null)
-        {
-            uieventListener = go.AddComponent<UIEventListener>();
-        }
-        return uieventListener;
-    }
+    public delegate void BoolDelegate(GameObject go, bool state);
+
+    public delegate void FloatDelegate(GameObject go, float delta);
+
+    public delegate void KeyCodeDelegate(GameObject go, KeyCode key);
+
+    public delegate void ObjectDelegate(GameObject go, GameObject draggedObject);
+
+    public delegate void StringDelegate(GameObject go, string text);
+
+    public delegate void VectorDelegate(GameObject go, Vector2 delta);
+
+    public delegate void VoidDelegate(GameObject go);
 }
+

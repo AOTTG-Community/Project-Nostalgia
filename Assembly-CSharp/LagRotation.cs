@@ -1,12 +1,13 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 [AddComponentMenu("NGUI/Examples/Lag Rotation")]
 public class LagRotation : MonoBehaviour
 {
+    public bool ignoreTimeScale;
     private Quaternion mAbsolute;
     private Quaternion mRelative;
     private Transform mTrans;
-    public bool ignoreTimeScale;
     public float speed = 10f;
     public int updateOrder;
 
@@ -35,3 +36,4 @@ public class LagRotation : MonoBehaviour
         }
     }
 }
+

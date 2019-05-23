@@ -1,53 +1,16 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 [AddComponentMenu("NGUI/Interaction/Button Color")]
 public class UIButtonColor : MonoBehaviour
 {
+    public float duration = 0.2f;
+    public Color hover = new Color(0.6f, 1f, 0.2f, 1f);
     protected Color mColor;
     protected bool mHighlighted;
     protected bool mStarted;
-    public float duration = 0.2f;
-    public Color hover = new Color(0.6f, 1f, 0.2f, 1f);
     public Color pressed = Color.grey;
     public GameObject tweenTarget;
-
-    public Color defaultColor
-    {
-        get
-        {
-            if (!this.mStarted)
-            {
-                this.Init();
-            }
-            return this.mColor;
-        }
-        set
-        {
-            this.mColor = value;
-        }
-    }
-
-    private void OnDisable()
-    {
-        if (this.mStarted && this.tweenTarget != null)
-        {
-            TweenColor component = this.tweenTarget.GetComponent<TweenColor>();
-            if (component != null)
-            {
-                component.color = this.mColor;
-                component.enabled = false;
-            }
-        }
-    }
-
-    private void Start()
-    {
-        if (!this.mStarted)
-        {
-            this.Init();
-            this.mStarted = true;
-        }
-    }
 
     protected void Init()
     {
@@ -84,6 +47,19 @@ public class UIButtonColor : MonoBehaviour
         this.OnEnable();
     }
 
+    private void OnDisable()
+    {
+        if (this.mStarted && (this.tweenTarget != null))
+        {
+            TweenColor component = this.tweenTarget.GetComponent<TweenColor>();
+            if (component != null)
+            {
+                component.color = this.mColor;
+                component.enabled = false;
+            }
+        }
+    }
+
     protected virtual void OnEnable()
     {
         if (this.mStarted && this.mHighlighted)
@@ -100,7 +76,7 @@ public class UIButtonColor : MonoBehaviour
             {
                 this.Start();
             }
-            TweenColor.Begin(this.tweenTarget, this.duration, (!isOver) ? this.mColor : this.hover);
+            TweenColor.Begin(this.tweenTarget, this.duration, !isOver ? this.mColor : this.hover);
             this.mHighlighted = isOver;
         }
     }
@@ -113,7 +89,33 @@ public class UIButtonColor : MonoBehaviour
             {
                 this.Start();
             }
-            TweenColor.Begin(this.tweenTarget, this.duration, (!isPressed) ? ((!UICamera.IsHighlighted(base.gameObject)) ? this.mColor : this.hover) : this.pressed);
+            TweenColor.Begin(this.tweenTarget, this.duration, !isPressed ? (!UICamera.IsHighlighted(base.gameObject) ? this.mColor : this.hover) : this.pressed);
+        }
+    }
+
+    private void Start()
+    {
+        if (!this.mStarted)
+        {
+            this.Init();
+            this.mStarted = true;
+        }
+    }
+
+    public Color defaultColor
+    {
+        get
+        {
+            if (!this.mStarted)
+            {
+                this.Init();
+            }
+            return this.mColor;
+        }
+        set
+        {
+            this.mColor = value;
         }
     }
 }
+

@@ -1,4 +1,6 @@
-﻿public enum OnSerializeTransform
+using System;
+
+public enum OnSerializeTransform
 {
     OnlyPosition,
     OnlyRotation,
@@ -6,3 +8,4 @@
     PositionAndRotation,
     All
 }
+

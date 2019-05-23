@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 public class OnStartDelete : MonoBehaviour
 {
@@ -7,3 +8,4 @@ public class OnStartDelete : MonoBehaviour
         UnityEngine.Object.DestroyObject(base.gameObject);
     }
 }
+

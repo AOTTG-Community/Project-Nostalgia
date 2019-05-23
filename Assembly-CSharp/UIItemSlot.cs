@@ -1,29 +1,33 @@
-﻿using System.Collections.Generic;
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 public abstract class UIItemSlot : MonoBehaviour
 {
-    private static InvGameItem mDraggedItem;
-    private InvGameItem mItem;
-    private string mText = string.Empty;
     public UIWidget background;
     public AudioClip errorSound;
     public AudioClip grabSound;
     public UISprite icon;
     public UILabel label;
+    private static InvGameItem mDraggedItem;
+    private InvGameItem mItem;
+    private string mText = string.Empty;
     public AudioClip placeSound;
-    protected abstract InvGameItem observedItem { get; }
+
+    protected UIItemSlot()
+    {
+    }
 
     private void OnClick()
     {
-        if (UIItemSlot.mDraggedItem != null)
+        if (mDraggedItem != null)
         {
             this.OnDrop(null);
         }
         else if (this.mItem != null)
         {
-            UIItemSlot.mDraggedItem = this.Replace(null);
-            if (UIItemSlot.mDraggedItem != null)
+            mDraggedItem = this.Replace(null);
+            if (mDraggedItem != null)
             {
                 NGUITools.PlaySound(this.grabSound);
             }
@@ -33,10 +37,10 @@ public abstract class UIItemSlot : MonoBehaviour
 
     private void OnDrag(Vector2 delta)
     {
-        if (UIItemSlot.mDraggedItem == null && this.mItem != null)
+        if ((mDraggedItem == null) && (this.mItem != null))
         {
             UICamera.currentTouch.clickNotification = UICamera.ClickNotification.BasedOnDelta;
-            UIItemSlot.mDraggedItem = this.Replace(null);
+            mDraggedItem = this.Replace(null);
             NGUITools.PlaySound(this.grabSound);
             this.UpdateCursor();
         }
@@ -44,12 +48,12 @@ public abstract class UIItemSlot : MonoBehaviour
 
     private void OnDrop(GameObject go)
     {
-        InvGameItem invGameItem = this.Replace(UIItemSlot.mDraggedItem);
-        if (UIItemSlot.mDraggedItem == invGameItem)
+        InvGameItem item = this.Replace(mDraggedItem);
+        if (mDraggedItem == item)
         {
             NGUITools.PlaySound(this.errorSound);
         }
-        else if (invGameItem != null)
+        else if (item != null)
         {
             NGUITools.PlaySound(this.grabSound);
         }
@@ -57,113 +61,100 @@ public abstract class UIItemSlot : MonoBehaviour
         {
             NGUITools.PlaySound(this.placeSound);
         }
-        UIItemSlot.mDraggedItem = invGameItem;
+        mDraggedItem = item;
         this.UpdateCursor();
     }
 
     private void OnTooltip(bool show)
     {
-        InvGameItem invGameItem = (!show) ? null : this.mItem;
-        if (invGameItem != null)
+        InvGameItem item = !show ? null : this.mItem;
+        if (item != null)
         {
-            InvBaseItem baseItem = invGameItem.baseItem;
+            InvBaseItem baseItem = item.baseItem;
             if (baseItem != null)
             {
-                string text = string.Concat(new string[]
-                {
-                    "[",
-                    NGUITools.EncodeColor(invGameItem.color),
-                    "]",
-                    invGameItem.name,
-                    "[-]\n"
-                });
-                string text2 = text;
-                text = string.Concat(new object[]
-                {
-                    text2,
-                    "[AFAFAF]Level ",
-                    invGameItem.itemLevel,
-                    " ",
-                    baseItem.slot
-                });
-                List<InvStat> list = invGameItem.CalculateStats();
-                int i = 0;
+                string[] textArray1 = new string[] { "[", NGUITools.EncodeColor(item.color), "]", item.name, "[-]\n" };
+                string str2 = string.Concat(textArray1);
+                object[] objArray1 = new object[] { str2, "[AFAFAF]Level ", item.itemLevel, " ", baseItem.slot };
+                string tooltipText = string.Concat(objArray1);
+                List<InvStat> list = item.CalculateStats();
+                int num = 0;
                 int count = list.Count;
-                while (i < count)
+                while (num < count)
                 {
-                    InvStat invStat = list[i];
-                    if (invStat.amount != 0)
+                    InvStat stat = list[num];
+                    if (stat.amount != 0)
                     {
-                        if (invStat.amount < 0)
+                        if (stat.amount < 0)
                         {
-                            text = text + "\n[FF0000]" + invStat.amount;
+                            tooltipText = tooltipText + "\n[FF0000]" + stat.amount;
                         }
                         else
                         {
-                            text = text + "\n[00FF00]+" + invStat.amount;
+                            tooltipText = tooltipText + "\n[00FF00]+" + stat.amount;
                         }
-                        if (invStat.modifier == InvStat.Modifier.Percent)
+                        if (stat.modifier == InvStat.Modifier.Percent)
                         {
-                            text += "%";
+                            tooltipText = tooltipText + "%";
                         }
-                        text = text + " " + invStat.id;
-                        text += "[-]";
+                        tooltipText = (tooltipText + " " + stat.id) + "[-]";
                     }
-                    i++;
+                    num++;
                 }
                 if (!string.IsNullOrEmpty(baseItem.description))
                 {
-                    text = text + "\n[FF9900]" + baseItem.description;
+                    tooltipText = tooltipText + "\n[FF9900]" + baseItem.description;
                 }
-                UITooltip.ShowText(text);
+                UITooltip.ShowText(tooltipText);
                 return;
             }
         }
         UITooltip.ShowText(null);
     }
 
+    protected abstract InvGameItem Replace(InvGameItem item);
     private void Update()
     {
         InvGameItem observedItem = this.observedItem;
         if (this.mItem != observedItem)
         {
             this.mItem = observedItem;
-            InvBaseItem invBaseItem = (observedItem == null) ? null : observedItem.baseItem;
+            InvBaseItem item2 = (observedItem == null) ? null : observedItem.baseItem;
             if (this.label != null)
             {
-                string text = (observedItem == null) ? null : observedItem.name;
+                string str = (observedItem == null) ? null : observedItem.name;
                 if (string.IsNullOrEmpty(this.mText))
                 {
                     this.mText = this.label.text;
                 }
-                this.label.text = ((text == null) ? this.mText : text);
+                this.label.text = (str == null) ? this.mText : str;
             }
             if (this.icon != null)
             {
-                if (invBaseItem == null || invBaseItem.iconAtlas == null)
+                if ((item2 == null) || (item2.iconAtlas == null))
                 {
                     this.icon.enabled = false;
                 }
                 else
                 {
-                    this.icon.atlas = invBaseItem.iconAtlas;
-                    this.icon.spriteName = invBaseItem.iconName;
+                    this.icon.atlas = item2.iconAtlas;
+                    this.icon.spriteName = item2.iconName;
                     this.icon.enabled = true;
                     this.icon.MakePixelPerfect();
                 }
             }
             if (this.background != null)
             {
-                this.background.color = ((observedItem == null) ? Color.white : observedItem.color);
+                this.background.color = (observedItem == null) ? Color.white : observedItem.color;
             }
         }
     }
 
     private void UpdateCursor()
     {
-        if (UIItemSlot.mDraggedItem != null && UIItemSlot.mDraggedItem.baseItem != null)
+        if ((mDraggedItem != null) && (mDraggedItem.baseItem != null))
         {
-            UICursor.Set(UIItemSlot.mDraggedItem.baseItem.iconAtlas, UIItemSlot.mDraggedItem.baseItem.iconName);
+            UICursor.Set(mDraggedItem.baseItem.iconAtlas, mDraggedItem.baseItem.iconName);
         }
         else
         {
@@ -171,5 +162,6 @@ public abstract class UIItemSlot : MonoBehaviour
         }
     }
 
-    protected abstract InvGameItem Replace(InvGameItem item);
+    protected abstract InvGameItem observedItem { get; }
 }
+

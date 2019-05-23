@@ -1,27 +1,92 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
-[AddComponentMenu("NGUI/Internal/Update Manager")]
-[ExecuteInEditMode]
+[AddComponentMenu("NGUI/Internal/Update Manager"), ExecuteInEditMode]
 public class UpdateManager : MonoBehaviour
 {
+    private BetterList<DestroyEntry> mDest = new BetterList<DestroyEntry>();
     private static UpdateManager mInst;
-
-    private BetterList<UpdateManager.DestroyEntry> mDest = new BetterList<UpdateManager.DestroyEntry>();
-
-    private List<UpdateManager.UpdateEntry> mOnCoro = new List<UpdateManager.UpdateEntry>();
-
-    private List<UpdateManager.UpdateEntry> mOnLate = new List<UpdateManager.UpdateEntry>();
-
-    private List<UpdateManager.UpdateEntry> mOnUpdate = new List<UpdateManager.UpdateEntry>();
-
+    private List<UpdateEntry> mOnCoro = new List<UpdateEntry>();
+    private List<UpdateEntry> mOnLate = new List<UpdateEntry>();
+    private List<UpdateEntry> mOnUpdate = new List<UpdateEntry>();
     private float mTime;
 
-    public delegate void OnUpdate(float delta);
+    private void Add(MonoBehaviour mb, int updateOrder, OnUpdate func, List<UpdateEntry> list)
+    {
+        int num = 0;
+        int count = list.Count;
+        while (num < count)
+        {
+            UpdateEntry entry = list[num];
+            if (entry.func == func)
+            {
+                return;
+            }
+            num++;
+        }
+        UpdateEntry item = new UpdateEntry {
+            index = updateOrder,
+            func = func,
+            mb = mb,
+            isMonoBehaviour = mb != null
+        };
+        list.Add(item);
+        if (updateOrder != 0)
+        {
+            list.Sort(new Comparison<UpdateEntry>(UpdateManager.Compare));
+        }
+    }
 
-    private static int Compare(UpdateManager.UpdateEntry a, UpdateManager.UpdateEntry b)
+    public static void AddCoroutine(MonoBehaviour mb, int updateOrder, OnUpdate func)
+    {
+        CreateInstance();
+        mInst.Add(mb, updateOrder, func, mInst.mOnCoro);
+    }
+
+    public static void AddDestroy(UnityEngine.Object obj, float delay)
+    {
+        if (obj != null)
+        {
+            if (Application.isPlaying)
+            {
+                if (delay > 0f)
+                {
+                    CreateInstance();
+                    DestroyEntry item = new DestroyEntry {
+                        obj = obj,
+                        time = Time.realtimeSinceStartup + delay
+                    };
+                    mInst.mDest.Add(item);
+                }
+                else
+                {
+                    UnityEngine.Object.Destroy(obj);
+                }
+            }
+            else
+            {
+                UnityEngine.Object.DestroyImmediate(obj);
+            }
+        }
+    }
+
+    public static void AddLateUpdate(MonoBehaviour mb, int updateOrder, OnUpdate func)
+    {
+        CreateInstance();
+        mInst.Add(mb, updateOrder, func, mInst.mOnLate);
+    }
+
+    public static void AddUpdate(MonoBehaviour mb, int updateOrder, OnUpdate func)
+    {
+        CreateInstance();
+        mInst.Add(mb, updateOrder, func, mInst.mOnUpdate);
+    }
+
+    private static int Compare(UpdateEntry a, UpdateEntry b)
     {
         if (a.index < b.index)
         {
@@ -34,90 +99,56 @@ public class UpdateManager : MonoBehaviour
         return 0;
     }
 
-    private static void CreateInstance()
-    {
-        if (UpdateManager.mInst == null)
-        {
-            UpdateManager.mInst = (UnityEngine.Object.FindObjectOfType(typeof(UpdateManager)) as UpdateManager);
-            if (UpdateManager.mInst == null && Application.isPlaying)
-            {
-                GameObject gameObject = new GameObject("_UpdateManager");
-                UnityEngine.Object.DontDestroyOnLoad(gameObject);
-                UpdateManager.mInst = gameObject.AddComponent<UpdateManager>();
-            }
-        }
-    }
-
-    private void Add(MonoBehaviour mb, int updateOrder, UpdateManager.OnUpdate func, List<UpdateManager.UpdateEntry> list)
-    {
-        int i = 0;
-        int count = list.Count;
-        while (i < count)
-        {
-            UpdateManager.UpdateEntry updateEntry = list[i];
-            if (updateEntry.func == func)
-            {
-                return;
-            }
-            i++;
-        }
-        list.Add(new UpdateManager.UpdateEntry
-        {
-            index = updateOrder,
-            func = func,
-            mb = mb,
-            isMonoBehaviour = (mb != null)
-        });
-        if (updateOrder != 0)
-        {
-            list.Sort(new Comparison<UpdateManager.UpdateEntry>(UpdateManager.Compare));
-        }
-    }
-
+    [DebuggerHidden]
     private IEnumerator CoroutineFunction()
     {
-        while (Application.isPlaying)
-        {
-            if (!this.CoroutineUpdate())
-            {
-                break;
-            }
-            yield return null;
-        }
-        yield break;
+        return new c__Iterator8 { f__this = this };
     }
 
     private bool CoroutineUpdate()
     {
         float realtimeSinceStartup = Time.realtimeSinceStartup;
-        float num = realtimeSinceStartup - this.mTime;
-        if (num < 0.001f)
+        float delta = realtimeSinceStartup - this.mTime;
+        if (delta >= 0.001f)
         {
-            return true;
-        }
-        this.mTime = realtimeSinceStartup;
-        this.UpdateList(this.mOnCoro, num);
-        bool isPlaying = Application.isPlaying;
-        int i = this.mDest.size;
-        while (i > 0)
-        {
-            UpdateManager.DestroyEntry destroyEntry = this.mDest.buffer[--i];
-            if (!isPlaying || destroyEntry.time < this.mTime)
+            this.mTime = realtimeSinceStartup;
+            this.UpdateList(this.mOnCoro, delta);
+            bool isPlaying = Application.isPlaying;
+            int size = this.mDest.size;
+            while (size > 0)
             {
-                if (destroyEntry.obj != null)
+                DestroyEntry entry = this.mDest.buffer[--size];
+                if (!isPlaying || (entry.time < this.mTime))
                 {
-                    NGUITools.Destroy(destroyEntry.obj);
-                    destroyEntry.obj = null;
+                    if (entry.obj != null)
+                    {
+                        NGUITools.Destroy(entry.obj);
+                        entry.obj = null;
+                    }
+                    this.mDest.RemoveAt(size);
                 }
-                this.mDest.RemoveAt(i);
+            }
+            if (((this.mOnUpdate.Count == 0) && (this.mOnLate.Count == 0)) && ((this.mOnCoro.Count == 0) && (this.mDest.size == 0)))
+            {
+                NGUITools.Destroy(base.gameObject);
+                return false;
             }
         }
-        if (this.mOnUpdate.Count == 0 && this.mOnLate.Count == 0 && this.mOnCoro.Count == 0 && this.mDest.size == 0)
-        {
-            NGUITools.Destroy(base.gameObject);
-            return false;
-        }
         return true;
+    }
+
+    private static void CreateInstance()
+    {
+        if (mInst == null)
+        {
+            mInst = UnityEngine.Object.FindObjectOfType(typeof(UpdateManager)) as UpdateManager;
+            if ((mInst == null) && Application.isPlaying)
+            {
+                GameObject target = new GameObject("_UpdateManager");
+                UnityEngine.Object.DontDestroyOnLoad(target);
+                mInst = target.AddComponent<UpdateManager>();
+            }
+        }
     }
 
     private void LateUpdate()
@@ -145,7 +176,7 @@ public class UpdateManager : MonoBehaviour
 
     private void Update()
     {
-        if (UpdateManager.mInst != this)
+        if (mInst != this)
         {
             NGUITools.Destroy(base.gameObject);
         }
@@ -155,79 +186,101 @@ public class UpdateManager : MonoBehaviour
         }
     }
 
-    private void UpdateList(List<UpdateManager.UpdateEntry> list, float delta)
+    private void UpdateList(List<UpdateEntry> list, float delta)
     {
-        int i = list.Count;
-        while (i > 0)
+        int count = list.Count;
+        while (count > 0)
         {
-            UpdateManager.UpdateEntry updateEntry = list[--i];
-            if (updateEntry.isMonoBehaviour)
+            UpdateEntry entry = list[--count];
+            if (entry.isMonoBehaviour)
             {
-                if (updateEntry.mb == null)
+                if (entry.mb == null)
                 {
-                    list.RemoveAt(i);
+                    list.RemoveAt(count);
                     continue;
                 }
-                if (!updateEntry.mb.enabled || !NGUITools.GetActive(updateEntry.mb.gameObject))
+                if (!entry.mb.enabled || !NGUITools.GetActive(entry.mb.gameObject))
                 {
                     continue;
                 }
             }
-            updateEntry.func(delta);
+            entry.func(delta);
         }
     }
 
-    public static void AddCoroutine(MonoBehaviour mb, int updateOrder, UpdateManager.OnUpdate func)
+    [CompilerGenerated]
+    private sealed class c__Iterator8 : IEnumerator, IDisposable, IEnumerator<object>
     {
-        UpdateManager.CreateInstance();
-        UpdateManager.mInst.Add(mb, updateOrder, func, UpdateManager.mInst.mOnCoro);
-    }
+        internal object current;
+        internal int PC;
+        internal UpdateManager f__this;
 
-    public static void AddDestroy(UnityEngine.Object obj, float delay)
-    {
-        if (obj == null)
+        [DebuggerHidden]
+        public void Dispose()
         {
-            return;
+            this.PC = -1;
         }
-        if (Application.isPlaying)
+
+        public bool MoveNext()
         {
-            if (delay > 0f)
+            uint num = (uint) this.PC;
+            this.PC = -1;
+            switch (num)
             {
-                UpdateManager.CreateInstance();
-                UpdateManager.DestroyEntry destroyEntry = new UpdateManager.DestroyEntry();
-                destroyEntry.obj = obj;
-                destroyEntry.time = Time.realtimeSinceStartup + delay;
-                UpdateManager.mInst.mDest.Add(destroyEntry);
+                case 0:
+                case 1:
+                    if (Application.isPlaying)
+                    {
+                        if (!this.f__this.CoroutineUpdate())
+                        {
+                            break;
+                        }
+                        this.current = null;
+                        this.PC = 1;
+                        return true;
+                    }
+                    break;
+
+                default:
+                    goto Label_0064;
             }
-            else
-            {
-                UnityEngine.Object.Destroy(obj);
-            }
+            this.PC = -1;
+        Label_0064:
+            return false;
         }
-        else
+
+        [DebuggerHidden]
+        public void Reset()
         {
-            UnityEngine.Object.DestroyImmediate(obj);
+            throw new NotSupportedException();
         }
-    }
 
-    public static void AddLateUpdate(MonoBehaviour mb, int updateOrder, UpdateManager.OnUpdate func)
-    {
-        UpdateManager.CreateInstance();
-        UpdateManager.mInst.Add(mb, updateOrder, func, UpdateManager.mInst.mOnLate);
-    }
+        object IEnumerator<object>.Current
+        {
+            [DebuggerHidden]
+            get
+            {
+                return this.current;
+            }
+        }
 
-    public static void AddUpdate(MonoBehaviour mb, int updateOrder, UpdateManager.OnUpdate func)
-    {
-        UpdateManager.CreateInstance();
-        UpdateManager.mInst.Add(mb, updateOrder, func, UpdateManager.mInst.mOnUpdate);
+        object IEnumerator.Current
+        {
+            [DebuggerHidden]
+            get
+            {
+                return this.current;
+            }
+        }
     }
 
     public class DestroyEntry
     {
         public UnityEngine.Object obj;
-
         public float time;
     }
+
+    public delegate void OnUpdate(float delta);
 
     public class UpdateEntry
     {
@@ -237,3 +290,4 @@ public class UpdateManager : MonoBehaviour
         public MonoBehaviour mb;
     }
 }
+

@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 public class TestDontDestroyOnLoad : MonoBehaviour
 {
@@ -7,3 +8,4 @@ public class TestDontDestroyOnLoad : MonoBehaviour
         UnityEngine.Object.DontDestroyOnLoad(base.gameObject);
     }
 }
+

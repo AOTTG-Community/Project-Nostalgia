@@ -1,806 +1,841 @@
-﻿using Optimization;
-using Optimization.Caching;
+using ExitGames.Client.Photon;
+using Photon;
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using UnityEngine;
 
 public class FengGameManagerMKII : Photon.MonoBehaviour
 {
-    private static readonly Hashtable itweenHash = new Hashtable() { { "x", 0 }, { "y", 0 }, { "z", 0 }, { "easetype", iTween.EaseType.easeInBounce }, { "time", 0.5f }, { "delay", 2f } };
-    private static Queue<KillInfoComponent> killInfoList = new Queue<KillInfoComponent>();
-    private FEMALE_TITAN annie;
-    //private ArrayList chatContent;
-    private COLOSSAL_TITAN colossal;
-    private float coreUpdate = 0.2f;
+    public static readonly string applicationId = "f1f6195c-df4a-40f9-bae5-4744c32901ef";
+    private ArrayList chatContent;
+    public GameObject checkpoint;
+    private ArrayList cT;
     private float currentSpeed;
+    public int difficulty;
     private bool endRacing;
-    private TITAN_EREN eren;
+    private ArrayList eT;
+    private ArrayList fT;
     private float gameEndCD;
     private float gameEndTotalCDtime = 9f;
+    public bool gameStart;
     private bool gameTimesUp;
-    private List<HERO> heroes;
+    private ArrayList heroes;
     private int highestwave = 1;
-    private List<Bullet> hooks;
+    private ArrayList hooks;
     private int humanScore;
+    public FengCustomInputs inputManager;
     private bool isLosing;
+    private bool isPlayer1Winning;
+    private bool isPlayer2Winning;
     private bool isWinning;
+    public bool justSuicide;
     private ArrayList kicklist;
-    private TextMesh labelInfoTopRight;
-    private TextMesh labelInfoCenter;
-    private TextMesh labelInfoTopCenter;
-    private TextMesh labelInfoTopLeft;
+    private ArrayList killInfoGO = new ArrayList();
+    public static bool LAN;
+    public static string level = string.Empty;
     private string localRacingResult;
     private IN_GAME_MAIN_CAMERA mainCamera;
     private float maxSpeed;
-    public string myLastHero;
+    private string myLastHero;
     private string myLastRespawnTag = "playerRespawn";
-    private PlayerList playerList;
+    public float myRespawnTime;
+    public bool needChooseSide;
+    public int PVPhumanScore;
     private int PVPhumanScoreMax = 200;
+    public int PVPtitanScore;
     private int PVPtitanScoreMax = 200;
     private ArrayList racingResult;
+    public float roundTime;
     private int single_kills;
     private int single_maxDamage;
     private int single_totalDamage;
     private bool startRacing;
     private int[] teamScores;
     private int teamWinner;
+    public int time = 600;
     private float timeElapse;
     private float timeTotalServer;
-    private List<TITAN> titans;
+    private ArrayList titans;
     private int titanScore;
+    private GameObject ui;
+    public int wave = 1;
 
-    public const string ApplicationId = "f1f6195c-df4a-40f9-bae5-4744c32901ef";
-    public static FengGameManagerMKII FGM;
-    public static FPSCounter FPS = new FPSCounter();
-    public static bool LAN;
-    public static LevelInfo Level;
-    public static StylishComponent Stylish;
-    public GameObject checkpoint;
-    public int Difficulty;
-    public bool GameStart;
-    public bool JustSuicide;
-    public float MyRespawnTime;
-    public bool NeedChooseSide;
-    public int PVPhumanScore;
-    public int PVPtitanScore;
-    public float RoundTime;
-    public int Time = 600;
-    public int Wave = 1;
-    public static List<HERO> Heroes => FGM.heroes;
-    public static List<TITAN> Titans => FGM.titans;
-    public static UIReferArray UIRefer { get; private set; }
-
-    private void Awake()
+    public void addCamera(IN_GAME_MAIN_CAMERA c)
     {
-        FGM = this;
-        NetworkingPeer.RegisterEvent(PhotonNetworkingMessage.OnConnectionFail, OnConnectionFail);
-        NetworkingPeer.RegisterEvent(PhotonNetworkingMessage.OnConnectedToPhoton, OnConnectedToPhoton);
-        NetworkingPeer.RegisterEvent(PhotonNetworkingMessage.OnCreatedRoom, OnCreatedRoom);
-        NetworkingPeer.RegisterEvent(PhotonNetworkingMessage.OnDisconnectedFromPhoton, OnDisconnectedFromPhoton);
-        NetworkingPeer.RegisterEvent(PhotonNetworkingMessage.OnJoinedLobby, OnJoinedLobby);
-        NetworkingPeer.RegisterEvent(PhotonNetworkingMessage.OnJoinedRoom, OnJoinedRoom);
-        NetworkingPeer.RegisterEvent(PhotonNetworkingMessage.OnLeftRoom, OnLeftRoom);
-        NetworkingPeer.RegisterEvent(PhotonNetworkingMessage.OnMasterClientSwitched, OnMasterClientSwitched);
-        NetworkingPeer.RegisterEvent(PhotonNetworkingMessage.OnPhotonPlayerConnected, OnPhotonPlayerConnected);
-        NetworkingPeer.RegisterEvent(PhotonNetworkingMessage.OnPhotonPlayerDisconnected, OnPhotonPlayerDisconnected);
-        NetworkingPeer.RegisterEvent(PhotonNetworkingMessage.OnPhotonPlayerPropertiesChanged, OnPhotonPlayerPropertiesChanged);
+        this.mainCamera = c;
+    }
+
+    public void addCT(COLOSSAL_TITAN titan)
+    {
+        this.cT.Add(titan);
+    }
+
+    public void addET(TITAN_EREN hero)
+    {
+        this.eT.Add(hero);
+    }
+
+    public void addFT(FEMALE_TITAN titan)
+    {
+        this.fT.Add(titan);
+    }
+
+    public void addHero(HERO hero)
+    {
+        this.heroes.Add(hero);
+    }
+
+    public void addHook(Bullet h)
+    {
+        this.hooks.Add(h);
+    }
+
+    public void addTitan(TITAN titan)
+    {
+        this.titans.Add(titan);
     }
 
     [RPC]
-    private void Chat(string content, string sender, PhotonMessageInfo info)
+    private void Chat(string content, string sender)
     {
-        if (content.Length > 7 && content.Substring(0, 7) == "/kick #")
+        if ((content.Length > 7) && (content.Substring(0, 7) == "/kick #"))
         {
-            if (PhotonNetwork.IsMasterClient)
+            if (PhotonNetwork.isMasterClient)
             {
-                this.KickPlayer(content.Remove(0, 7), sender);
-            }
-            return;
-        }
-        string message;
-        if (sender != string.Empty) message = sender + ":" + content;
-        else message = content;
-        InRoomChat.Chat.AddLine($"[{info.sender.ID}] {message}");
-    }
-
-    private bool CheckIsTitanAllDie()
-    {
-        foreach(TITAN tit in titans)
-        {
-            if (!tit.hasDie)
-            {
-                return false;
-            }
-        }
-        return annie == null;
-    }
-
-    private void Core(float dt)
-    {
-        if (IN_GAME_MAIN_CAMERA.GameType != GameType.Single && this.NeedChooseSide)
-        {
-            if (FengCustomInputs.Main.isInputDown[InputCode.flare1])
-            {
-                if (NGUITools.GetActive(UIRefer.panels[3]))
-                {
-                    Screen.lockCursor = true;
-                    Screen.showCursor = true;
-                    NGUITools.SetActive(UIRefer.panels[0], true);
-                    NGUITools.SetActive(UIRefer.panels[1], false);
-                    NGUITools.SetActive(UIRefer.panels[2], false);
-                    NGUITools.SetActive(UIRefer.panels[3], false);
-                    IN_GAME_MAIN_CAMERA.SpecMov.disable = false;
-                    IN_GAME_MAIN_CAMERA.Look.disable = false;
-                }
-                else
-                {
-                    Screen.lockCursor = false;
-                    Screen.showCursor = true;
-                    NGUITools.SetActive(UIRefer.panels[0], false);
-                    NGUITools.SetActive(UIRefer.panels[1], false);
-                    NGUITools.SetActive(UIRefer.panels[2], false);
-                    NGUITools.SetActive(UIRefer.panels[3], true);
-                    IN_GAME_MAIN_CAMERA.SpecMov.disable = true;
-                    IN_GAME_MAIN_CAMERA.Look.disable = true;
-                }
-            }
-            if (FengCustomInputs.Main.isInputDown[15])
-            {
-                if (!NGUITools.GetActive(UIRefer.panels[3]))
-                {
-                    NGUITools.SetActive(UIRefer.panels[0], false);
-                    NGUITools.SetActive(UIRefer.panels[1], true);
-                    NGUITools.SetActive(UIRefer.panels[2], false);
-                    NGUITools.SetActive(UIRefer.panels[3], false);
-                    Screen.showCursor = true;
-                    Screen.lockCursor = false;
-                    IN_GAME_MAIN_CAMERA.SpecMov.disable = true;
-                    IN_GAME_MAIN_CAMERA.Look.disable = true;
-                    FengCustomInputs.Main.showKeyMap();
-                    FengCustomInputs.Main.justUPDATEME();
-                    FengCustomInputs.Main.menuOn = true;
-                }
-            }
-        }
-        coreUpdate -= dt;
-        this.timeElapse += dt;
-        this.RoundTime += dt;
-        if (IN_GAME_MAIN_CAMERA.GameType == GameType.Single)
-        {
-            if (IN_GAME_MAIN_CAMERA.GameMode == GameMode.RACING)
-            {
-                if (!this.isWinning)
-                {
-                    this.timeTotalServer += dt;
-                }
-            }
-            else if (!this.isLosing && !this.isWinning)
-            {
-                this.timeTotalServer += dt;
+                this.kickPlayer(content.Remove(0, 7), sender);
             }
         }
         else
         {
-            this.timeTotalServer += dt;
-        }
-        if (coreUpdate > 0f)
-        {
-            return;
-        }
-        float delta = coreUpdate - 0.2f;
-        coreUpdate = 0.2f;
-        if(PhotonNetwork.IsMasterClient)
-        {
-            CustomLevel.OnUpdate();
-            if (CustomLevel.logicLoaded)
+            if (sender != string.Empty)
             {
-                for(int i = 0; i < CustomLevel.titanSpawners.Count; i++)
+                content = sender + ":" + content;
+            }
+            GameObject.Find("Chatroom").GetComponent<InRoomChat>().addLINE(content);
+        }
+    }
+
+    private bool checkIsTitanAllDie()
+    {
+        foreach (GameObject obj2 in GameObject.FindGameObjectsWithTag("titan"))
+        {
+            if ((obj2.GetComponent<TITAN>() != null) && !obj2.GetComponent<TITAN>().hasDie)
+            {
+                return false;
+            }
+            if (obj2.GetComponent<FEMALE_TITAN>() != null)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public void checkPVPpts()
+    {
+        if (this.PVPtitanScore >= this.PVPtitanScoreMax)
+        {
+            this.PVPtitanScore = this.PVPtitanScoreMax;
+            this.gameLose();
+        }
+        else if (this.PVPhumanScore >= this.PVPhumanScoreMax)
+        {
+            this.PVPhumanScore = this.PVPhumanScoreMax;
+            this.gameWin();
+        }
+    }
+
+    private void core()
+    {
+        if ((IN_GAME_MAIN_CAMERA.gametype != GAMETYPE.SINGLE) && this.needChooseSide)
+        {
+            if (GameObject.Find("InputManagerController").GetComponent<FengCustomInputs>().isInputDown[InputCode.flare1])
+            {
+                if (NGUITools.GetActive(this.ui.GetComponent<UIReferArray>().panels[3]))
                 {
-                    var item = CustomLevel.titanSpawners[i];
-                    item.time -= 0.2f;
-                    if(item.name == "spawnannie")
+                    Screen.lockCursor = true;
+                    Screen.showCursor = true;
+                    NGUITools.SetActive(this.ui.GetComponent<UIReferArray>().panels[0], true);
+                    NGUITools.SetActive(this.ui.GetComponent<UIReferArray>().panels[1], false);
+                    NGUITools.SetActive(this.ui.GetComponent<UIReferArray>().panels[2], false);
+                    NGUITools.SetActive(this.ui.GetComponent<UIReferArray>().panels[3], false);
+                    GameObject.Find("MainCamera").GetComponent<SpectatorMovement>().disable = false;
+                    GameObject.Find("MainCamera").GetComponent<MouseLook>().disable = false;
+                }
+                else
+                {
+                    Screen.lockCursor = false;
+                    Screen.showCursor = true;
+                    NGUITools.SetActive(this.ui.GetComponent<UIReferArray>().panels[0], false);
+                    NGUITools.SetActive(this.ui.GetComponent<UIReferArray>().panels[1], false);
+                    NGUITools.SetActive(this.ui.GetComponent<UIReferArray>().panels[2], false);
+                    NGUITools.SetActive(this.ui.GetComponent<UIReferArray>().panels[3], true);
+                    GameObject.Find("MainCamera").GetComponent<SpectatorMovement>().disable = true;
+                    GameObject.Find("MainCamera").GetComponent<MouseLook>().disable = true;
+                }
+            }
+            if (GameObject.Find("InputManagerController").GetComponent<FengCustomInputs>().isInputDown[15] && !NGUITools.GetActive(this.ui.GetComponent<UIReferArray>().panels[3]))
+            {
+                NGUITools.SetActive(this.ui.GetComponent<UIReferArray>().panels[0], false);
+                NGUITools.SetActive(this.ui.GetComponent<UIReferArray>().panels[1], true);
+                NGUITools.SetActive(this.ui.GetComponent<UIReferArray>().panels[2], false);
+                NGUITools.SetActive(this.ui.GetComponent<UIReferArray>().panels[3], false);
+                Screen.showCursor = true;
+                Screen.lockCursor = false;
+                GameObject.Find("MainCamera").GetComponent<SpectatorMovement>().disable = true;
+                GameObject.Find("MainCamera").GetComponent<MouseLook>().disable = true;
+                GameObject.Find("InputManagerController").GetComponent<FengCustomInputs>().showKeyMap();
+                GameObject.Find("InputManagerController").GetComponent<FengCustomInputs>().justUPDATEME();
+                GameObject.Find("InputManagerController").GetComponent<FengCustomInputs>().menuOn = true;
+            }
+        }
+        if ((IN_GAME_MAIN_CAMERA.gametype == GAMETYPE.SINGLE) || (IN_GAME_MAIN_CAMERA.gametype == GAMETYPE.MULTIPLAYER))
+        {
+            string str11;
+            if (IN_GAME_MAIN_CAMERA.gametype == GAMETYPE.MULTIPLAYER)
+            {
+                string content = string.Empty;
+                foreach (PhotonPlayer player in PhotonNetwork.playerList)
+                {
+                    if (player.customProperties[PhotonPlayerProperty.dead] != null)
                     {
-                        Pool.NetworkEnable("FEMALE_TITAN", item.location, Quaternion.identity, 0);
-                    }
-                    else
-                    {
-                        TITAN tit = Pool.NetworkEnable("TITAN_VER3.1", item.location, Quaternion.identity, 0).GetComponent<TITAN>();
-                        AbnormalType type = AbnormalType.Normal;
-                        switch (item.name)
+                        str11 = content;
+                        object[] objArray1 = new object[] { str11, "[ffffff]#", player.ID, " " };
+                        content = string.Concat(objArray1);
+                        if (player.isLocal)
                         {
-                            case "spawnAbnormal":
-                                type = AbnormalType.Aberrant;
-                                break;
-
-                            case "spawnJumper":
-                                type = AbnormalType.Jumper;
-                                break;
-
-                            case "spawnCrawler":
-                                type = AbnormalType.Crawler;
-                                break;
-
-                            case "spawnPunk":
-                                type = AbnormalType.Punk;
-                                break;
-
-                            default:
-                                break;
+                            content = content + "> ";
                         }
-                        tit.setAbnormalType(type, type == AbnormalType.Crawler);
-                        if (item.endless)
+                        if (player.isMasterClient)
                         {
-                            item.time = item.delay;
+                            content = content + "M ";
+                        }
+                        if ((bool) player.customProperties[PhotonPlayerProperty.dead])
+                        {
+                            content = content + "[" + ColorSet.color_red + "] *dead* ";
+                            if (((int) player.customProperties[PhotonPlayerProperty.isTitan]) == 2)
+                            {
+                                content = content + "[" + ColorSet.color_titan_player + "] T ";
+                            }
+                            if (((int) player.customProperties[PhotonPlayerProperty.isTitan]) == 1)
+                            {
+                                if (((int) player.customProperties[PhotonPlayerProperty.team]) == 2)
+                                {
+                                    content = content + "[" + ColorSet.color_human_1 + "] H ";
+                                }
+                                else
+                                {
+                                    content = content + "[" + ColorSet.color_human + "] H ";
+                                }
+                            }
                         }
                         else
                         {
-                            CustomLevel.titanSpawners.Remove(item);
+                            if (((int) player.customProperties[PhotonPlayerProperty.isTitan]) == 2)
+                            {
+                                content = content + "[" + ColorSet.color_titan_player + "] T ";
+                            }
+                            if (((int) player.customProperties[PhotonPlayerProperty.isTitan]) == 1)
+                            {
+                                if (((int) player.customProperties[PhotonPlayerProperty.team]) == 2)
+                                {
+                                    content = content + "[" + ColorSet.color_human_1 + "] H ";
+                                }
+                                else
+                                {
+                                    content = content + "[" + ColorSet.color_human + "] H ";
+                                }
+                            }
+                        }
+                        str11 = content;
+                        object[] objArray2 = new object[] { str11, string.Empty, player.customProperties[PhotonPlayerProperty.name], "[ffffff]:", player.customProperties[PhotonPlayerProperty.kills], "/", player.customProperties[PhotonPlayerProperty.deaths], "/", player.customProperties[PhotonPlayerProperty.max_dmg], "/", player.customProperties[PhotonPlayerProperty.total_dmg] };
+                        content = string.Concat(objArray2);
+                        if ((bool) player.customProperties[PhotonPlayerProperty.dead])
+                        {
+                            content = content + "[-]";
+                        }
+                        content = content + "\n";
+                    }
+                }
+                this.ShowHUDInfoTopLeft(content);
+                if (((GameObject.Find("MainCamera") != null) && (IN_GAME_MAIN_CAMERA.gamemode != GAMEMODE.RACING)) && (GameObject.Find("MainCamera").GetComponent<IN_GAME_MAIN_CAMERA>().gameOver && !this.needChooseSide))
+                {
+                    this.ShowHUDInfoCenter("Press [F7D358]" + GameObject.Find("InputManagerController").GetComponent<FengCustomInputs>().inputString[InputCode.flare1] + "[-] to spectate the next player. \nPress [F7D358]" + GameObject.Find("InputManagerController").GetComponent<FengCustomInputs>().inputString[InputCode.flare2] + "[-] to spectate the previous player.\nPress [F7D358]" + GameObject.Find("InputManagerController").GetComponent<FengCustomInputs>().inputString[InputCode.attack1] + "[-] to enter the spectator mode.\n\n\n\n");
+                    if (LevelInfo.getInfo(level).respawnMode == RespawnMode.DEATHMATCH)
+                    {
+                        this.myRespawnTime += Time.deltaTime;
+                        int num2 = 10;
+                        if (((int) PhotonNetwork.player.customProperties[PhotonPlayerProperty.isTitan]) == 2)
+                        {
+                            num2 = 15;
+                        }
+                        this.ShowHUDInfoCenterADD("Respawn in " + ((num2 - ((int) this.myRespawnTime))).ToString() + "s.");
+                        if (this.myRespawnTime > num2)
+                        {
+                            this.myRespawnTime = 0f;
+                            GameObject.Find("MainCamera").GetComponent<IN_GAME_MAIN_CAMERA>().gameOver = false;
+                            if (((int) PhotonNetwork.player.customProperties[PhotonPlayerProperty.isTitan]) == 2)
+                            {
+                                this.SpawnNonAITitan(this.myLastHero, "titanRespawn");
+                            }
+                            else
+                            {
+                                this.SpawnPlayer(this.myLastHero, this.myLastRespawnTag);
+                            }
+                            GameObject.Find("MainCamera").GetComponent<IN_GAME_MAIN_CAMERA>().gameOver = false;
+                            this.ShowHUDInfoCenter(string.Empty);
                         }
                     }
                 }
             }
-        }
-        if (IN_GAME_MAIN_CAMERA.GameType == GameType.Multi && IN_GAME_MAIN_CAMERA.GameMode != GameMode.RACING && IN_GAME_MAIN_CAMERA.MainCamera.gameOver && !this.NeedChooseSide)
-        {
-            this.ShowHUDInfoCenter(string.Concat(new string[]
+            else if (IN_GAME_MAIN_CAMERA.gametype == GAMETYPE.SINGLE)
             {
-                    "Press [F7D358]",
-                    FengCustomInputs.Main.inputString[InputCode.flare1],
-                    "[-] to spectate the next player. \nPress [F7D358]",
-                    FengCustomInputs.Main.inputString[InputCode.flare2],
-                    "[-] to spectate the previous player.\nPress [F7D358]",
-                    FengCustomInputs.Main.inputString[InputCode.attack1],
-                    "[-] to enter the spectator mode.\n\n\n\n"
-            }));
-            if (FengGameManagerMKII.Level.RespawnMode == RespawnMode.DEATHMATCH)
-            {
-                this.MyRespawnTime += 0.2f;
-                int num = 10;
-                if ((int)PhotonNetwork.player.Properties[PhotonPlayerProperty.isTitan] == 2)
+                if (IN_GAME_MAIN_CAMERA.gamemode == GAMEMODE.RACING)
                 {
-                    num = 15;
-                }
-                this.ShowHUDInfoCenterADD("Respawn in " + ((int)((float)num - this.MyRespawnTime)).ToString() + "s.");
-                if (this.MyRespawnTime > (float)num)
-                {
-                    this.MyRespawnTime = 0f;
-                    IN_GAME_MAIN_CAMERA.MainCamera.gameOver = false;
-                    if ((int)PhotonNetwork.player.Properties[PhotonPlayerProperty.isTitan] == 2)
+                    if (!this.isLosing)
                     {
-                        this.SpawnNonAITitan(this.myLastHero, "titanRespawn");
-                    }
-                    else
-                    {
-                        this.SpawnPlayer(this.myLastHero, this.myLastRespawnTag);
-                    }
-                    IN_GAME_MAIN_CAMERA.MainCamera.gameOver = false;
-                    this.ShowHUDInfoCenter(string.Empty);
-                }
-            }
-        }
-        else if (IN_GAME_MAIN_CAMERA.GameType == GameType.Single)
-        {
-            if (IN_GAME_MAIN_CAMERA.GameMode == GameMode.RACING)
-            {
-                if (!this.isLosing)
-                {
-                    this.currentSpeed = IN_GAME_MAIN_CAMERA.MainR.velocity.magnitude;
-                    this.maxSpeed = Mathf.Max(this.maxSpeed, this.currentSpeed);
-                    this.ShowHUDInfoTopLeft(string.Concat(new object[]
-                    {
-                        "Current Speed : ",
-                        (int)this.currentSpeed,
-                        "\nMax Speed:",
-                        this.maxSpeed
-                    }));
-                }
-            }
-            else
-            {
-                this.ShowHUDInfoTopLeft(string.Concat(new object[]
-                {
-                    "Kills:",
-                    this.single_kills,
-                    "\nMax Damage:",
-                    this.single_maxDamage,
-                    "\nTotal Damage:",
-                    this.single_totalDamage
-                }));
-            }
-        }
-        if (this.isLosing)
-        {
-            if (IN_GAME_MAIN_CAMERA.GameMode != GameMode.RACING)
-            {
-                if (IN_GAME_MAIN_CAMERA.GameType == GameType.Single)
-                {
-                    if (IN_GAME_MAIN_CAMERA.GameMode == GameMode.SURVIVE_MODE)
-                    {
-                        this.ShowHUDInfoCenter(string.Concat(new object[]
-                        {
-                            "Survive ",
-                            this.Wave,
-                            " Waves!\n Press ",
-                            FengCustomInputs.Main.inputString[InputCode.restart],
-                            " to Restart.\n\n\n"
-                        }));
-                    }
-                    else
-                    {
-                        this.ShowHUDInfoCenter("Humanity Fail!\n Press " + FengCustomInputs.Main.inputString[InputCode.restart] + " to Restart.\n\n\n");
+                        this.currentSpeed = GameObject.Find("MainCamera").GetComponent<IN_GAME_MAIN_CAMERA>().main_object.rigidbody.velocity.magnitude;
+                        this.maxSpeed = Mathf.Max(this.maxSpeed, this.currentSpeed);
+                        this.ShowHUDInfoTopLeft(string.Concat(new object[] { "Current Speed : ", (int) this.currentSpeed, "\nMax Speed:", this.maxSpeed }));
                     }
                 }
                 else
                 {
-                    if (IN_GAME_MAIN_CAMERA.GameMode == GameMode.SURVIVE_MODE)
+                    this.ShowHUDInfoTopLeft(string.Concat(new object[] { "Kills:", this.single_kills, "\nMax Damage:", this.single_maxDamage, "\nTotal Damage:", this.single_totalDamage }));
+                }
+            }
+            if (this.isLosing && (IN_GAME_MAIN_CAMERA.gamemode != GAMEMODE.RACING))
+            {
+                if (IN_GAME_MAIN_CAMERA.gametype == GAMETYPE.SINGLE)
+                {
+                    if (IN_GAME_MAIN_CAMERA.gamemode == GAMEMODE.SURVIVE_MODE)
                     {
-                        this.ShowHUDInfoCenter(string.Concat(new object[]
-                        {
-                            "Survive ",
-                            this.Wave,
-                            " Waves!\nGame Restart in ",
-                            (int)this.gameEndCD,
-                            "s\n\n"
-                        }));
+                        this.ShowHUDInfoCenter(string.Concat(new object[] { "Survive ", this.wave, " Waves!\n Press ", GameObject.Find("InputManagerController").GetComponent<FengCustomInputs>().inputString[InputCode.restart], " to Restart.\n\n\n" }));
                     }
                     else
                     {
-                        this.ShowHUDInfoCenter("Humanity Fail!\nAgain!\nGame Restart in " + (int)this.gameEndCD + "s\n\n");
+                        this.ShowHUDInfoCenter("Humanity Fail!\n Press " + GameObject.Find("InputManagerController").GetComponent<FengCustomInputs>().inputString[InputCode.restart] + " to Restart.\n\n\n");
+                    }
+                }
+                else
+                {
+                    if (IN_GAME_MAIN_CAMERA.gamemode == GAMEMODE.SURVIVE_MODE)
+                    {
+                        this.ShowHUDInfoCenter(string.Concat(new object[] { "Survive ", this.wave, " Waves!\nGame Restart in ", (int) this.gameEndCD, "s\n\n" }));
+                    }
+                    else
+                    {
+                        this.ShowHUDInfoCenter("Humanity Fail!\nAgain!\nGame Restart in " + ((int) this.gameEndCD) + "s\n\n");
                     }
                     if (this.gameEndCD <= 0f)
                     {
                         this.gameEndCD = 0f;
-                        if (PhotonNetwork.IsMasterClient)
+                        if (PhotonNetwork.isMasterClient)
                         {
-                            this.RestartGame(false);
+                            this.restartGame(false);
                         }
                         this.ShowHUDInfoCenter(string.Empty);
                     }
                     else
                     {
-                        this.gameEndCD -= 0.2f;
+                        this.gameEndCD -= Time.deltaTime;
                     }
                 }
             }
-        }
-        if (this.isWinning)
-        {
-            if (IN_GAME_MAIN_CAMERA.GameType == GameType.Single)
+            if (this.isWinning)
             {
-                if (IN_GAME_MAIN_CAMERA.GameMode == GameMode.RACING)
+                if (IN_GAME_MAIN_CAMERA.gametype == GAMETYPE.SINGLE)
                 {
-                    this.ShowHUDInfoCenter(((float)((int)(this.timeTotalServer * 10f)) * 0.1f - 5f).ToString() + "s !\n Press " + FengCustomInputs.Main.inputString[InputCode.restart] + " to Restart.\n\n\n");
-                }
-                else if (IN_GAME_MAIN_CAMERA.GameMode == GameMode.SURVIVE_MODE)
-                {
-                    this.ShowHUDInfoCenter("Survive All Waves!\n Press " + FengCustomInputs.Main.inputString[InputCode.restart] + " to Restart.\n\n\n");
+                    if (IN_GAME_MAIN_CAMERA.gamemode == GAMEMODE.RACING)
+                    {
+                        this.ShowHUDInfoCenter((((((int) (this.timeTotalServer * 10f)) * 0.1f) - 5f)).ToString() + "s !\n Press " + GameObject.Find("InputManagerController").GetComponent<FengCustomInputs>().inputString[InputCode.restart] + " to Restart.\n\n\n");
+                    }
+                    else if (IN_GAME_MAIN_CAMERA.gamemode == GAMEMODE.SURVIVE_MODE)
+                    {
+                        this.ShowHUDInfoCenter("Survive All Waves!\n Press " + GameObject.Find("InputManagerController").GetComponent<FengCustomInputs>().inputString[InputCode.restart] + " to Restart.\n\n\n");
+                    }
+                    else
+                    {
+                        this.ShowHUDInfoCenter("Humanity Win!\n Press " + GameObject.Find("InputManagerController").GetComponent<FengCustomInputs>().inputString[InputCode.restart] + " to Restart.\n\n\n");
+                    }
                 }
                 else
                 {
-                    this.ShowHUDInfoCenter("Humanity Win!\n Press " + FengCustomInputs.Main.inputString[InputCode.restart] + " to Restart.\n\n\n");
-                }
-            }
-            else
-            {
-                if (IN_GAME_MAIN_CAMERA.GameMode == GameMode.RACING)
-                {
-                    this.ShowHUDInfoCenter(string.Concat(new object[]
+                    if (IN_GAME_MAIN_CAMERA.gamemode == GAMEMODE.RACING)
                     {
-                        this.localRacingResult,
-                        "\n\nGame Restart in ",
-                        (int)this.gameEndCD,
-                        "s"
-                    }));
-                }
-                else if (IN_GAME_MAIN_CAMERA.GameMode == GameMode.SURVIVE_MODE)
-                {
-                    this.ShowHUDInfoCenter("Survive All Waves!\nGame Restart in " + (int)this.gameEndCD + "s\n\n");
-                }
-                else if (IN_GAME_MAIN_CAMERA.GameMode == GameMode.PVP_AHSS)
-                {
-                    this.ShowHUDInfoCenter(string.Concat(new object[]
-                    {
-                        "Team ",
-                        this.teamWinner,
-                        " Win!\nGame Restart in ",
-                        (int)this.gameEndCD,
-                        "s\n\n"
-                    }));
-                }
-                else
-                {
-                    this.ShowHUDInfoCenter("Humanity Win!\nGame Restart in " + (int)this.gameEndCD + "s\n\n");
-                }
-                if (this.gameEndCD <= 0f)
-                {
-                    this.gameEndCD = 0f;
-                    if (PhotonNetwork.IsMasterClient)
-                    {
-                        this.RestartGame(false);
+                        this.ShowHUDInfoCenter(string.Concat(new object[] { this.localRacingResult, "\n\nGame Restart in ", (int) this.gameEndCD, "s" }));
                     }
-                    this.ShowHUDInfoCenter(string.Empty);
-                }
-                else
-                {
-                    this.gameEndCD -= 0.2f;
-                }
-            }
-        }
-        if (IN_GAME_MAIN_CAMERA.GameMode == GameMode.RACING)
-        {
-            if (IN_GAME_MAIN_CAMERA.GameType == GameType.Single)
-            {
-                if (!this.isWinning)
-                {
-                    this.ShowHUDInfoTopCenter("Time : " + ((float)((int)(this.timeTotalServer * 10f)) * 0.1f - 5f));
-                }
-                if (this.timeTotalServer < 5f)
-                {
-                    this.ShowHUDInfoCenter("RACE START IN " + (int)(5f - this.timeTotalServer));
-                }
-                else if (!this.startRacing)
-                {
-                    this.ShowHUDInfoCenter(string.Empty);
-                    this.startRacing = true;
-                    this.endRacing = false;
-                    GameObject obj = GameObject.Find("door");
-                    if (obj != null)
+                    else if (IN_GAME_MAIN_CAMERA.gamemode == GAMEMODE.SURVIVE_MODE)
                     {
-                        obj.SetActive(false);
+                        this.ShowHUDInfoCenter("Survive All Waves!\nGame Restart in " + ((int) this.gameEndCD) + "s\n\n");
                     }
-                }
-            }
-            else
-            {
-                this.ShowHUDInfoTopCenter("Time : " + ((this.RoundTime >= 20f) ? ((float)((int)(this.RoundTime * 10f)) * 0.1f - 20f).ToString() : "WAITING"));
-                if (this.RoundTime < 20f)
-                {
-                    this.ShowHUDInfoCenter("RACE START IN " + (int)(20f - this.RoundTime) + ((!(this.localRacingResult == string.Empty)) ? ("\nLast Round\n" + this.localRacingResult) : "\n\n"));
-                }
-                else if (!this.startRacing)
-                {
-                    this.ShowHUDInfoCenter(string.Empty);
-                    this.startRacing = true;
-                    this.endRacing = false;
-                    GameObject obj = GameObject.Find("door");
-                    if (obj != null)
+                    else if (IN_GAME_MAIN_CAMERA.gamemode == GAMEMODE.PVP_AHSS)
                     {
-                        obj.SetActive(false);
+                        this.ShowHUDInfoCenter(string.Concat(new object[] { "Team ", this.teamWinner, " Win!\nGame Restart in ", (int) this.gameEndCD, "s\n\n" }));
                     }
-                    if (CustomLevel.racingDoors != null && CustomLevel.customLevelLoaded)
+                    else
                     {
-                        foreach (GameObject gameObject in CustomLevel.racingDoors)
+                        this.ShowHUDInfoCenter("Humanity Win!\nGame Restart in " + ((int) this.gameEndCD) + "s\n\n");
+                    }
+                    if (this.gameEndCD <= 0f)
+                    {
+                        this.gameEndCD = 0f;
+                        if (PhotonNetwork.isMasterClient)
                         {
-                            gameObject.SetActive(false);
+                            this.restartGame(false);
                         }
-                        CustomLevel.racingDoors = null;
+                        this.ShowHUDInfoCenter(string.Empty);
                     }
-                }
-                else if (CustomLevel.racingDoors != null && CustomLevel.customLevelLoaded)
-                {
-                    foreach (GameObject gameObject2 in CustomLevel.racingDoors)
+                    else
                     {
-                        gameObject2.SetActive(false);
+                        this.gameEndCD -= Time.deltaTime;
                     }
-                    CustomLevel.racingDoors = null;
                 }
-                else if (this.RoundTime < 50f && this.RoundTime > 20f)
+            }
+            this.timeElapse += Time.deltaTime;
+            this.roundTime += Time.deltaTime;
+            if (IN_GAME_MAIN_CAMERA.gametype == GAMETYPE.SINGLE)
+            {
+                if (IN_GAME_MAIN_CAMERA.gamemode == GAMEMODE.RACING)
                 {
-                    if (CustomLevel.racingDoors != null && CustomLevel.customLevelLoaded)
+                    if (!this.isWinning)
                     {
-                        foreach (GameObject gameObject3 in CustomLevel.racingDoors)
-                        {
-                            gameObject3.SetActive(false);
-                        }
-                        CustomLevel.racingDoors = null;
-                    }
-                    GameObject obj2 = GameObject.Find("door");
-                    if (obj2 != null)
-                    {
-                        obj2.SetActive(false);
+                        this.timeTotalServer += Time.deltaTime;
                     }
                 }
-            }
-            if (IN_GAME_MAIN_CAMERA.MainCamera.gameOver && !this.NeedChooseSide)
-            {
-                this.MyRespawnTime += 0.2f + dt;
-                if (this.MyRespawnTime > 1.5f)
+                else if (!this.isLosing && !this.isWinning)
                 {
-                    this.MyRespawnTime = 0f;
-                    IN_GAME_MAIN_CAMERA.MainCamera.gameOver = false;
-                    this.SpawnPlayer(this.myLastHero, this.myLastRespawnTag);
-                    IN_GAME_MAIN_CAMERA.MainCamera.gameOver = false;
-                    this.ShowHUDInfoCenter(string.Empty);
+                    this.timeTotalServer += Time.deltaTime;
                 }
-            }
-        }
-        if (this.timeElapse > 1f)
-        {
-            this.timeElapse -= 1f;
-            string text3 = string.Empty;
-            if (IN_GAME_MAIN_CAMERA.GameMode == GameMode.ENDLESS_TITAN)
-            {
-                text3 += "Time : ";
-                text3 += ((int)((float)this.Time - this.timeTotalServer)).ToString();
-            }
-            else if (IN_GAME_MAIN_CAMERA.GameMode == GameMode.KILL_TITAN)
-            {
-                text3 = "Titan Left: ";
-                text3 += titans.Count.ToString();
-                text3 += "  Time : ";
-                if (IN_GAME_MAIN_CAMERA.GameType == GameType.Single)
-                {
-                    text3 += ((int)this.timeTotalServer).ToString();
-                }
-                else
-                {
-                    text3 += ((int)((float)this.Time - this.timeTotalServer)).ToString();
-                }
-            }
-            else if (IN_GAME_MAIN_CAMERA.GameMode == GameMode.SURVIVE_MODE)
-            {
-                text3 = "Titan Left: ";
-                text3 += titans.Count.ToString();
-                text3 += " Wave : ";
-                text3 += this.Wave;
-            }
-            else if (IN_GAME_MAIN_CAMERA.GameMode == GameMode.BOSS_FIGHT_CT)
-            {
-                text3 = "Time : ";
-                text3 += ((int)((float)this.Time - this.timeTotalServer)).ToString();
-                text3 += "\nDefeat the Colossal Titan.\nPrevent abnormal titan from running to the north gate";
-            }
-            else if (IN_GAME_MAIN_CAMERA.GameMode == GameMode.PVP_CAPTURE)
-            {
-                string text4 = "| ";
-                for (int j = 0; j < PVPcheckPoint.chkPts.Count; j++)
-                {
-                    text4 = text4 + (PVPcheckPoint.chkPts[j] as PVPcheckPoint).getStateString() + " ";
-                }
-                text4 += "|";
-                text3 = string.Concat(new object[]
-                {
-                    this.PVPtitanScoreMax - this.PVPtitanScore,
-                    "  ",
-                    text4,
-                    "  ",
-                    this.PVPhumanScoreMax - this.PVPhumanScore,
-                    "\n"
-                });
-                text3 += "Time : ";
-                text3 += ((int)((float)this.Time - this.timeTotalServer)).ToString();
-            }
-            if(IN_GAME_MAIN_CAMERA.GameMode != GameMode.RACING) ShowHUDInfoTopCenter(text3);
-            text3 = string.Empty;
-            if (IN_GAME_MAIN_CAMERA.GameType == GameType.Single)
-            {
-                if (IN_GAME_MAIN_CAMERA.GameMode == GameMode.SURVIVE_MODE)
-                {
-                    text3 = "Time : ";
-                    text3 += ((int)this.timeTotalServer).ToString();
-                }
-            }
-            else if (IN_GAME_MAIN_CAMERA.GameMode == GameMode.ENDLESS_TITAN)
-            {
-                text3 = string.Concat(new object[]
-                {
-                    "Humanity ",
-                    this.humanScore,
-                    " : Titan ",
-                    this.titanScore,
-                    " "
-                });
-            }
-            else if (IN_GAME_MAIN_CAMERA.GameMode == GameMode.KILL_TITAN || IN_GAME_MAIN_CAMERA.GameMode == GameMode.BOSS_FIGHT_CT || IN_GAME_MAIN_CAMERA.GameMode == GameMode.PVP_CAPTURE)
-            {
-                text3 = string.Concat(new object[]
-                {
-                    "Humanity ",
-                    this.humanScore,
-                    " : Titan ",
-                    this.titanScore,
-                    " "
-                });
-            }
-            else if (IN_GAME_MAIN_CAMERA.GameMode != GameMode.CAGE_FIGHT)
-            {
-                if (IN_GAME_MAIN_CAMERA.GameMode == GameMode.SURVIVE_MODE)
-                {
-                    text3 = "Time : ";
-                    text3 += ((int)((float)this.Time - this.timeTotalServer)).ToString();
-                }
-                else if (IN_GAME_MAIN_CAMERA.GameMode == GameMode.PVP_AHSS)
-                {
-                    for (int k = 0; k < this.teamScores.Length; k++)
-                    {
-                        string text2 = text3;
-                        text3 = string.Concat(new object[]
-                        {
-                            text2,
-                            (k == 0) ? string.Empty : " : ",
-                            "Team",
-                            k + 1,
-                            " ",
-                            this.teamScores[k],
-                            string.Empty
-                        });
-                    }
-                    text3 += "\nTime : ";
-                    text3 += ((int)((float)this.Time - this.timeTotalServer)).ToString();
-                }
-            }
-            this.ShowHUDInfoTopRight(text3);
-            string text5 = (IN_GAME_MAIN_CAMERA.difficulty >= 0) ? ((IN_GAME_MAIN_CAMERA.difficulty != 0) ? ((IN_GAME_MAIN_CAMERA.difficulty != 1) ? "Abnormal" : "Hard") : "Normal") : "Trainning";
-            if (IN_GAME_MAIN_CAMERA.GameMode == GameMode.CAGE_FIGHT)
-            {
-                this.ShowHUDInfoTopRightMAPNAME(string.Concat(new object[]
-                {
-                    (int)this.RoundTime,
-                    "s\n",
-                    FengGameManagerMKII.Level,
-                    " : ",
-                    text5
-                }));
             }
             else
             {
-                this.ShowHUDInfoTopRightMAPNAME("\n" + Level.Name + " : " + text5);
+                this.timeTotalServer += Time.deltaTime;
             }
-            this.ShowHUDInfoTopRightMAPNAME("\nCamera[" + FengCustomInputs.Main.inputString[InputCode.camera] + "]:" + IN_GAME_MAIN_CAMERA.CameraMode.ToString() + "\nFPS[[DD00DD]" + FPS.FPS + "[-]]");
-        }
-        if (IN_GAME_MAIN_CAMERA.GameType == GameType.Multi)
-        {
-            if (NeedChooseSide)
+            if (IN_GAME_MAIN_CAMERA.gamemode == GAMEMODE.RACING)
             {
-                this.ShowHUDInfoTopCenter("\n\nPRESS 1 TO ENTER GAME");
+                if (IN_GAME_MAIN_CAMERA.gametype == GAMETYPE.SINGLE)
+                {
+                    if (!this.isWinning)
+                    {
+                        this.ShowHUDInfoTopCenter("Time : " + ((((int) (this.timeTotalServer * 10f)) * 0.1f) - 5f));
+                    }
+                    if (this.timeTotalServer < 5f)
+                    {
+                        this.ShowHUDInfoCenter("RACE START IN " + ((int) (5f - this.timeTotalServer)));
+                    }
+                    else if (!this.startRacing)
+                    {
+                        this.ShowHUDInfoCenter(string.Empty);
+                        this.startRacing = true;
+                        this.endRacing = false;
+                        GameObject.Find("door").SetActive(false);
+                    }
+                }
+                else
+                {
+                    this.ShowHUDInfoTopCenter("Time : " + ((this.roundTime >= 20f) ? (((((int) (this.roundTime * 10f)) * 0.1f) - 20f)).ToString() : "WAITING"));
+                    if (this.roundTime < 20f)
+                    {
+                        this.ShowHUDInfoCenter("RACE START IN " + ((int) (20f - this.roundTime)) + (!(this.localRacingResult == string.Empty) ? ("\nLast Round\n" + this.localRacingResult) : "\n\n"));
+                    }
+                    else if (!this.startRacing)
+                    {
+                        this.ShowHUDInfoCenter(string.Empty);
+                        this.startRacing = true;
+                        this.endRacing = false;
+                        GameObject.Find("door").SetActive(false);
+                    }
+                }
+                if (GameObject.Find("MainCamera").GetComponent<IN_GAME_MAIN_CAMERA>().gameOver && !this.needChooseSide)
+                {
+                    this.myRespawnTime += Time.deltaTime;
+                    if (this.myRespawnTime > 1.5f)
+                    {
+                        this.myRespawnTime = 0f;
+                        GameObject.Find("MainCamera").GetComponent<IN_GAME_MAIN_CAMERA>().gameOver = false;
+                        if (this.checkpoint != null)
+                        {
+                            this.SpawnPlayerAt(this.myLastHero, this.checkpoint);
+                        }
+                        else
+                        {
+                            this.SpawnPlayer(this.myLastHero, this.myLastRespawnTag);
+                        }
+                        GameObject.Find("MainCamera").GetComponent<IN_GAME_MAIN_CAMERA>().gameOver = false;
+                        this.ShowHUDInfoCenter(string.Empty);
+                    }
+                }
             }
-            if(killInfoList.Count > 0 && killInfoList.Peek() == null) killInfoList.Dequeue();
-            if(timeTotalServer > Time && PhotonNetwork.IsMasterClient)
+            if (this.timeElapse > 1f)
             {
-
-                IN_GAME_MAIN_CAMERA.GameType = GameType.Stop;
-                this.GameStart = false;
+                this.timeElapse--;
+                string str2 = string.Empty;
+                if (IN_GAME_MAIN_CAMERA.gamemode == GAMEMODE.ENDLESS_TITAN)
+                {
+                    str2 = str2 + "Time : " + ((this.time - ((int) this.timeTotalServer))).ToString();
+                }
+                else if (IN_GAME_MAIN_CAMERA.gamemode == GAMEMODE.KILL_TITAN)
+                {
+                    str2 = "Titan Left: ";
+                    str2 = str2 + GameObject.FindGameObjectsWithTag("titan").Length.ToString() + "  Time : ";
+                    if (IN_GAME_MAIN_CAMERA.gametype == GAMETYPE.SINGLE)
+                    {
+                        str2 = str2 + ((int) this.timeTotalServer).ToString();
+                    }
+                    else
+                    {
+                        str2 = str2 + ((this.time - ((int) this.timeTotalServer))).ToString();
+                    }
+                }
+                else if (IN_GAME_MAIN_CAMERA.gamemode == GAMEMODE.SURVIVE_MODE)
+                {
+                    str2 = "Titan Left: ";
+                    str2 = (str2 + GameObject.FindGameObjectsWithTag("titan").Length.ToString()) + " Wave : " + this.wave;
+                }
+                else if (IN_GAME_MAIN_CAMERA.gamemode == GAMEMODE.BOSS_FIGHT_CT)
+                {
+                    str2 = "Time : ";
+                    str2 = str2 + ((this.time - ((int) this.timeTotalServer))).ToString() + "\nDefeat the Colossal Titan.\nPrevent abnormal titan from running to the north gate";
+                }
+                else if (IN_GAME_MAIN_CAMERA.gamemode == GAMEMODE.PVP_CAPTURE)
+                {
+                    string str3 = "| ";
+                    for (int i = 0; i < PVPcheckPoint.chkPts.Count; i++)
+                    {
+                        str3 = str3 + (PVPcheckPoint.chkPts[i] as PVPcheckPoint).getStateString() + " ";
+                    }
+                    str3 = str3 + "|";
+                    str2 = string.Concat(new object[] { this.PVPtitanScoreMax - this.PVPtitanScore, "  ", str3, "  ", this.PVPhumanScoreMax - this.PVPhumanScore, "\n" }) + "Time : " + ((this.time - ((int) this.timeTotalServer))).ToString();
+                }
+                this.ShowHUDInfoTopCenter(str2);
+                str2 = string.Empty;
+                if (IN_GAME_MAIN_CAMERA.gametype == GAMETYPE.SINGLE)
+                {
+                    if (IN_GAME_MAIN_CAMERA.gamemode == GAMEMODE.SURVIVE_MODE)
+                    {
+                        str2 = "Time : ";
+                        str2 = str2 + ((int) this.timeTotalServer).ToString();
+                    }
+                }
+                else if (IN_GAME_MAIN_CAMERA.gamemode == GAMEMODE.ENDLESS_TITAN)
+                {
+                    object[] objArray10 = new object[] { "Humanity ", this.humanScore, " : Titan ", this.titanScore, " " };
+                    str2 = string.Concat(objArray10);
+                }
+                else if (((IN_GAME_MAIN_CAMERA.gamemode == GAMEMODE.KILL_TITAN) || (IN_GAME_MAIN_CAMERA.gamemode == GAMEMODE.BOSS_FIGHT_CT)) || (IN_GAME_MAIN_CAMERA.gamemode == GAMEMODE.PVP_CAPTURE))
+                {
+                    object[] objArray11 = new object[] { "Humanity ", this.humanScore, " : Titan ", this.titanScore, " " };
+                    str2 = string.Concat(objArray11);
+                }
+                else if (IN_GAME_MAIN_CAMERA.gamemode != GAMEMODE.CAGE_FIGHT)
+                {
+                    if (IN_GAME_MAIN_CAMERA.gamemode == GAMEMODE.SURVIVE_MODE)
+                    {
+                        str2 = "Time : ";
+                        str2 = str2 + ((this.time - ((int) this.timeTotalServer))).ToString();
+                    }
+                    else if (IN_GAME_MAIN_CAMERA.gamemode == GAMEMODE.PVP_AHSS)
+                    {
+                        for (int j = 0; j < this.teamScores.Length; j++)
+                        {
+                            str11 = str2;
+                            object[] objArray12 = new object[] { str11, (j == 0) ? string.Empty : " : ", "Team", j + 1, " ", this.teamScores[j], string.Empty };
+                            str2 = string.Concat(objArray12);
+                        }
+                        str2 = str2 + "\nTime : " + ((this.time - ((int) this.timeTotalServer))).ToString();
+                    }
+                }
+                this.ShowHUDInfoTopRight(str2);
+                string str4 = (IN_GAME_MAIN_CAMERA.difficulty >= 0) ? ((IN_GAME_MAIN_CAMERA.difficulty != 0) ? ((IN_GAME_MAIN_CAMERA.difficulty != 1) ? "Abnormal" : "Hard") : "Normal") : "Trainning";
+                if (IN_GAME_MAIN_CAMERA.gamemode == GAMEMODE.CAGE_FIGHT)
+                {
+                    this.ShowHUDInfoTopRightMAPNAME(string.Concat(new object[] { (int) this.roundTime, "s\n", level, " : ", str4 }));
+                }
+                else
+                {
+                    this.ShowHUDInfoTopRightMAPNAME("\n" + level + " : " + str4);
+                }
+                this.ShowHUDInfoTopRightMAPNAME("\nCamera(" + GameObject.Find("InputManagerController").GetComponent<FengCustomInputs>().inputString[InputCode.camera] + "):" + IN_GAME_MAIN_CAMERA.cameraMode.ToString());
+                if ((IN_GAME_MAIN_CAMERA.gametype == GAMETYPE.MULTIPLAYER) && this.needChooseSide)
+                {
+                    this.ShowHUDInfoTopCenterADD("\n\nPRESS 1 TO ENTER GAME");
+                }
+            }
+            if (((IN_GAME_MAIN_CAMERA.gametype == GAMETYPE.MULTIPLAYER) && (this.killInfoGO.Count > 0)) && (this.killInfoGO[0] == null))
+            {
+                this.killInfoGO.RemoveAt(0);
+            }
+            if (((IN_GAME_MAIN_CAMERA.gametype != GAMETYPE.SINGLE) && PhotonNetwork.isMasterClient) && (this.timeTotalServer > this.time))
+            {
+                string str10;
+                IN_GAME_MAIN_CAMERA.gametype = GAMETYPE.STOP;
+                this.gameStart = false;
                 Screen.lockCursor = false;
                 Screen.showCursor = true;
-                string names = string.Empty;
-                string kills = string.Empty;
-                string deaths = string.Empty;
-                string maxs = string.Empty;
-                string totals = string.Empty;
-                string title = string.Empty;
-                foreach (PhotonPlayer player in PhotonNetwork.playerList)
+                string str5 = string.Empty;
+                string str6 = string.Empty;
+                string str7 = string.Empty;
+                string str8 = string.Empty;
+                string str9 = string.Empty;
+                foreach (PhotonPlayer player2 in PhotonNetwork.playerList)
                 {
-                    names += player.UIName + "\n";
-                    kills += player.Kills + "\n";
-                    deaths += player.Deaths + "\n";
-                    maxs += player.Max_Dmg + "\n";
-                    totals += player.Total_Dmg + "\n";
+                    if (player2 != null)
+                    {
+                        str5 = str5 + player2.customProperties[PhotonPlayerProperty.name] + "\n";
+                        str6 = str6 + player2.customProperties[PhotonPlayerProperty.kills] + "\n";
+                        str7 = str7 + player2.customProperties[PhotonPlayerProperty.deaths] + "\n";
+                        str8 = str8 + player2.customProperties[PhotonPlayerProperty.max_dmg] + "\n";
+                        str9 = str9 + player2.customProperties[PhotonPlayerProperty.total_dmg] + "\n";
+                    }
                 }
-                switch (IN_GAME_MAIN_CAMERA.GameMode)
+                if (IN_GAME_MAIN_CAMERA.gamemode == GAMEMODE.PVP_AHSS)
                 {
-                    case GameMode.PVP_AHSS:
-                        for (int m = 0; m < this.teamScores.Length; m++)
-                        {
-                            title += ((m == 0) ? $"Team{m + 1} {teamScores[m]} " : " : ");
-                        }
-                        break;
-
-                    case GameMode.SURVIVE_MODE:
-                        title = "Highest Wave : " + this.highestwave;
-                        break;
-
-                    default:
-                        title = $"Humanity {humanScore} : Titan {titanScore}";
-                        break;
+                    str10 = string.Empty;
+                    for (int k = 0; k < this.teamScores.Length; k++)
+                    {
+                        str10 = str10 + ((k == 0) ? string.Concat(new object[] { "Team", k + 1, " ", this.teamScores[k], " " }) : " : ");
+                    }
                 }
-                BasePV.RPC("showResult", PhotonTargets.AllBuffered, new object[] { names, kills, deaths, maxs, totals, title });
+                else if (IN_GAME_MAIN_CAMERA.gamemode == GAMEMODE.SURVIVE_MODE)
+                {
+                    str10 = "Highest Wave : " + this.highestwave;
+                }
+                else
+                {
+                    object[] objArray15 = new object[] { "Humanity ", this.humanScore, " : Titan ", this.titanScore };
+                    str10 = string.Concat(objArray15);
+                }
+                object[] parameters = new object[] { str5, str6, str7, str8, str9, str10 };
+                base.photonView.RPC("showResult", PhotonTargets.AllBuffered, parameters);
             }
         }
     }
 
-    [RPC]
-    private void clearlevel(string[] link, int gametype, PhotonMessageInfo info)
+    public void gameLose()
     {
-        if (info.sender.IsMasterClient)
+        if (!this.isWinning && !this.isLosing)
         {
-            if (gametype == 0)
+            this.isLosing = true;
+            this.titanScore++;
+            this.gameEndCD = this.gameEndTotalCDtime;
+            if (IN_GAME_MAIN_CAMERA.gametype == GAMETYPE.MULTIPLAYER)
             {
-                IN_GAME_MAIN_CAMERA.GameMode = GameMode.KILL_TITAN;
-                return;
-            }
-            if (gametype == 1)
-            {
-                IN_GAME_MAIN_CAMERA.GameMode = GameMode.SURVIVE_MODE;
-                return;
-            }
-            if (gametype == 2)
-            {
-                IN_GAME_MAIN_CAMERA.GameMode = GameMode.PVP_AHSS;
-                return;
-            }
-            if (gametype == 3)
-            {
-                IN_GAME_MAIN_CAMERA.GameMode = GameMode.RACING;
-                return;
-            }
-            if (gametype == 4)
-            {
-                IN_GAME_MAIN_CAMERA.GameMode = GameMode.None;
+                object[] parameters = new object[] { this.titanScore };
+                base.photonView.RPC("netGameLose", PhotonTargets.Others, parameters);
             }
         }
     }
 
-
-    [RPC]
-    private void customlevelRPC(string[] content, PhotonMessageInfo info)
+    public void gameWin()
     {
-        if (!info.sender.IsMasterClient)
+        if (!this.isLosing && !this.isWinning)
         {
-            return;
+            this.isWinning = true;
+            this.humanScore++;
+            if (IN_GAME_MAIN_CAMERA.gamemode == GAMEMODE.RACING)
+            {
+                this.gameEndCD = 20f;
+                if (IN_GAME_MAIN_CAMERA.gametype == GAMETYPE.MULTIPLAYER)
+                {
+                    object[] parameters = new object[] { 0 };
+                    base.photonView.RPC("netGameWin", PhotonTargets.Others, parameters);
+                }
+            }
+            else if (IN_GAME_MAIN_CAMERA.gamemode == GAMEMODE.PVP_AHSS)
+            {
+                this.gameEndCD = this.gameEndTotalCDtime;
+                if (IN_GAME_MAIN_CAMERA.gametype == GAMETYPE.MULTIPLAYER)
+                {
+                    object[] objArray2 = new object[] { this.teamWinner };
+                    base.photonView.RPC("netGameWin", PhotonTargets.Others, objArray2);
+                }
+                this.teamScores[this.teamWinner - 1]++;
+            }
+            else
+            {
+                this.gameEndCD = this.gameEndTotalCDtime;
+                if (IN_GAME_MAIN_CAMERA.gametype == GAMETYPE.MULTIPLAYER)
+                {
+                    object[] objArray3 = new object[] { this.humanScore };
+                    base.photonView.RPC("netGameWin", PhotonTargets.Others, objArray3);
+                }
+            }
         }
-        CustomLevel.RPC(content);
     }
 
     [RPC]
     private void getRacingResult(string player, float time)
     {
-        RacingResult racingResult = new RacingResult();
-        racingResult.name = player;
-        racingResult.time = time;
-        this.racingResult.Add(racingResult);
-        this.RefreshRacingResult();
+        RacingResult result = new RacingResult {
+            name = player,
+            time = time
+        };
+        this.racingResult.Add(result);
+        this.refreshRacingResult();
     }
 
-    private void KickPhotonPlayer(string name)
+    public bool isPlayerAllDead()
     {
-        foreach (PhotonPlayer photonPlayer in PhotonNetwork.playerList)
+        int num = 0;
+        int num2 = 0;
+        foreach (PhotonPlayer player in PhotonNetwork.playerList)
         {
-            if (photonPlayer.ID.ToString() == name && !photonPlayer.IsMasterClient)
+            if (((int) player.customProperties[PhotonPlayerProperty.isTitan]) == 1)
             {
-                PhotonNetwork.CloseConnection(photonPlayer);
+                num++;
+                if ((bool) player.customProperties[PhotonPlayerProperty.dead])
+                {
+                    num2++;
+                }
+            }
+        }
+        return (num == num2);
+    }
+
+    public bool isTeamAllDead(int team)
+    {
+        int num = 0;
+        int num2 = 0;
+        foreach (PhotonPlayer player in PhotonNetwork.playerList)
+        {
+            if ((((int) player.customProperties[PhotonPlayerProperty.isTitan]) == 1) && (((int) player.customProperties[PhotonPlayerProperty.team]) == team))
+            {
+                num++;
+                if ((bool) player.customProperties[PhotonPlayerProperty.dead])
+                {
+                    num2++;
+                }
+            }
+        }
+        return (num == num2);
+    }
+
+    private void kickPhotonPlayer(string name)
+    {
+        UnityEngine.MonoBehaviour.print("KICK " + name + "!!!");
+        foreach (PhotonPlayer player in PhotonNetwork.playerList)
+        {
+            if ((player.ID.ToString() == name) && !player.isMasterClient)
+            {
+                PhotonNetwork.CloseConnection(player);
                 return;
             }
         }
     }
 
-    private void KickPlayer(string kickPlayer, string kicker)
+    private void kickPlayer(string kickPlayer, string kicker)
     {
+        KickState state;
         bool flag = false;
         for (int i = 0; i < this.kicklist.Count; i++)
         {
-            if (((KickState)this.kicklist[i]).name == kickPlayer)
+            if (((KickState) this.kicklist[i]).name == kickPlayer)
             {
-                KickState kickState = (KickState)this.kicklist[i];
-                kickState.addKicker(kicker);
-                this.TryKick(kickState);
+                state = (KickState) this.kicklist[i];
+                state.addKicker(kicker);
+                this.tryKick(state);
                 flag = true;
                 break;
             }
         }
         if (!flag)
         {
-            KickState kickState = new KickState();
-            kickState.init(kickPlayer);
-            kickState.addKicker(kicker);
-            this.kicklist.Add(kickState);
-            this.TryKick(kickState);
+            state = new KickState();
+            state.init(kickPlayer);
+            state.addKicker(kicker);
+            this.kicklist.Add(state);
+            this.tryKick(state);
         }
     }
 
     private void LateUpdate()
     {
-        if (this.GameStart)
+        if (this.gameStart)
         {
-            foreach (var h in heroes)
+            IEnumerator enumerator = this.heroes.GetEnumerator();
+            try
             {
-                h.lateUpdate();
+                while (enumerator.MoveNext())
+                {
+                    ((HERO) enumerator.Current).lateUpdate();
+                }
             }
-            foreach (var t in titans)
+            finally
             {
-                t.lateUpdate();
+                IDisposable disposable = enumerator as IDisposable;
+                if (disposable != null)
+                {
+	                disposable.Dispose();
+                }
             }
-            Core(UnityEngine.Time.deltaTime);
+            IEnumerator enumerator2 = this.eT.GetEnumerator();
+            try
+            {
+                while (enumerator2.MoveNext())
+                {
+                    ((TITAN_EREN) enumerator2.Current).lateUpdate();
+                }
+            }
+            finally
+            {
+                IDisposable disposable2 = enumerator2 as IDisposable;
+                if (disposable2 != null)
+                {
+	                disposable2.Dispose();
+                }
+            }
+            IEnumerator enumerator3 = this.titans.GetEnumerator();
+            try
+            {
+                while (enumerator3.MoveNext())
+                {
+                    ((TITAN) enumerator3.Current).lateUpdate();
+                }
+            }
+            finally
+            {
+                IDisposable disposable3 = enumerator3 as IDisposable;
+                if (disposable3 != null)
+                {
+	                disposable3.Dispose();
+                }
+            }
+            IEnumerator enumerator4 = this.fT.GetEnumerator();
+            try
+            {
+                while (enumerator4.MoveNext())
+                {
+                    ((FEMALE_TITAN) enumerator4.Current).lateUpdate();
+                }
+            }
+            finally
+            {
+                IDisposable disposable4 = enumerator4 as IDisposable;
+                if (disposable4 != null)
+                {
+	                disposable4.Dispose();
+                }
+            }
+            this.core();
         }
+    }
+
+    public void multiplayerRacingFinsih()
+    {
+        float time = this.roundTime - 20f;
+        if (PhotonNetwork.isMasterClient)
+        {
+            this.getRacingResult(LoginFengKAI.player.name, time);
+        }
+        else
+        {
+            object[] parameters = new object[] { LoginFengKAI.player.name, time };
+            base.photonView.RPC("getRacingResult", PhotonTargets.MasterClient, parameters);
+        }
+        this.gameWin();
     }
 
     [RPC]
@@ -816,13 +851,13 @@ public class FengGameManagerMKII : Photon.MonoBehaviour
     {
         this.humanScore = score;
         this.isWinning = true;
-        if (IN_GAME_MAIN_CAMERA.GameMode == GameMode.PVP_AHSS)
+        if (IN_GAME_MAIN_CAMERA.gamemode == GAMEMODE.PVP_AHSS)
         {
             this.teamWinner = score;
             this.teamScores[this.teamWinner - 1]++;
             this.gameEndCD = this.gameEndTotalCDtime;
         }
-        else if (IN_GAME_MAIN_CAMERA.GameMode == GameMode.RACING)
+        else if (IN_GAME_MAIN_CAMERA.gamemode == GAMEMODE.RACING)
         {
             this.gameEndCD = 20f;
         }
@@ -838,701 +873,38 @@ public class FengGameManagerMKII : Photon.MonoBehaviour
         this.localRacingResult = tmp;
     }
 
-    private void OnLevelWasLoaded(int level)
-    {
-        ChangeQuality.setCurrentQuality();
-        if (level == 0)
-        {
-            return;
-        }
-        if (Application.loadedLevelName == "characterCreation" || Application.loadedLevelName == "SnapShot")
-        {
-            return;
-        }
-        GameObject[] array = GameObject.FindGameObjectsWithTag("titan");
-        foreach (GameObject gameObject in array)
-        {
-            if (gameObject.GetPhotonView() == null || !gameObject.GetPhotonView().owner.IsMasterClient)
-            {
-                UnityEngine.Object.Destroy(gameObject);
-            }
-        }
-        this.isWinning = false;
-        this.GameStart = true;
-        RespawnPositions.Dispose();
-        this.ShowHUDInfoCenter(string.Empty);
-        GameObject gameObject2 = (GameObject)UnityEngine.Object.Instantiate(CacheResources.Load("MainCamera_mono"), CacheGameObject.Find("cameraDefaultPosition").transform.position, CacheGameObject.Find("cameraDefaultPosition").transform.rotation);
-        UnityEngine.Object.Destroy(CacheGameObject.Find("cameraDefaultPosition"));
-        gameObject2.name = "MainCamera";
-        Screen.lockCursor = true;
-        Screen.showCursor = true;
-        var ui = (GameObject)Instantiate(CacheResources.Load("UI_IN_GAME"));
-        ui.name = "UI_IN_GAME";
-        ui.SetActive(true);
-        UIRefer = ui.GetComponent<UIReferArray>();
-        NGUITools.SetActive(UIRefer.panels[0], true);
-        NGUITools.SetActive(UIRefer.panels[1], false);
-        NGUITools.SetActive(UIRefer.panels[2], false);
-        NGUITools.SetActive(UIRefer.panels[3], false);
-        IN_GAME_MAIN_CAMERA.MainCamera.setHUDposition();
-        IN_GAME_MAIN_CAMERA.MainCamera.setDayLight(IN_GAME_MAIN_CAMERA.DayLight);
-        LevelInfo info = Level;
-        if (IN_GAME_MAIN_CAMERA.GameType == GameType.Single)
-        {
-            this.single_kills = 0;
-            this.single_maxDamage = 0;
-            this.single_totalDamage = 0;
-            IN_GAME_MAIN_CAMERA.MainCamera.enabled = true;
-            IN_GAME_MAIN_CAMERA.SpecMov.disable = true;
-            IN_GAME_MAIN_CAMERA.Look.disable = true;
-            IN_GAME_MAIN_CAMERA.GameMode = FengGameManagerMKII.Level.Mode;
-            this.SpawnPlayer(IN_GAME_MAIN_CAMERA.singleCharacter.ToUpper(), "playerRespawn");
-            if (IN_GAME_MAIN_CAMERA.CameraMode == CameraType.TPS)
-            {
-                Screen.lockCursor = true;
-            }
-            else
-            {
-                Screen.lockCursor = false;
-            }
-            Screen.showCursor = false;
-            int rate = 90;
-            if (this.Difficulty == 1)
-            {
-                rate = 70;
-            }
-            this.RandomSpawnTitan("titanRespawn", rate, info.EnemyNumber, false);
-            return;
-        }
-        playerList = new PlayerList();
-        PVPcheckPoint.chkPts = new ArrayList();
-        IN_GAME_MAIN_CAMERA.MainCamera.enabled = false;
-        IN_GAME_MAIN_CAMERA.BaseCamera.GetComponent<CameraShake>().enabled = false;
-        IN_GAME_MAIN_CAMERA.GameType = GameType.Multi;
-        CustomLevel.loadLevel();
-        if (info.Mode == GameMode.TROST)
-        {
-            CacheGameObject.Find("playerRespawn").SetActive(false);
-            UnityEngine.Object.Destroy(CacheGameObject.Find("playerRespawn"));
-            GameObject gameObject3 = CacheGameObject.Find("rock");
-            gameObject3.animation["lift"].speed = 0f;
-            CacheGameObject.Find("door_fine").SetActive(false);
-            CacheGameObject.Find("door_broke").SetActive(true);
-            UnityEngine.Object.Destroy(CacheGameObject.Find("ppl"));
-        }
-        else if (info.Mode == GameMode.BOSS_FIGHT_CT)
-        {
-            CacheGameObject.Find("playerRespawnTrost").SetActive(false);
-            UnityEngine.Object.Destroy(CacheGameObject.Find("playerRespawnTrost"));
-        }
-        if (this.NeedChooseSide)
-        {
-            this.ShowHUDInfoTopCenterADD("\n\nPRESS 1 TO ENTER GAME");
-        }
-        else
-        {
-            if (IN_GAME_MAIN_CAMERA.CameraMode == CameraType.TPS)
-            {
-                Screen.lockCursor = true;
-            }
-            else
-            {
-                Screen.lockCursor = false;
-            }
-            if (IN_GAME_MAIN_CAMERA.GameMode == GameMode.PVP_CAPTURE)
-            {
-                if ((int)PhotonNetwork.player.Properties[PhotonPlayerProperty.isTitan] == 2)
-                {
-                    this.checkpoint = CacheGameObject.Find("PVPchkPtT");
-                }
-                else
-                {
-                    this.checkpoint = CacheGameObject.Find("PVPchkPtH");
-                }
-            }
-            if ((int)PhotonNetwork.player.Properties[PhotonPlayerProperty.isTitan] == 2)
-            {
-                this.SpawnNonAITitan(this.myLastHero, "titanRespawn");
-            }
-            else
-            {
-                this.SpawnPlayer(this.myLastHero, this.myLastRespawnTag);
-            }
-        }
-        if (info.Mode == GameMode.BOSS_FIGHT_CT)
-        {
-            UnityEngine.Object.Destroy(CacheGameObject.Find("rock"));
-        }
-        if (PhotonNetwork.IsMasterClient)
-        {
-            if (info.Mode == GameMode.TROST)
-            {
-                if (!this.IsPlayerAllDead())
-                {
-                    GameObject gameObject4 = Optimization.Caching.Pool.NetworkEnable("TITAN_EREN_trost", new Vector3(-200f, 0f, -194f), Quaternion.Euler(0f, 180f, 0f), 0);
-                    gameObject4.GetComponent<TITAN_EREN>().rockLift = true;
-                    int rate2 = 90;
-                    if (this.Difficulty == 1)
-                    {
-                        rate2 = 70;
-                    }
-                    GameObject[] array3 = GameObject.FindGameObjectsWithTag("titanRespawn");
-                    GameObject gameObject5 = CacheGameObject.Find("titanRespawnTrost");
-                    if (gameObject5 != null)
-                    {
-                        foreach (GameObject gameObject6 in array3)
-                        {
-                            if (gameObject6.transform.parent.gameObject == gameObject5)
-                            {
-                                this.SpawnTitan(rate2, gameObject6.transform.position, gameObject6.transform.rotation, false);
-                            }
-                        }
-                    }
-                }
-            }
-            else if (info.Mode == GameMode.BOSS_FIGHT_CT)
-            {
-                if (!this.IsPlayerAllDead())
-                {
-                    Optimization.Caching.Pool.NetworkEnable("COLOSSAL_TITAN", -Vectors.up * 10000f, Quaternion.Euler(0f, 180f, 0f), 0);
-                }
-            }
-            else if (info.Mode == GameMode.KILL_TITAN || info.Mode == GameMode.ENDLESS_TITAN || info.Mode == GameMode.SURVIVE_MODE)
-            {
-                if (info.Name == "Annie" || info.Name == "Annie II")
-                {
-                    Optimization.Caching.Pool.NetworkEnable("FEMALE_TITAN", CacheGameObject.Find("titanRespawn").transform.position, CacheGameObject.Find("titanRespawn").transform.rotation, 0);
-                }
-                else
-                {
-                    int rate3 = 90;
-                    if (this.Difficulty == 1)
-                    {
-                        rate3 = 70;
-                    }
-                    this.RandomSpawnTitan("titanRespawn", rate3, info.EnemyNumber, false);
-                }
-            }
-            else if (info.Mode != GameMode.TROST)
-            {
-                if (info.Mode == GameMode.PVP_CAPTURE && FengGameManagerMKII.Level.MapName == "OutSide")
-                {
-                    GameObject[] array5 = GameObject.FindGameObjectsWithTag("titanRespawn");
-                    if (array5.Length <= 0)
-                    {
-                        return;
-                    }
-                    for (int k = 0; k < array5.Length; k++)
-                    {
-                        this.spawnTitanRaw(array5[k].transform.position, array5[k].transform.rotation).setAbnormalType(AbnormalType.Crawler, true);
-                    }
-                }
-            }
-        }
-        if (!info.Supply)
-        {
-            UnityEngine.Object.Destroy(CacheGameObject.Find("aot_supply"));
-        }
-        if (!PhotonNetwork.IsMasterClient)
-        {
-            BasePV.RPC("RequireStatus", PhotonTargets.MasterClient, new object[0]);
-        }
-        if (Stylish != null)
-        {
-            Stylish.enabled = true;
-        }
-        if (FengGameManagerMKII.Level.LavaMode)
-        {
-            UnityEngine.Object.Instantiate(CacheResources.Load("levelBottom"), new Vector3(0f, -29.5f, 0f), Quaternion.Euler(0f, 0f, 0f));
-            CacheGameObject.Find("aot_supply").transform.position = CacheGameObject.Find("aot_supply_lava_position").transform.position;
-            CacheGameObject.Find("aot_supply").transform.rotation = CacheGameObject.Find("aot_supply_lava_position").transform.rotation;
-        }
-        Resources.UnloadUnusedAssets();
-    }
-
-    [RPC]
-    private void refreshPVPStatus(int score1, int score2)
-    {
-        this.PVPhumanScore = score1;
-        this.PVPtitanScore = score2;
-    }
-
-    [RPC]
-    private void refreshPVPStatus_AHSS(int[] score1)
-    {
-        this.teamScores = score1;
-    }
-
-    private void RefreshRacingResult()
-    {
-        this.localRacingResult = "Result\n";
-        IComparer comparer = new IComparerRacingResult();
-        this.racingResult.Sort(comparer);
-        int num = this.racingResult.Count;
-        num = Mathf.Min(num, 6);
-        for (int i = 0; i < num; i++)
-        {
-            string text = this.localRacingResult;
-            this.localRacingResult = string.Concat(new object[]
-            {
-                text,
-                "Rank ",
-                i + 1,
-                " : "
-            });
-            this.localRacingResult += (this.racingResult[i] as RacingResult).name;
-            this.localRacingResult = this.localRacingResult + "   " + ((float)((int)((this.racingResult[i] as RacingResult).time * 100f)) * 0.01f).ToString() + "s";
-            this.localRacingResult += "\n";
-        }
-        BasePV.RPC("netRefreshRacingResult", PhotonTargets.All, new object[]
-        {
-            this.localRacingResult
-        });
-    }
-
-    [RPC]
-    private void refreshStatus(int score1, int score2, int wav, int highestWav, float time1, float time2, bool startRacin, bool endRacin)
-    {
-        this.humanScore = score1;
-        this.titanScore = score2;
-        this.Wave = wav;
-        this.highestwave = highestWav;
-        this.RoundTime = time1;
-        this.timeTotalServer = time2;
-        this.startRacing = startRacin;
-        this.endRacing = endRacin;
-        if (this.startRacing && CacheGameObject.Find("door"))
-        {
-            CacheGameObject.Find("door").SetActive(false);
-        }
-    }
-
-    [RPC]
-    private void RequireStatus()
-    {
-        BasePV.RPC("refreshStatus", PhotonTargets.Others, new object[]
-        {
-            this.humanScore,
-            this.titanScore,
-            this.Wave,
-            this.highestwave,
-            this.RoundTime,
-            this.timeTotalServer,
-            this.startRacing,
-            this.endRacing
-        });
-        BasePV.RPC("refreshPVPStatus", PhotonTargets.Others, new object[]
-        {
-            this.PVPhumanScore,
-            this.PVPtitanScore
-        });
-        BasePV.RPC("refreshPVPStatus_AHSS", PhotonTargets.Others, new object[]
-        {
-            this.teamScores
-        });
-    }
-
-    [RPC]
-    private void respawnHeroInNewRound()
-    {
-        if (this.NeedChooseSide)
-        {
-            return;
-        }
-        if (IN_GAME_MAIN_CAMERA.MainCamera.gameOver)
-        {
-            this.SpawnPlayer(this.myLastHero, this.myLastRespawnTag);
-            IN_GAME_MAIN_CAMERA.MainCamera.gameOver = false;
-            this.ShowHUDInfoCenter(string.Empty);
-        }
-    }
-
-    [RPC]
-    private void restartGameByClient()
-    {
-        this.RestartGame(false);
-    }
-
-    [RPC]
-    private void RPCLoadLevel()
-    {
-        PhotonNetwork.LoadLevel(FengGameManagerMKII.Level.MapName);
-    }
-
-    [RPC]
-    private void showChatContent(string content)
-    {
-        //    this.chatContent.Add(content);
-        //    if (this.chatContent.Count > 10)
-        //    {
-        //        this.chatContent.RemoveAt(0);
-        //    }
-        //    CacheGameObject.Find("LabelChatContent").GetComponent<UILabel>().text = string.Empty;
-        //    for (int i = 0; i < this.chatContent.Count; i++)
-        //    {
-        //        UILabel component = CacheGameObject.Find("LabelChatContent").GetComponent<UILabel>();
-        //        component.text += this.chatContent[i];
-        //    }
-        Debug.Log("showChatContent sent. Content: " + content);
-    }
-
-    #region Show UILabels
-    internal void ShowHUDInfoCenter(string content)
-    {
-        Labels.Center = content.ToRGBA();
-    }
-
-    internal void ShowHUDInfoCenterADD(string content)
-    {
-        Labels.Center = content.ToRGBA();
-    }
-
-    internal void ShowHUDInfoTopCenter(string content)
-    {
-        Labels.TopCenter = content.ToRGBA();
-    }
-
-    internal void ShowHUDInfoTopCenterADD(string content)
-    {
-        Labels.TopCenter = content.ToRGBA();
-    }
-
-    internal void ShowHUDInfoTopLeft(string content)
-    {
-        Labels.TopLeft= content.ToRGBA();
-    }
-
-    internal void ShowHUDInfoTopRight(string content)
-    {
-        Labels.TopRight = content.ToRGBA();
-    }
-
-    internal void ShowHUDInfoTopRightMAPNAME(string content)
-    {
-        Labels.TopRight += content.ToRGBA();
-    }
-    #endregion
-
-    [RPC]
-    private void showResult(string text0, string text1, string text2, string text3, string text4, string text6, PhotonMessageInfo t)
-    {
-        if (this.gameTimesUp)
-        {
-            return;
-        }
-        this.gameTimesUp = true;
-        NGUITools.SetActive(UIRefer.panels[0], false);
-        NGUITools.SetActive(UIRefer.panels[1], false);
-        NGUITools.SetActive(UIRefer.panels[2], true);
-        NGUITools.SetActive(UIRefer.panels[3], false);
-        CacheGameObject.Find<UILabel>("LabelName").text = text0;
-        CacheGameObject.Find<UILabel>("LabelKill").text = text1;
-        CacheGameObject.Find<UILabel>("LabelDead").text = text2;
-        CacheGameObject.Find<UILabel>("LabelMaxDmg").text = text3;
-        CacheGameObject.Find<UILabel>("LabelTotalDmg").text = text4;
-        CacheGameObject.Find<UILabel>("LabelResultTitle").text = text6;
-        Screen.lockCursor = false;
-        Screen.showCursor = true;
-        IN_GAME_MAIN_CAMERA.GameType = GameType.Stop;
-        this.GameStart = false;
-    }
-
-    private TITAN spawnTitanRaw(Vector3 position, Quaternion rotation)
-    {
-        if (IN_GAME_MAIN_CAMERA.GameType == GameType.Single)
-        {
-            return ((GameObject)UnityEngine.Object.Instantiate(CacheResources.Load("TITAN_VER3.1"), position, rotation)).GetComponent<TITAN>();
-        }
-        else
-        {
-            return Optimization.Caching.Pool.NetworkEnable("TITAN_VER3.1", position, rotation, 0).GetComponent<TITAN>();
-        }
-    }
-
-    private void Start()
-    {
-        ChangeQuality.setCurrentQuality();
-        name = "MultiplayerManager";
-        DontDestroyOnLoad(this);
-        HeroCostume.Init();
-        CharacterMaterials.init();
-        RCManager.Clear();
-        this.heroes = new List<HERO>();
-        this.titans = new List<TITAN>();
-        this.hooks = new List<Bullet>();
-        //Application.targetFrameRate = 60;
-        //UnityEngine.Time.fixedDeltaTime = 1f / 60f;
-    }
-
-    private void TryKick(KickState tmp)
-    {
-        this.SendChatContentInfo(string.Concat(new object[]
-        {
-            "kicking #",
-            tmp.name,
-            ", ",
-            tmp.getKickCount(),
-            "/",
-            (int)((float)PhotonNetwork.playerList.Length * 0.5f),
-            "vote"
-        }));
-        if (tmp.getKickCount() >= (int)((float)PhotonNetwork.playerList.Length * 0.5f))
-        {
-            this.KickPhotonPlayer(tmp.name.ToString());
-        }
-    }
-
-    private void Update()
-    {
-        FPS.FPSUpdate();
-        if (IN_GAME_MAIN_CAMERA.GameType != GameType.Single)
-        {
-            Labels.NetworkStatus = PhotonNetwork.connectionStateDetailed.ToString() + (PhotonNetwork.connected ? " ping: " + PhotonNetwork.GetPing() : "");
-        }
-        if (!GameStart) return;
-        foreach (var h in heroes)
-        {
-            h.update();
-        }
-        foreach (var b in hooks)
-        {
-            b.update();
-        }
-        if (IN_GAME_MAIN_CAMERA.GameType == GameType.Single || PhotonNetwork.IsMasterClient)
-        {
-            foreach (var t in titans)
-            {
-                t.update();
-            }
-        }
-        if (mainCamera)
-        {
-            mainCamera.update();
-            mainCamera.snapShotUpdate();
-        }
-    }
-
-    [RPC]
-    private void updateKillInfo(bool t1, string killer, bool t2, string victim, int dmg)
-    {
-        //var killInfo = Pool.Enable("UI/KillInfo").GetComponent<KillInfoComponent>();
-        var killInfo = ((GameObject)Instantiate(CacheResources.Load("UI/KillInfo"))).GetComponent<KillInfoComponent>();
-        using (var ien = killInfoList.GetEnumerator())
-        {
-            while (ien.MoveNext())
-            {
-                if (ien.Current != null)
-                {
-                    ien.Current.moveOn();
-                }
-            }
-        }
-        if (killInfoList.Count > 4)
-        {
-            killInfoList.Dequeue().destroy();
-        }
-        killInfo.SetParent(UIRefer.panels[0].transform);
-        killInfo.Show(t1, killer, t2, victim, dmg);
-        killInfoList.Enqueue(killInfo);
-    }
-
-    public void AddCamera(IN_GAME_MAIN_CAMERA c)
-    {
-        this.mainCamera = c;
-    }
-
-    public void AddCT(COLOSSAL_TITAN titan)
-    {
-        colossal = titan;
-    }
-
-    public void AddET(TITAN_EREN hero)
-    {
-        eren = hero;
-    }
-
-    public void AddFT(FEMALE_TITAN titan)
-    {
-        annie = titan;
-    }
-
-    public void AddHero(HERO hero)
-    {
-        this.heroes.Add(hero);
-    }
-
-    public void AddHook(Bullet h)
-    {
-        this.hooks.Add(h);
-    }
-
-    public void AddTitan(TITAN titan)
-    {
-        this.titans.Add(titan);
-    }
-
-    public void CheckPVPpts()
-    {
-        if (this.PVPtitanScore >= this.PVPtitanScoreMax)
-        {
-            this.PVPtitanScore = this.PVPtitanScoreMax;
-            this.GameLose();
-        }
-        else if (this.PVPhumanScore >= this.PVPhumanScoreMax)
-        {
-            this.PVPhumanScore = this.PVPhumanScoreMax;
-            this.GameWin();
-        }
-    }
-
-    public void GameLose()
-    {
-        if (this.isWinning)
-        {
-            return;
-        }
-        if (this.isLosing)
-        {
-            return;
-        }
-        this.isLosing = true;
-        this.titanScore++;
-        this.gameEndCD = this.gameEndTotalCDtime;
-        if (IN_GAME_MAIN_CAMERA.GameType == GameType.Multi)
-        {
-            BasePV.RPC("netGameLose", PhotonTargets.Others, new object[]
-            {
-                this.titanScore
-            });
-        }
-    }
-
-    public void GameWin()
-    {
-        if (this.isLosing)
-        {
-            return;
-        }
-        if (this.isWinning)
-        {
-            return;
-        }
-        this.isWinning = true;
-        this.humanScore++;
-        if (IN_GAME_MAIN_CAMERA.GameMode == GameMode.RACING)
-        {
-            this.gameEndCD = 20f;
-            if (IN_GAME_MAIN_CAMERA.GameType == GameType.Multi)
-            {
-                BasePV.RPC("netGameWin", PhotonTargets.Others, new object[]
-                {
-                    0
-                });
-            }
-        }
-        else if (IN_GAME_MAIN_CAMERA.GameMode == GameMode.PVP_AHSS)
-        {
-            this.gameEndCD = this.gameEndTotalCDtime;
-            if (IN_GAME_MAIN_CAMERA.GameType == GameType.Multi)
-            {
-                BasePV.RPC("netGameWin", PhotonTargets.Others, new object[]
-                {
-                    this.teamWinner
-                });
-            }
-            this.teamScores[this.teamWinner - 1]++;
-        }
-        else
-        {
-            this.gameEndCD = this.gameEndTotalCDtime;
-            if (IN_GAME_MAIN_CAMERA.GameType == GameType.Multi)
-            {
-                BasePV.RPC("netGameWin", PhotonTargets.Others, new object[]
-                {
-                    this.humanScore
-                });
-            }
-        }
-    }
-
-    public bool IsPlayerAllDead()
-    {
-        foreach(PhotonPlayer player in PhotonNetwork.playerList)
-        {
-            if (player.IsTitan || player.Dead) continue;
-            return false;
-        }
-        return true;
-    }
-
-    public bool IsTeamAllDead(int team)
-    {
-        foreach(PhotonPlayer player in PhotonNetwork.playerList)
-        {
-            if (player.IsTitan) continue;
-            if (player.Team == team && !player.Dead) return false;
-
-        }
-        return true;
-    }
-
-    public void MultiplayerRacingFinsih()
-    {
-        float num = this.RoundTime - 20f;
-        if (PhotonNetwork.IsMasterClient)
-        {
-            this.getRacingResult(LoginFengKAI.player.name, num);
-        }
-        else
-        {
-            BasePV.RPC("getRacingResult", PhotonTargets.MasterClient, new object[]
-            {
-                LoginFengKAI.player.name,
-                num
-            });
-        }
-        this.GameWin();
-    }
-
     [RPC]
     public void netShowDamage(int speed)
     {
-        Stylish?.Style(speed);
-        //CacheGameObject.Find<StylishComponent>("Stylish").Style(speed);
-        var target = CacheGameObject.Find<UILabel>("LabelScore");
+        GameObject.Find("Stylish").GetComponent<StylishComponent>().Style(speed);
+        GameObject target = GameObject.Find("LabelScore");
         if (target != null)
         {
-            target.text = speed.ToString();
-            target.transform.localScale = Vectors.zero;
-            speed = (int)(speed * 0.1f);
+            target.GetComponent<UILabel>().text = speed.ToString();
+            target.transform.localScale = Vector3.zero;
+            speed = (int) (speed * 0.1f);
             speed = Mathf.Max(40, speed);
             speed = Mathf.Min(150, speed);
-            iTween.Stop(target.cachedGameObject);
-            iTween.ScaleTo(target.cachedGameObject, new System.Collections.Hashtable() { { "x", speed }, { "y", speed }, { "z", speed }, { "easetype", iTween.EaseType.easeOutElastic }, { "time", 1f } });
-            iTween.ScaleTo(target.cachedGameObject, itweenHash);
+            iTween.Stop(target);
+            object[] args = new object[] { "x", speed, "y", speed, "z", speed, "easetype", iTween.EaseType.easeOutElastic, "time", 1f };
+            iTween.ScaleTo(target, iTween.Hash(args));
+            object[] objArray2 = new object[] { "x", 0, "y", 0, "z", 0, "easetype", iTween.EaseType.easeInBounce, "time", 0.5f, "delay", 2f };
+            iTween.ScaleTo(target, iTween.Hash(objArray2));
         }
     }
 
     public void NOTSpawnNonAITitan(string id)
     {
         this.myLastHero = id.ToUpper();
-        ExitGames.Client.Photon.Hashtable customProperties = new ExitGames.Client.Photon.Hashtable
-        {
-            {
-                "dead",
-                true
-            }
-        };
-        PhotonNetwork.player.SetCustomProperties(customProperties);
-        customProperties = new ExitGames.Client.Photon.Hashtable
-        {
-            {
-                PhotonPlayerProperty.isTitan,
-                2
-            }
-        };
-        PhotonNetwork.player.SetCustomProperties(customProperties);
-        if (IN_GAME_MAIN_CAMERA.CameraMode == CameraType.TPS)
+        ExitGames.Client.Photon.Hashtable hashtable2 = new ExitGames.Client.Photon.Hashtable();
+        hashtable2.Add("dead", true);
+        ExitGames.Client.Photon.Hashtable propertiesToSet = hashtable2;
+        PhotonNetwork.player.SetCustomProperties(propertiesToSet);
+        hashtable2 = new ExitGames.Client.Photon.Hashtable();
+        hashtable2.Add(PhotonPlayerProperty.isTitan, 2);
+        propertiesToSet = hashtable2;
+        PhotonNetwork.player.SetCustomProperties(propertiesToSet);
+        if (IN_GAME_MAIN_CAMERA.cameraMode == CAMERA_TYPE.TPS)
         {
             Screen.lockCursor = true;
         }
@@ -1542,32 +914,24 @@ public class FengGameManagerMKII : Photon.MonoBehaviour
         }
         Screen.showCursor = true;
         this.ShowHUDInfoCenter("the game has started for 60 seconds.\n please wait for next round.\n Click Right Mouse Key to Enter or Exit the Spectator Mode.");
-        IN_GAME_MAIN_CAMERA.MainCamera.enabled = true;
-        IN_GAME_MAIN_CAMERA.MainCamera.SetMainObject(null, true, false);
-        IN_GAME_MAIN_CAMERA.MainCamera.setSpectorMode(true);
-        IN_GAME_MAIN_CAMERA.MainCamera.gameOver = true;
+        GameObject.Find("MainCamera").GetComponent<IN_GAME_MAIN_CAMERA>().enabled = true;
+        GameObject.Find("MainCamera").GetComponent<IN_GAME_MAIN_CAMERA>().setMainObject(null, true, false);
+        GameObject.Find("MainCamera").GetComponent<IN_GAME_MAIN_CAMERA>().setSpectorMode(true);
+        GameObject.Find("MainCamera").GetComponent<IN_GAME_MAIN_CAMERA>().gameOver = true;
     }
 
     public void NOTSpawnPlayer(string id)
     {
         this.myLastHero = id.ToUpper();
-        ExitGames.Client.Photon.Hashtable customProperties = new ExitGames.Client.Photon.Hashtable
-        {
-            {
-                "dead",
-                true
-            }
-        };
-        PhotonNetwork.player.SetCustomProperties(customProperties);
-        customProperties = new ExitGames.Client.Photon.Hashtable
-        {
-            {
-                PhotonPlayerProperty.isTitan,
-                1
-            }
-        };
-        PhotonNetwork.player.SetCustomProperties(customProperties);
-        if (IN_GAME_MAIN_CAMERA.CameraMode == CameraType.TPS)
+        ExitGames.Client.Photon.Hashtable hashtable2 = new ExitGames.Client.Photon.Hashtable();
+        hashtable2.Add("dead", true);
+        ExitGames.Client.Photon.Hashtable propertiesToSet = hashtable2;
+        PhotonNetwork.player.SetCustomProperties(propertiesToSet);
+        hashtable2 = new ExitGames.Client.Photon.Hashtable();
+        hashtable2.Add(PhotonPlayerProperty.isTitan, 1);
+        propertiesToSet = hashtable2;
+        PhotonNetwork.player.SetCustomProperties(propertiesToSet);
+        if (IN_GAME_MAIN_CAMERA.cameraMode == CAMERA_TYPE.TPS)
         {
             Screen.lockCursor = true;
         }
@@ -1577,38 +941,38 @@ public class FengGameManagerMKII : Photon.MonoBehaviour
         }
         Screen.showCursor = false;
         this.ShowHUDInfoCenter("the game has started for 60 seconds.\n please wait for next round.\n Click Right Mouse Key to Enter or Exit the Spectator Mode.");
-        IN_GAME_MAIN_CAMERA.MainCamera.enabled = true;
-        IN_GAME_MAIN_CAMERA.MainCamera.SetMainObject(null, true, false);
-        IN_GAME_MAIN_CAMERA.MainCamera.setSpectorMode(true);
-        IN_GAME_MAIN_CAMERA.MainCamera.gameOver = true;
+        GameObject.Find("MainCamera").GetComponent<IN_GAME_MAIN_CAMERA>().enabled = true;
+        GameObject.Find("MainCamera").GetComponent<IN_GAME_MAIN_CAMERA>().setMainObject(null, true, false);
+        GameObject.Find("MainCamera").GetComponent<IN_GAME_MAIN_CAMERA>().setSpectorMode(true);
+        GameObject.Find("MainCamera").GetComponent<IN_GAME_MAIN_CAMERA>().gameOver = true;
     }
 
-    public void OnConnectedToMaster(AOTEventArgs args)
+    public void OnConnectedToMaster()
     {
         UnityEngine.MonoBehaviour.print("OnConnectedToMaster");
     }
 
-    public void OnConnectedToPhoton(AOTEventArgs args)
+    public void OnConnectedToPhoton()
     {
         UnityEngine.MonoBehaviour.print("OnConnectedToPhoton");
     }
 
-    public void OnConnectionFail(AOTEventArgs args)
+    public void OnConnectionFail(DisconnectCause cause)
     {
-        UnityEngine.MonoBehaviour.print("OnConnectionFail : " + args.DisconnectCause.ToString());
+        UnityEngine.MonoBehaviour.print("OnConnectionFail : " + cause.ToString());
         Screen.lockCursor = false;
         Screen.showCursor = true;
-        IN_GAME_MAIN_CAMERA.GameType = GameType.Stop;
-        this.GameStart = false;
-        NGUITools.SetActive(UIRefer.panels[0], false);
-        NGUITools.SetActive(UIRefer.panels[1], false);
-        NGUITools.SetActive(UIRefer.panels[2], false);
-        NGUITools.SetActive(UIRefer.panels[3], false);
-        NGUITools.SetActive(UIRefer.panels[4], true);
-        CacheGameObject.Find("LabelDisconnectInfo").GetComponent<UILabel>().text = "OnConnectionFail : " + args.DisconnectCause.ToString();
+        IN_GAME_MAIN_CAMERA.gametype = GAMETYPE.STOP;
+        this.gameStart = false;
+        NGUITools.SetActive(this.ui.GetComponent<UIReferArray>().panels[0], false);
+        NGUITools.SetActive(this.ui.GetComponent<UIReferArray>().panels[1], false);
+        NGUITools.SetActive(this.ui.GetComponent<UIReferArray>().panels[2], false);
+        NGUITools.SetActive(this.ui.GetComponent<UIReferArray>().panels[3], false);
+        NGUITools.SetActive(this.ui.GetComponent<UIReferArray>().panels[4], true);
+        GameObject.Find("LabelDisconnectInfo").GetComponent<UILabel>().text = "OnConnectionFail : " + cause.ToString();
     }
 
-    public void OnCreatedRoom(AOTEventArgs args)
+    public void OnCreatedRoom()
     {
         this.kicklist = new ArrayList();
         this.racingResult = new ArrayList();
@@ -1621,22 +985,7 @@ public class FengGameManagerMKII : Photon.MonoBehaviour
         UnityEngine.MonoBehaviour.print("OnCustomAuthenticationFailed");
     }
 
-    private void OnDestroy()
-    {
-        NetworkingPeer.RemoveEvent(PhotonNetworkingMessage.OnConnectionFail, OnConnectionFail);
-        NetworkingPeer.RemoveEvent(PhotonNetworkingMessage.OnConnectedToPhoton, OnConnectedToPhoton);
-        NetworkingPeer.RemoveEvent(PhotonNetworkingMessage.OnCreatedRoom, OnCreatedRoom);
-        NetworkingPeer.RemoveEvent(PhotonNetworkingMessage.OnDisconnectedFromPhoton, OnDisconnectedFromPhoton);
-        NetworkingPeer.RemoveEvent(PhotonNetworkingMessage.OnJoinedLobby, OnJoinedLobby);
-        NetworkingPeer.RemoveEvent(PhotonNetworkingMessage.OnJoinedRoom, OnJoinedRoom);
-        NetworkingPeer.RemoveEvent(PhotonNetworkingMessage.OnLeftRoom, OnLeftRoom);
-        NetworkingPeer.RemoveEvent(PhotonNetworkingMessage.OnMasterClientSwitched, OnMasterClientSwitched);
-        NetworkingPeer.RemoveEvent(PhotonNetworkingMessage.OnPhotonPlayerConnected, OnPhotonPlayerConnected);
-        NetworkingPeer.RemoveEvent(PhotonNetworkingMessage.OnPhotonPlayerDisconnected, OnPhotonPlayerDisconnected);
-        NetworkingPeer.RemoveEvent(PhotonNetworkingMessage.OnPhotonPlayerPropertiesChanged, OnPhotonPlayerPropertiesChanged);
-    }
-
-    public void OnDisconnectedFromPhoton(AOTEventArgs args)
+    public void OnDisconnectedFromPhoton()
     {
         UnityEngine.MonoBehaviour.print("OnDisconnectedFromPhoton");
         Screen.lockCursor = false;
@@ -1646,277 +995,489 @@ public class FengGameManagerMKII : Photon.MonoBehaviour
     [RPC]
     public void oneTitanDown(string name1 = "", bool onPlayerLeave = false)
     {
-        if (IN_GAME_MAIN_CAMERA.GameType != GameType.Single)
+        if ((IN_GAME_MAIN_CAMERA.gametype == GAMETYPE.SINGLE) || PhotonNetwork.isMasterClient)
         {
-            if (!PhotonNetwork.IsMasterClient)
+            if (IN_GAME_MAIN_CAMERA.gamemode == GAMEMODE.PVP_CAPTURE)
             {
-                return;
-            }
-        }
-        if (IN_GAME_MAIN_CAMERA.GameMode == GameMode.PVP_CAPTURE)
-        {
-            if (!(name1 == string.Empty))
-            {
-                if (name1 == "Titan")
+                if (name1 != string.Empty)
                 {
-                    this.PVPhumanScore++;
-                }
-                else if (name1 == "Aberrant")
-                {
-                    this.PVPhumanScore += 2;
-                }
-                else if (name1 == "Jumper")
-                {
-                    this.PVPhumanScore += 3;
-                }
-                else if (name1 == "Crawler")
-                {
-                    this.PVPhumanScore += 4;
-                }
-                else if (name1 == "Female Titan")
-                {
-                    this.PVPhumanScore += 10;
-                }
-                else
-                {
-                    this.PVPhumanScore += 3;
-                }
-            }
-            this.CheckPVPpts();
-            BasePV.RPC("refreshPVPStatus", PhotonTargets.Others, new object[]
-            {
-                this.PVPhumanScore,
-                this.PVPtitanScore
-            });
-        }
-        else if (IN_GAME_MAIN_CAMERA.GameMode != GameMode.CAGE_FIGHT)
-        {
-            if (IN_GAME_MAIN_CAMERA.GameMode == GameMode.KILL_TITAN)
-            {
-                if (this.CheckIsTitanAllDie())
-                {
-                    this.GameWin();
-                    IN_GAME_MAIN_CAMERA.MainCamera.gameOver = true;
-                }
-            }
-            else if (IN_GAME_MAIN_CAMERA.GameMode == GameMode.SURVIVE_MODE)
-            {
-                if (this.CheckIsTitanAllDie())
-                {
-                    this.Wave++;
-                    if (FengGameManagerMKII.Level.RespawnMode == RespawnMode.NEWROUND && IN_GAME_MAIN_CAMERA.GameType == GameType.Multi)
+                    if (name1 == "Titan")
                     {
-                        BasePV.RPC("respawnHeroInNewRound", PhotonTargets.All, new object[0]);
+                        this.PVPhumanScore++;
                     }
-                    if (IN_GAME_MAIN_CAMERA.GameType == GameType.Multi)
+                    else if (name1 == "Aberrant")
                     {
-                        this.SendChatContentInfo("<color=#A8FF24>Wave : " + this.Wave + "</color>");
+                        this.PVPhumanScore += 2;
                     }
-                    if (this.Wave > this.highestwave)
+                    else if (name1 == "Jumper")
                     {
-                        this.highestwave = this.Wave;
+                        this.PVPhumanScore += 3;
                     }
-                    if (PhotonNetwork.IsMasterClient)
+                    else if (name1 == "Crawler")
                     {
-                        this.RequireStatus();
+                        this.PVPhumanScore += 4;
                     }
-                    if (this.Wave > 20)
+                    else if (name1 == "Female Titan")
                     {
-                        this.GameWin();
+                        this.PVPhumanScore += 10;
                     }
                     else
                     {
-                        int rate = 90;
-                        if (this.Difficulty == 1)
+                        this.PVPhumanScore += 3;
+                    }
+                }
+                this.checkPVPpts();
+                object[] parameters = new object[] { this.PVPhumanScore, this.PVPtitanScore };
+                base.photonView.RPC("refreshPVPStatus", PhotonTargets.Others, parameters);
+            }
+            else if (IN_GAME_MAIN_CAMERA.gamemode != GAMEMODE.CAGE_FIGHT)
+            {
+                if (IN_GAME_MAIN_CAMERA.gamemode == GAMEMODE.KILL_TITAN)
+                {
+                    if (this.checkIsTitanAllDie())
+                    {
+                        this.gameWin();
+                        GameObject.Find("MainCamera").GetComponent<IN_GAME_MAIN_CAMERA>().gameOver = true;
+                    }
+                }
+                else if (IN_GAME_MAIN_CAMERA.gamemode == GAMEMODE.SURVIVE_MODE)
+                {
+                    if (this.checkIsTitanAllDie())
+                    {
+                        this.wave++;
+                        if ((LevelInfo.getInfo(level).respawnMode == RespawnMode.NEWROUND) && (IN_GAME_MAIN_CAMERA.gametype == GAMETYPE.MULTIPLAYER))
                         {
-                            rate = 70;
+                            base.photonView.RPC("respawnHeroInNewRound", PhotonTargets.All, new object[0]);
                         }
-                        if (!FengGameManagerMKII.Level.PunksEnabled)
+                        if (IN_GAME_MAIN_CAMERA.gametype == GAMETYPE.MULTIPLAYER)
                         {
-                            this.RandomSpawnTitan("titanRespawn", rate, this.Wave + 2, false);
+                            this.sendChatContentInfo("<color=#A8FF24>Wave : " + this.wave + "</color>");
                         }
-                        else if (this.Wave == 5)
+                        if (this.wave > this.highestwave)
                         {
-                            this.RandomSpawnTitan("titanRespawn", rate, 1, true);
+                            this.highestwave = this.wave;
                         }
-                        else if (this.Wave == 10)
+                        if (PhotonNetwork.isMasterClient)
                         {
-                            this.RandomSpawnTitan("titanRespawn", rate, 2, true);
+                            this.RequireStatus();
                         }
-                        else if (this.Wave == 15)
+                        if (this.wave > 20)
                         {
-                            this.RandomSpawnTitan("titanRespawn", rate, 3, true);
-                        }
-                        else if (this.Wave == 20)
-                        {
-                            this.RandomSpawnTitan("titanRespawn", rate, 4, true);
+                            this.gameWin();
                         }
                         else
                         {
-                            this.RandomSpawnTitan("titanRespawn", rate, this.Wave + 2, false);
+                            int rate = 90;
+                            if (this.difficulty == 1)
+                            {
+                                rate = 70;
+                            }
+                            if (!LevelInfo.getInfo(level).punk)
+                            {
+                                this.randomSpawnTitan("titanRespawn", rate, this.wave + 2, false);
+                            }
+                            else if (this.wave == 5)
+                            {
+                                this.randomSpawnTitan("titanRespawn", rate, 1, true);
+                            }
+                            else if (this.wave == 10)
+                            {
+                                this.randomSpawnTitan("titanRespawn", rate, 2, true);
+                            }
+                            else if (this.wave == 15)
+                            {
+                                this.randomSpawnTitan("titanRespawn", rate, 3, true);
+                            }
+                            else if (this.wave == 20)
+                            {
+                                this.randomSpawnTitan("titanRespawn", rate, 4, true);
+                            }
+                            else
+                            {
+                                this.randomSpawnTitan("titanRespawn", rate, this.wave + 2, false);
+                            }
                         }
                     }
                 }
-            }
-            else if (IN_GAME_MAIN_CAMERA.GameMode == GameMode.ENDLESS_TITAN)
-            {
-                if (!onPlayerLeave)
+                else if (IN_GAME_MAIN_CAMERA.gamemode == GAMEMODE.ENDLESS_TITAN)
                 {
-                    this.humanScore++;
-                    int rate2 = 90;
-                    if (this.Difficulty == 1)
+                    if (!onPlayerLeave)
                     {
-                        rate2 = 70;
+                        this.humanScore++;
+                        int num2 = 90;
+                        if (this.difficulty == 1)
+                        {
+                            num2 = 70;
+                        }
+                        this.randomSpawnTitan("titanRespawn", num2, 1, false);
                     }
-                    this.RandomSpawnTitan("titanRespawn", rate2, 1, false);
+                }
+                else if (LevelInfo.getInfo(level).enemyNumber == -1)
+                {
                 }
             }
         }
     }
 
-    public void OnFailedToConnectToPhoton(AOTEventArgs args)
+    public void OnFailedToConnectToPhoton()
     {
         UnityEngine.MonoBehaviour.print("OnFailedToConnectToPhoton");
     }
 
-    public void OnJoinedLobby(AOTEventArgs args)
+    public void OnJoinedLobby()
     {
         UnityEngine.MonoBehaviour.print("OnJoinedLobby");
-        NGUITools.SetActive(UIMainReferences.Main.panelMultiStart, false);
-        NGUITools.SetActive(UIMainReferences.Main.panelMultiROOM, true);
+        NGUITools.SetActive(GameObject.Find("UIRefer").GetComponent<UIMainReferences>().panelMultiStart, false);
+        NGUITools.SetActive(GameObject.Find("UIRefer").GetComponent<UIMainReferences>().panelMultiROOM, true);
     }
 
-    public void OnJoinedRoom(AOTEventArgs args)
+    public void OnJoinedRoom()
     {
-        var strArray = PhotonNetwork.room.name.Split('`');
-        Debug.Log("OnJoinedRoom " + PhotonNetwork.room.name + "    >>>>   " + LevelInfo.GetInfo(strArray[1]).MapName);
-        gameTimesUp = false;
-        Level = LevelInfo.GetInfo(strArray[1]);
-        switch (strArray[2].ToLower())
+        char[] separator = new char[] { "`"[0] };
+        UnityEngine.MonoBehaviour.print("OnJoinedRoom " + PhotonNetwork.room.name + "    >>>>   " + LevelInfo.getInfo(PhotonNetwork.room.name.Split(separator)[1]).mapName);
+        this.gameTimesUp = false;
+        char[] chArray2 = new char[] { "`"[0] };
+        string[] strArray = PhotonNetwork.room.name.Split(chArray2);
+        level = strArray[1];
+        if (strArray[2] == "normal")
         {
-            case "normal":
-                Difficulty = 0;
-                break;
-            case "hard":
-                Difficulty = 1;
-                break;
-            case "abnormal":
-                Difficulty = 2;
-                break;
-            default:
-                Difficulty = 1;
-                break;
+            this.difficulty = 0;
         }
-        IN_GAME_MAIN_CAMERA.difficulty = this.Difficulty;
-        Time = int.Parse(strArray[3]) * 60;
-        switch (strArray[4].ToLower())
+        else if (strArray[2] == "hard")
         {
-            case "day":
-            case "день":
-                IN_GAME_MAIN_CAMERA.DayLight = DayLight.Day;
-                break;
-            case "dawn":
-            case "вечер":
-                IN_GAME_MAIN_CAMERA.DayLight = DayLight.Dawn;
-                break;
-            case "night":
-            case "ночь":
-                IN_GAME_MAIN_CAMERA.DayLight = DayLight.Night;
-                break;
-            default:
-                IN_GAME_MAIN_CAMERA.DayLight = DayLight.Dawn;
-                break;
+            this.difficulty = 1;
         }
-        IN_GAME_MAIN_CAMERA.GameMode = Level.Mode;
-        PhotonNetwork.LoadLevel(Level.MapName);
-        var player = PhotonNetwork.player;
-        player.UIName = LoginFengKAI.player.name;
-        player.GuildName =LoginFengKAI.player.guildname;
-        player.Kills = player.Deaths = player.Max_Dmg = player.Total_Dmg = 0;
-        player.Dead = true;
-        player.IsTitan = false;
-        humanScore = 0;
-        titanScore = 0;
-        PVPtitanScore = 0;
-        PVPhumanScore = 0;
-        Wave = 1;
-        highestwave = 1;
-        localRacingResult = string.Empty;
-        NeedChooseSide = true;
-        foreach(var info in killInfoList)
+        else if (strArray[2] == "abnormal")
         {
-            info.destroy();
+            this.difficulty = 2;
         }
-        killInfoList.Clear();
-        InRoomChat.Clear();
-        RCManager.racingSpawnPointSet = false;
-        if (!PhotonNetwork.IsMasterClient)
+        IN_GAME_MAIN_CAMERA.difficulty = this.difficulty;
+        this.time = int.Parse(strArray[3]);
+        this.time *= 60;
+        if (strArray[4] == "day")
         {
-            BasePV.RPC("RequireStatus", PhotonTargets.MasterClient, new object[0]);
+            IN_GAME_MAIN_CAMERA.dayLight = DayLight.Day;
+        }
+        else if (strArray[4] == "dawn")
+        {
+            IN_GAME_MAIN_CAMERA.dayLight = DayLight.Dawn;
+        }
+        else if (strArray[4] == "night")
+        {
+            IN_GAME_MAIN_CAMERA.dayLight = DayLight.Night;
+        }
+        IN_GAME_MAIN_CAMERA.gamemode = LevelInfo.getInfo(level).type;
+        PhotonNetwork.LoadLevel(LevelInfo.getInfo(level).mapName);
+        ExitGames.Client.Photon.Hashtable hashtable2 = new ExitGames.Client.Photon.Hashtable();
+        hashtable2.Add(PhotonPlayerProperty.name, LoginFengKAI.player.name);
+        ExitGames.Client.Photon.Hashtable propertiesToSet = hashtable2;
+        PhotonNetwork.player.SetCustomProperties(propertiesToSet);
+        hashtable2 = new ExitGames.Client.Photon.Hashtable();
+        hashtable2.Add(PhotonPlayerProperty.guildName, LoginFengKAI.player.guildname);
+        propertiesToSet = hashtable2;
+        PhotonNetwork.player.SetCustomProperties(propertiesToSet);
+        hashtable2 = new ExitGames.Client.Photon.Hashtable();
+        hashtable2.Add(PhotonPlayerProperty.kills, 0);
+        propertiesToSet = hashtable2;
+        PhotonNetwork.player.SetCustomProperties(propertiesToSet);
+        hashtable2 = new ExitGames.Client.Photon.Hashtable();
+        hashtable2.Add(PhotonPlayerProperty.max_dmg, 0);
+        propertiesToSet = hashtable2;
+        PhotonNetwork.player.SetCustomProperties(propertiesToSet);
+        hashtable2 = new ExitGames.Client.Photon.Hashtable();
+        hashtable2.Add(PhotonPlayerProperty.total_dmg, 0);
+        propertiesToSet = hashtable2;
+        PhotonNetwork.player.SetCustomProperties(propertiesToSet);
+        hashtable2 = new ExitGames.Client.Photon.Hashtable();
+        hashtable2.Add(PhotonPlayerProperty.deaths, 0);
+        propertiesToSet = hashtable2;
+        PhotonNetwork.player.SetCustomProperties(propertiesToSet);
+        hashtable2 = new ExitGames.Client.Photon.Hashtable();
+        hashtable2.Add(PhotonPlayerProperty.dead, true);
+        propertiesToSet = hashtable2;
+        PhotonNetwork.player.SetCustomProperties(propertiesToSet);
+        hashtable2 = new ExitGames.Client.Photon.Hashtable();
+        hashtable2.Add(PhotonPlayerProperty.isTitan, 0);
+        propertiesToSet = hashtable2;
+        PhotonNetwork.player.SetCustomProperties(propertiesToSet);
+        this.humanScore = 0;
+        this.titanScore = 0;
+        this.PVPtitanScore = 0;
+        this.PVPhumanScore = 0;
+        this.wave = 1;
+        this.highestwave = 1;
+        this.localRacingResult = string.Empty;
+        this.needChooseSide = true;
+        this.chatContent = new ArrayList();
+        this.killInfoGO = new ArrayList();
+        InRoomChat.messages = new List<string>();
+        if (!PhotonNetwork.isMasterClient)
+        {
+            base.photonView.RPC("RequireStatus", PhotonTargets.MasterClient, new object[0]);
         }
     }
 
-    public void OnLeftLobby(AOTEventArgs args)
+    public void OnLeftLobby()
     {
         UnityEngine.MonoBehaviour.print("OnLeftLobby");
     }
 
-    public void OnLeftRoom(AOTEventArgs args)
+    public void OnLeftRoom()
     {
         UnityEngine.MonoBehaviour.print("OnLeftRoom");
         if (Application.loadedLevel != 0)
         {
-            UnityEngine.Time.timeScale = 1f;
+            Time.timeScale = 1f;
             if (PhotonNetwork.connected)
             {
                 PhotonNetwork.Disconnect();
             }
-            IN_GAME_MAIN_CAMERA.GameType = GameType.Stop;
-            this.GameStart = false;
+            IN_GAME_MAIN_CAMERA.gametype = GAMETYPE.STOP;
+            this.gameStart = false;
             Screen.lockCursor = false;
             Screen.showCursor = true;
-            FengCustomInputs.Main.menuOn = false;
-            UnityEngine.Object.Destroy(FengGameManagerMKII.FGM);
+            GameObject.Find("InputManagerController").GetComponent<FengCustomInputs>().menuOn = false;
+            UnityEngine.Object.Destroy(GameObject.Find("MultiplayerManager"));
             Application.LoadLevel("menu");
         }
     }
 
-    public void OnMasterClientSwitched(AOTEventArgs args)
+    private void OnLevelWasLoaded(int level)
     {
-        UnityEngine.MonoBehaviour.print("OnMasterClientSwitched");
-        if (this.gameTimesUp)
+        if ((level != 0) && ((Application.loadedLevelName != "characterCreation") && (Application.loadedLevelName != "SnapShot")))
         {
-            return;
-        }
-        if (PhotonNetwork.IsMasterClient)
-        {
-            this.RestartGame(true);
+            ChangeQuality.setCurrentQuality();
+            foreach (GameObject obj2 in GameObject.FindGameObjectsWithTag("titan"))
+            {
+                if ((obj2.GetPhotonView() == null) || !obj2.GetPhotonView().owner.isMasterClient)
+                {
+                    UnityEngine.Object.Destroy(obj2);
+                }
+            }
+            this.isWinning = false;
+            this.gameStart = true;
+            this.ShowHUDInfoCenter(string.Empty);
+            GameObject obj3 = (GameObject) UnityEngine.Object.Instantiate(Resources.Load("MainCamera_mono"), GameObject.Find("cameraDefaultPosition").transform.position, GameObject.Find("cameraDefaultPosition").transform.rotation);
+            UnityEngine.Object.Destroy(GameObject.Find("cameraDefaultPosition"));
+            obj3.name = "MainCamera";
+            Screen.lockCursor = true;
+            Screen.showCursor = true;
+            this.ui = (GameObject) UnityEngine.Object.Instantiate(Resources.Load("UI_IN_GAME"));
+            this.ui.name = "UI_IN_GAME";
+            this.ui.SetActive(true);
+            NGUITools.SetActive(this.ui.GetComponent<UIReferArray>().panels[0], true);
+            NGUITools.SetActive(this.ui.GetComponent<UIReferArray>().panels[1], false);
+            NGUITools.SetActive(this.ui.GetComponent<UIReferArray>().panels[2], false);
+            NGUITools.SetActive(this.ui.GetComponent<UIReferArray>().panels[3], false);
+            GameObject.Find("MainCamera").GetComponent<IN_GAME_MAIN_CAMERA>().setHUDposition();
+            GameObject.Find("MainCamera").GetComponent<IN_GAME_MAIN_CAMERA>().setDayLight(IN_GAME_MAIN_CAMERA.dayLight);
+            LevelInfo info = LevelInfo.getInfo(FengGameManagerMKII.level);
+            if (IN_GAME_MAIN_CAMERA.gametype == GAMETYPE.SINGLE)
+            {
+                this.single_kills = 0;
+                this.single_maxDamage = 0;
+                this.single_totalDamage = 0;
+                GameObject.Find("MainCamera").GetComponent<IN_GAME_MAIN_CAMERA>().enabled = true;
+                GameObject.Find("MainCamera").GetComponent<SpectatorMovement>().disable = true;
+                GameObject.Find("MainCamera").GetComponent<MouseLook>().disable = true;
+                IN_GAME_MAIN_CAMERA.gamemode = LevelInfo.getInfo(FengGameManagerMKII.level).type;
+                this.SpawnPlayer(IN_GAME_MAIN_CAMERA.singleCharacter.ToUpper(), "playerRespawn");
+                if (IN_GAME_MAIN_CAMERA.cameraMode == CAMERA_TYPE.TPS)
+                {
+                    Screen.lockCursor = true;
+                }
+                else
+                {
+                    Screen.lockCursor = false;
+                }
+                Screen.showCursor = false;
+                int rate = 90;
+                if (this.difficulty == 1)
+                {
+                    rate = 70;
+                }
+                this.randomSpawnTitan("titanRespawn", rate, info.enemyNumber, false);
+            }
+            else
+            {
+                PVPcheckPoint.chkPts = new ArrayList();
+                GameObject.Find("MainCamera").GetComponent<IN_GAME_MAIN_CAMERA>().enabled = false;
+                GameObject.Find("MainCamera").GetComponent<CameraShake>().enabled = false;
+                IN_GAME_MAIN_CAMERA.gametype = GAMETYPE.MULTIPLAYER;
+                if (info.type == GAMEMODE.TROST)
+                {
+                    GameObject.Find("playerRespawn").SetActive(false);
+                    UnityEngine.Object.Destroy(GameObject.Find("playerRespawn"));
+                    GameObject.Find("rock").animation["lift"].speed = 0f;
+                    GameObject.Find("door_fine").SetActiveRecursively(false);
+                    GameObject.Find("door_broke").SetActiveRecursively(true);
+                    UnityEngine.Object.Destroy(GameObject.Find("ppl"));
+                }
+                else if (info.type == GAMEMODE.BOSS_FIGHT_CT)
+                {
+                    GameObject.Find("playerRespawnTrost").SetActive(false);
+                    UnityEngine.Object.Destroy(GameObject.Find("playerRespawnTrost"));
+                }
+                if (this.needChooseSide)
+                {
+                    this.ShowHUDInfoTopCenterADD("\n\nPRESS 1 TO ENTER GAME");
+                }
+                else
+                {
+                    if (IN_GAME_MAIN_CAMERA.cameraMode == CAMERA_TYPE.TPS)
+                    {
+                        Screen.lockCursor = true;
+                    }
+                    else
+                    {
+                        Screen.lockCursor = false;
+                    }
+                    if (IN_GAME_MAIN_CAMERA.gamemode == GAMEMODE.PVP_CAPTURE)
+                    {
+                        if (((int) PhotonNetwork.player.customProperties[PhotonPlayerProperty.isTitan]) == 2)
+                        {
+                            this.checkpoint = GameObject.Find("PVPchkPtT");
+                        }
+                        else
+                        {
+                            this.checkpoint = GameObject.Find("PVPchkPtH");
+                        }
+                    }
+                    if (((int) PhotonNetwork.player.customProperties[PhotonPlayerProperty.isTitan]) == 2)
+                    {
+                        this.SpawnNonAITitan(this.myLastHero, "titanRespawn");
+                    }
+                    else
+                    {
+                        this.SpawnPlayer(this.myLastHero, this.myLastRespawnTag);
+                    }
+                }
+                if (info.type == GAMEMODE.BOSS_FIGHT_CT)
+                {
+                    UnityEngine.Object.Destroy(GameObject.Find("rock"));
+                }
+                if (PhotonNetwork.isMasterClient)
+                {
+                    if (info.type == GAMEMODE.TROST)
+                    {
+                        if (!this.isPlayerAllDead())
+                        {
+                            PhotonNetwork.Instantiate("TITAN_EREN_trost", new Vector3(-200f, 0f, -194f), Quaternion.Euler(0f, 180f, 0f), 0).GetComponent<TITAN_EREN>().rockLift = true;
+                            int num3 = 90;
+                            if (this.difficulty == 1)
+                            {
+                                num3 = 70;
+                            }
+                            GameObject[] objArray3 = GameObject.FindGameObjectsWithTag("titanRespawn");
+                            GameObject obj6 = GameObject.Find("titanRespawnTrost");
+                            if (obj6 != null)
+                            {
+                                foreach (GameObject obj7 in objArray3)
+                                {
+                                    if (obj7.transform.parent.gameObject == obj6)
+                                    {
+                                        this.spawnTitan(num3, obj7.transform.position, obj7.transform.rotation, false);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    else if (info.type == GAMEMODE.BOSS_FIGHT_CT)
+                    {
+                        if (!this.isPlayerAllDead())
+                        {
+                            PhotonNetwork.Instantiate("COLOSSAL_TITAN", (Vector3) (-Vector3.up * 10000f), Quaternion.Euler(0f, 180f, 0f), 0);
+                        }
+                    }
+                    else if (((info.type == GAMEMODE.KILL_TITAN) || (info.type == GAMEMODE.ENDLESS_TITAN)) || (info.type == GAMEMODE.SURVIVE_MODE))
+                    {
+                        if ((info.name == "Annie") || (info.name == "Annie II"))
+                        {
+                            PhotonNetwork.Instantiate("FEMALE_TITAN", GameObject.Find("titanRespawn").transform.position, GameObject.Find("titanRespawn").transform.rotation, 0);
+                        }
+                        else
+                        {
+                            int num5 = 90;
+                            if (this.difficulty == 1)
+                            {
+                                num5 = 70;
+                            }
+                            this.randomSpawnTitan("titanRespawn", num5, info.enemyNumber, false);
+                        }
+                    }
+                    else if ((info.type != GAMEMODE.TROST) && ((info.type == GAMEMODE.PVP_CAPTURE) && (LevelInfo.getInfo(FengGameManagerMKII.level).mapName == "OutSide")))
+                    {
+                        GameObject[] objArray5 = GameObject.FindGameObjectsWithTag("titanRespawn");
+                        if (objArray5.Length <= 0)
+                        {
+                            return;
+                        }
+                        for (int i = 0; i < objArray5.Length; i++)
+                        {
+                            this.spawnTitanRaw(objArray5[i].transform.position, objArray5[i].transform.rotation).GetComponent<TITAN>().setAbnormalType(AbnormalType.TYPE_CRAWLER, true);
+                        }
+                    }
+                }
+                if (!info.supply)
+                {
+                    UnityEngine.Object.Destroy(GameObject.Find("aot_supply"));
+                }
+                if (!PhotonNetwork.isMasterClient)
+                {
+                    base.photonView.RPC("RequireStatus", PhotonTargets.MasterClient, new object[0]);
+                }
+                if (LevelInfo.getInfo(FengGameManagerMKII.level).lavaMode)
+                {
+                    UnityEngine.Object.Instantiate(Resources.Load("levelBottom"), new Vector3(0f, -29.5f, 0f), Quaternion.Euler(0f, 0f, 0f));
+                    GameObject.Find("aot_supply").transform.position = GameObject.Find("aot_supply_lava_position").transform.position;
+                    GameObject.Find("aot_supply").transform.rotation = GameObject.Find("aot_supply_lava_position").transform.rotation;
+                }
+            }
         }
     }
 
-    public void OnPhotonCreateRoomFailed(AOTEventArgs args)
+    public void OnMasterClientSwitched(PhotonPlayer newMasterClient)
+    {
+        UnityEngine.MonoBehaviour.print("OnMasterClientSwitched");
+        if (!this.gameTimesUp && PhotonNetwork.isMasterClient)
+        {
+            this.restartGame(true);
+        }
+    }
+
+    public void OnPhotonCreateRoomFailed()
     {
         UnityEngine.MonoBehaviour.print("OnPhotonCreateRoomFailed");
     }
 
-    public void OnPhotonCustomRoomPropertiesChanged(AOTEventArgs args)
+    public void OnPhotonCustomRoomPropertiesChanged()
     {
         UnityEngine.MonoBehaviour.print("OnPhotonCustomRoomPropertiesChanged");
     }
 
-    public void OnPhotonJoinRoomFailed(AOTEventArgs args)
+    public void OnPhotonInstantiate()
+    {
+        UnityEngine.MonoBehaviour.print("OnPhotonInstantiate");
+    }
+
+    public void OnPhotonJoinRoomFailed()
     {
         UnityEngine.MonoBehaviour.print("OnPhotonJoinRoomFailed");
     }
 
-    public void OnPhotonPlayerConnected(AOTEventArgs args)
+    public void OnPhotonMaxCccuReached()
     {
-        playerList?.Update();
+        UnityEngine.MonoBehaviour.print("OnPhotonMaxCccuReached");
     }
 
-    public void OnPhotonPlayerDisconnected(AOTEventArgs args)
+    public void OnPhotonPlayerConnected()
     {
-        playerList?.Update();
+        UnityEngine.MonoBehaviour.print("OnPhotonPlayerConnected");
+    }
+
+    public void OnPhotonPlayerDisconnected()
+    {
+        UnityEngine.MonoBehaviour.print("OnPhotonPlayerDisconnected");
         if (!this.gameTimesUp)
         {
             this.oneTitanDown(string.Empty, true);
@@ -1924,136 +1485,227 @@ public class FengGameManagerMKII : Photon.MonoBehaviour
         }
     }
 
-    public void OnPhotonPlayerPropertiesChanged(AOTEventArgs args)
+    public void OnPhotonPlayerPropertiesChanged()
     {
-        playerList?.Update();
     }
 
-    public void OnPhotonRandomJoinFailed(AOTEventArgs args)
+    public void OnPhotonRandomJoinFailed()
     {
         UnityEngine.MonoBehaviour.print("OnPhotonRandomJoinFailed");
     }
 
-    public void OnPhotonSerializeView(AOTEventArgs args)
+    public void OnPhotonSerializeView()
     {
         UnityEngine.MonoBehaviour.print("OnPhotonSerializeView");
     }
 
-    public void OnReceivedRoomListUpdate(AOTEventArgs args)
+    public void OnReceivedRoomListUpdate()
     {
     }
 
-    public void OnUpdatedFriendList(AOTEventArgs args)
+    public void OnUpdatedFriendList()
     {
         UnityEngine.MonoBehaviour.print("OnUpdatedFriendList");
     }
 
-    public void PlayerKillInfoSingleUpdate(int dmg)
+    public void playerKillInfoSingleUpdate(int dmg)
     {
         this.single_kills++;
         this.single_maxDamage = Mathf.Max(dmg, this.single_maxDamage);
         this.single_totalDamage += dmg;
     }
 
-    public void PlayerKillInfoUpdate(PhotonPlayer player, int dmg)
+    public void playerKillInfoUpdate(PhotonPlayer player, int dmg)
     {
-        player.Kills++;
-        player.Max_Dmg = Mathf.Max(dmg, player.Max_Dmg);
-        player.Total_Dmg += dmg;
+        ExitGames.Client.Photon.Hashtable propertiesToSet = new ExitGames.Client.Photon.Hashtable();
+        propertiesToSet.Add(PhotonPlayerProperty.kills, ((int) player.customProperties[PhotonPlayerProperty.kills]) + 1);
+        player.SetCustomProperties(propertiesToSet);
+        propertiesToSet = new ExitGames.Client.Photon.Hashtable();
+        propertiesToSet.Add(PhotonPlayerProperty.max_dmg, Mathf.Max(dmg, (int) player.customProperties[PhotonPlayerProperty.max_dmg]));
+        player.SetCustomProperties(propertiesToSet);
+        propertiesToSet = new ExitGames.Client.Photon.Hashtable();
+        propertiesToSet.Add(PhotonPlayerProperty.total_dmg, ((int) player.customProperties[PhotonPlayerProperty.total_dmg]) + dmg);
+        player.SetCustomProperties(propertiesToSet);
     }
 
-    public TITAN RandomSpawnOneTitan(string place, int rate)
+    public GameObject randomSpawnOneTitan(string place, int rate)
     {
-        return this.SpawnTitan(rate, RespawnPositions.RandomTitanPos, Quaternion.identity, false);
+        GameObject[] objArray = GameObject.FindGameObjectsWithTag(place);
+        int index = UnityEngine.Random.Range(0, objArray.Length);
+        GameObject obj2 = objArray[index];
+        while (objArray[index] == null)
+        {
+            index = UnityEngine.Random.Range(0, objArray.Length);
+            obj2 = objArray[index];
+        }
+        objArray[index] = null;
+        return this.spawnTitan(rate, obj2.transform.position, obj2.transform.rotation, false);
     }
 
-    public void RandomSpawnTitan(string place, int rate, int num, bool punk = false)
+    public void randomSpawnTitan(string place, int rate, int num, bool punk = false)
     {
         if (num == -1)
         {
             num = 1;
         }
-        List<Vector3> list = new List<Vector3>(RespawnPositions.TitanPositions);
-        if (list.Count <= 0)
+        GameObject[] objArray = GameObject.FindGameObjectsWithTag(place);
+        if (objArray.Length > 0)
         {
-            return;
+            for (int i = 0; i < num; i++)
+            {
+                int index = UnityEngine.Random.Range(0, objArray.Length);
+                GameObject obj2 = objArray[index];
+                while (objArray[index] == null)
+                {
+                    index = UnityEngine.Random.Range(0, objArray.Length);
+                    obj2 = objArray[index];
+                }
+                objArray[index] = null;
+                this.spawnTitan(rate, obj2.transform.position, obj2.transform.rotation, punk);
+            }
         }
+    }
+
+    [RPC]
+    private void refreshPVPStatus(int score1, int score2)
+    {
+        this.PVPhumanScore = score1;
+        this.PVPtitanScore = score2;
+    }
+
+    [RPC]
+    private void refreshPVPStatus_AHSS(int[] score1)
+    {
+        UnityEngine.MonoBehaviour.print(score1);
+        this.teamScores = score1;
+    }
+
+    private void refreshRacingResult()
+    {
+        this.localRacingResult = "Result\n";
+        IComparer comparer = new IComparerRacingResult();
+        this.racingResult.Sort(comparer);
+        int num = Mathf.Min(this.racingResult.Count, 6);
         for (int i = 0; i < num; i++)
         {
-            if (list.Count <= 0)
-            {
-                return;
-            }
-            int pos = Random.Range(0, list.Count);
-            this.SpawnTitan(rate, list[pos], Quaternion.identity, punk);
-            list.RemoveAt(pos);
+            string localRacingResult = this.localRacingResult;
+            object[] objArray1 = new object[] { localRacingResult, "Rank ", i + 1, " : " };
+            this.localRacingResult = string.Concat(objArray1);
+            this.localRacingResult = this.localRacingResult + (this.racingResult[i] as RacingResult).name;
+            this.localRacingResult = this.localRacingResult + "   " + ((((int) ((this.racingResult[i] as RacingResult).time * 100f)) * 0.01f)).ToString() + "s";
+            this.localRacingResult = this.localRacingResult + "\n";
+        }
+        object[] parameters = new object[] { this.localRacingResult };
+        base.photonView.RPC("netRefreshRacingResult", PhotonTargets.All, parameters);
+    }
+
+    [RPC]
+    private void refreshStatus(int score1, int score2, int wav, int highestWav, float time1, float time2, bool startRacin, bool endRacin)
+    {
+        this.humanScore = score1;
+        this.titanScore = score2;
+        this.wave = wav;
+        this.highestwave = highestWav;
+        this.roundTime = time1;
+        this.timeTotalServer = time2;
+        this.startRacing = startRacin;
+        this.endRacing = endRacin;
+        if (this.startRacing && (GameObject.Find("door") != null))
+        {
+            GameObject.Find("door").SetActive(false);
         }
     }
 
-    public void RemoveCT(COLOSSAL_TITAN titan)
+    public void removeCT(COLOSSAL_TITAN titan)
     {
-        titan = null;
+        this.cT.Remove(titan);
     }
 
-    public void RemoveET(TITAN_EREN hero)
+    public void removeET(TITAN_EREN hero)
     {
-        eren = null;
+        this.eT.Remove(hero);
     }
 
-    public void RemoveFT(FEMALE_TITAN titan)
+    public void removeFT(FEMALE_TITAN titan)
     {
-        titan = null;
+        this.fT.Remove(titan);
     }
 
-    public void RemoveHero(HERO hero)
+    public void removeHero(HERO hero)
     {
         this.heroes.Remove(hero);
     }
 
-    public void RemoveHook(Bullet h)
+    public void removeHook(Bullet h)
     {
         this.hooks.Remove(h);
     }
 
-    public void RemoveTitan(TITAN titan)
+    public void removeTitan(TITAN titan)
     {
         this.titans.Remove(titan);
     }
 
-    public void RestartGame(bool masterclientSwitched = false)
+    [RPC]
+    private void RequireStatus()
     {
-        if (this.gameTimesUp)
+        object[] parameters = new object[] { this.humanScore, this.titanScore, this.wave, this.highestwave, this.roundTime, this.timeTotalServer, this.startRacing, this.endRacing };
+        base.photonView.RPC("refreshStatus", PhotonTargets.Others, parameters);
+        object[] objArray2 = new object[] { this.PVPhumanScore, this.PVPtitanScore };
+        base.photonView.RPC("refreshPVPStatus", PhotonTargets.Others, objArray2);
+        object[] objArray3 = new object[] { this.teamScores };
+        base.photonView.RPC("refreshPVPStatus_AHSS", PhotonTargets.Others, objArray3);
+    }
+
+    [RPC]
+    private void respawnHeroInNewRound()
+    {
+        if (!this.needChooseSide && GameObject.Find("MainCamera").GetComponent<IN_GAME_MAIN_CAMERA>().gameOver)
         {
-            return;
-        }
-        this.PVPtitanScore = 0;
-        this.PVPhumanScore = 0;
-        this.startRacing = false;
-        this.endRacing = false;
-        this.checkpoint = null;
-        this.timeElapse = 0f;
-        this.RoundTime = 0f;
-        this.isWinning = false;
-        this.isLosing = false;
-        this.Wave = 1;
-        this.MyRespawnTime = 0f;
-        this.kicklist = new ArrayList();
-        foreach (var info in killInfoList)
-        {
-            info.destroy();
-        }
-        killInfoList.Clear();
-        this.racingResult = new ArrayList();
-        this.ShowHUDInfoCenter(string.Empty);
-        PhotonNetwork.DestroyAll();
-        BasePV.RPC("RPCLoadLevel", PhotonTargets.All, new object[0]);
-        if (masterclientSwitched)
-        {
-            this.SendChatContentInfo("<color=#A8FF24>MasterClient has switched to </color>" + PhotonNetwork.player.Properties[PhotonPlayerProperty.name]);
+            this.SpawnPlayer(this.myLastHero, this.myLastRespawnTag);
+            GameObject.Find("MainCamera").GetComponent<IN_GAME_MAIN_CAMERA>().gameOver = false;
+            this.ShowHUDInfoCenter(string.Empty);
         }
     }
 
-    public void RestartGameSingle()
+    public void restartGame(bool masterclientSwitched = false)
+    {
+        UnityEngine.MonoBehaviour.print("reset game :" + this.gameTimesUp);
+        if (!this.gameTimesUp)
+        {
+            this.PVPtitanScore = 0;
+            this.PVPhumanScore = 0;
+            this.startRacing = false;
+            this.endRacing = false;
+            this.checkpoint = null;
+            this.timeElapse = 0f;
+            this.roundTime = 0f;
+            this.isWinning = false;
+            this.isLosing = false;
+            this.isPlayer1Winning = false;
+            this.isPlayer2Winning = false;
+            this.wave = 1;
+            this.myRespawnTime = 0f;
+            this.kicklist = new ArrayList();
+            this.killInfoGO = new ArrayList();
+            this.racingResult = new ArrayList();
+            this.ShowHUDInfoCenter(string.Empty);
+            PhotonNetwork.DestroyAll();
+            base.photonView.RPC("RPCLoadLevel", PhotonTargets.All, new object[0]);
+            if (masterclientSwitched)
+            {
+                this.sendChatContentInfo("<color=#A8FF24>MasterClient has switched to </color>" + PhotonNetwork.player.customProperties[PhotonPlayerProperty.name]);
+            }
+        }
+    }
+
+    [RPC]
+    private void restartGameByClient()
+    {
+        this.restartGame(false);
+    }
+
+    public void restartGameSingle()
     {
         this.startRacing = false;
         this.endRacing = false;
@@ -2062,127 +1714,240 @@ public class FengGameManagerMKII : Photon.MonoBehaviour
         this.single_maxDamage = 0;
         this.single_totalDamage = 0;
         this.timeElapse = 0f;
-        this.RoundTime = 0f;
+        this.roundTime = 0f;
         this.timeTotalServer = 0f;
         this.isWinning = false;
         this.isLosing = false;
-        this.Wave = 1;
-        this.MyRespawnTime = 0f;
+        this.isPlayer1Winning = false;
+        this.isPlayer2Winning = false;
+        this.wave = 1;
+        this.myRespawnTime = 0f;
         this.ShowHUDInfoCenter(string.Empty);
         Application.LoadLevel(Application.loadedLevel);
     }
 
-    public void SendChatContentInfo(string content)
+    [RPC]
+    private void RPCLoadLevel()
     {
-        BasePV.RPC("Chat", PhotonTargets.All, new object[]
-        {
-            content,
-            string.Empty
-        });
+        PhotonNetwork.LoadLevel(LevelInfo.getInfo(level).mapName);
     }
 
-    public void SendKillInfo(bool t1, string killer, bool t2, string victim, int dmg = 0)
+    public void sendChatContentInfo(string content)
     {
-        BasePV.RPC("updateKillInfo", PhotonTargets.All, new object[]
+        object[] parameters = new object[] { content, string.Empty };
+        base.photonView.RPC("Chat", PhotonTargets.All, parameters);
+    }
+
+    public void sendKillInfo(bool t1, string killer, bool t2, string victim, int dmg = 0)
+    {
+        object[] parameters = new object[] { t1, killer, t2, victim, dmg };
+        base.photonView.RPC("updateKillInfo", PhotonTargets.All, parameters);
+    }
+
+    [RPC]
+    private void showChatContent(string content)
+    {
+        this.chatContent.Add(content);
+        if (this.chatContent.Count > 10)
         {
-            t1,
-            killer,
-            t2,
-            victim,
-            dmg
-        });
+            this.chatContent.RemoveAt(0);
+        }
+        GameObject.Find("LabelChatContent").GetComponent<UILabel>().text = string.Empty;
+        for (int i = 0; i < this.chatContent.Count; i++)
+        {
+            UILabel component = GameObject.Find("LabelChatContent").GetComponent<UILabel>();
+            component.text = component.text + this.chatContent[i];
+        }
+    }
+
+    public void ShowHUDInfoCenter(string content)
+    {
+        GameObject obj2 = GameObject.Find("LabelInfoCenter");
+        if (obj2 != null)
+        {
+            obj2.GetComponent<UILabel>().text = content;
+        }
+    }
+
+    public void ShowHUDInfoCenterADD(string content)
+    {
+        GameObject obj2 = GameObject.Find("LabelInfoCenter");
+        if (obj2 != null)
+        {
+            UILabel component = obj2.GetComponent<UILabel>();
+            component.text = component.text + content;
+        }
+    }
+
+    private void ShowHUDInfoTopCenter(string content)
+    {
+        GameObject obj2 = GameObject.Find("LabelInfoTopCenter");
+        if (obj2 != null)
+        {
+            obj2.GetComponent<UILabel>().text = content;
+        }
+    }
+
+    private void ShowHUDInfoTopCenterADD(string content)
+    {
+        GameObject obj2 = GameObject.Find("LabelInfoTopCenter");
+        if (obj2 != null)
+        {
+            UILabel component = obj2.GetComponent<UILabel>();
+            component.text = component.text + content;
+        }
+    }
+
+    private void ShowHUDInfoTopLeft(string content)
+    {
+        GameObject obj2 = GameObject.Find("LabelInfoTopLeft");
+        if (obj2 != null)
+        {
+            obj2.GetComponent<UILabel>().text = content;
+        }
+    }
+
+    private void ShowHUDInfoTopRight(string content)
+    {
+        GameObject obj2 = GameObject.Find("LabelInfoTopRight");
+        if (obj2 != null)
+        {
+            obj2.GetComponent<UILabel>().text = content;
+        }
+    }
+
+    private void ShowHUDInfoTopRightMAPNAME(string content)
+    {
+        GameObject obj2 = GameObject.Find("LabelInfoTopRight");
+        if (obj2 != null)
+        {
+            UILabel component = obj2.GetComponent<UILabel>();
+            component.text = component.text + content;
+        }
+    }
+
+    [RPC]
+    private void showResult(string text0, string text1, string text2, string text3, string text4, string text6, PhotonMessageInfo t)
+    {
+        if (!this.gameTimesUp)
+        {
+            this.gameTimesUp = true;
+            GameObject obj2 = GameObject.Find("UI_IN_GAME");
+            NGUITools.SetActive(obj2.GetComponent<UIReferArray>().panels[0], false);
+            NGUITools.SetActive(obj2.GetComponent<UIReferArray>().panels[1], false);
+            NGUITools.SetActive(obj2.GetComponent<UIReferArray>().panels[2], true);
+            NGUITools.SetActive(obj2.GetComponent<UIReferArray>().panels[3], false);
+            GameObject.Find("LabelName").GetComponent<UILabel>().text = text0;
+            GameObject.Find("LabelKill").GetComponent<UILabel>().text = text1;
+            GameObject.Find("LabelDead").GetComponent<UILabel>().text = text2;
+            GameObject.Find("LabelMaxDmg").GetComponent<UILabel>().text = text3;
+            GameObject.Find("LabelTotalDmg").GetComponent<UILabel>().text = text4;
+            GameObject.Find("LabelResultTitle").GetComponent<UILabel>().text = text6;
+            Screen.lockCursor = false;
+            Screen.showCursor = true;
+            IN_GAME_MAIN_CAMERA.gametype = GAMETYPE.STOP;
+            this.gameStart = false;
+        }
+    }
+
+    private void SingleShowHUDInfoTopCenter(string content)
+    {
+        GameObject obj2 = GameObject.Find("LabelInfoTopCenter");
+        if (obj2 != null)
+        {
+            obj2.GetComponent<UILabel>().text = content;
+        }
+    }
+
+    private void SingleShowHUDInfoTopLeft(string content)
+    {
+        GameObject obj2 = GameObject.Find("LabelInfoTopLeft");
+        if (obj2 != null)
+        {
+            content = content.Replace("[0]", "[*^_^*]");
+            obj2.GetComponent<UILabel>().text = content;
+        }
     }
 
     [RPC]
     public void someOneIsDead(int id = -1)
     {
-        if (IN_GAME_MAIN_CAMERA.GameMode == GameMode.PVP_CAPTURE)
+        if (IN_GAME_MAIN_CAMERA.gamemode == GAMEMODE.PVP_CAPTURE)
         {
             if (id != 0)
             {
                 this.PVPtitanScore += 2;
             }
-            this.CheckPVPpts();
-            BasePV.RPC("refreshPVPStatus", PhotonTargets.Others, new object[]
-            {
-                this.PVPhumanScore,
-                this.PVPtitanScore
-            });
+            this.checkPVPpts();
+            object[] parameters = new object[] { this.PVPhumanScore, this.PVPtitanScore };
+            base.photonView.RPC("refreshPVPStatus", PhotonTargets.Others, parameters);
         }
-        else if (IN_GAME_MAIN_CAMERA.GameMode == GameMode.ENDLESS_TITAN)
+        else if (IN_GAME_MAIN_CAMERA.gamemode == GAMEMODE.ENDLESS_TITAN)
         {
             this.titanScore++;
         }
-        else if (IN_GAME_MAIN_CAMERA.GameMode == GameMode.KILL_TITAN || IN_GAME_MAIN_CAMERA.GameMode == GameMode.SURVIVE_MODE || IN_GAME_MAIN_CAMERA.GameMode == GameMode.BOSS_FIGHT_CT || IN_GAME_MAIN_CAMERA.GameMode == GameMode.TROST)
+        else if (((IN_GAME_MAIN_CAMERA.gamemode == GAMEMODE.KILL_TITAN) || (IN_GAME_MAIN_CAMERA.gamemode == GAMEMODE.SURVIVE_MODE)) || ((IN_GAME_MAIN_CAMERA.gamemode == GAMEMODE.BOSS_FIGHT_CT) || (IN_GAME_MAIN_CAMERA.gamemode == GAMEMODE.TROST)))
         {
-            if (this.IsPlayerAllDead())
+            if (this.isPlayerAllDead())
             {
-                this.GameLose();
+                this.gameLose();
             }
         }
-        else if (IN_GAME_MAIN_CAMERA.GameMode == GameMode.PVP_AHSS)
+        else if (IN_GAME_MAIN_CAMERA.gamemode == GAMEMODE.PVP_AHSS)
         {
-            if (this.IsPlayerAllDead())
+            if (this.isPlayerAllDead())
             {
-                this.GameLose();
+                this.gameLose();
                 this.teamWinner = 0;
             }
-            if (this.IsTeamAllDead(1))
+            if (this.isTeamAllDead(1))
             {
                 this.teamWinner = 2;
-                this.GameWin();
+                this.gameWin();
             }
-            if (this.IsTeamAllDead(2))
+            if (this.isTeamAllDead(2))
             {
                 this.teamWinner = 1;
-                this.GameWin();
+                this.gameWin();
             }
         }
     }
 
     public void SpawnNonAITitan(string id, string tag = "titanRespawn")
     {
-        GameObject[] array = GameObject.FindGameObjectsWithTag(tag);
-        GameObject gameObject = array[UnityEngine.Random.Range(0, array.Length)];
+        GameObject obj3;
+        GameObject[] objArray = GameObject.FindGameObjectsWithTag(tag);
+        GameObject obj2 = objArray[UnityEngine.Random.Range(0, objArray.Length)];
         this.myLastHero = id.ToUpper();
-        GameObject gameObject2;
-        if (IN_GAME_MAIN_CAMERA.GameMode == GameMode.PVP_CAPTURE)
+        if (IN_GAME_MAIN_CAMERA.gamemode == GAMEMODE.PVP_CAPTURE)
         {
-            gameObject2 = Optimization.Caching.Pool.NetworkEnable("TITAN_VER3.1", this.checkpoint.transform.position + new Vector3((float)UnityEngine.Random.Range(-20, 20), 2f, (float)UnityEngine.Random.Range(-20, 20)), this.checkpoint.transform.rotation, 0);
+            obj3 = PhotonNetwork.Instantiate("TITAN_VER3.1", this.checkpoint.transform.position + new Vector3((float) UnityEngine.Random.Range(-20, 20), 2f, (float) UnityEngine.Random.Range(-20, 20)), this.checkpoint.transform.rotation, 0);
         }
         else
         {
-            gameObject2 = Optimization.Caching.Pool.NetworkEnable("TITAN_VER3.1", gameObject.transform.position, gameObject.transform.rotation, 0);
+            obj3 = PhotonNetwork.Instantiate("TITAN_VER3.1", obj2.transform.position, obj2.transform.rotation, 0);
         }
-        IN_GAME_MAIN_CAMERA.MainCamera.SetMainObject(gameObject2.GetComponent<TITAN>());
-        gameObject2.GetComponent<TITAN>().nonAI = true;
-        gameObject2.GetComponent<TITAN>().speed = 30f;
-        gameObject2.GetComponent<TITAN_CONTROLLER>().enabled = true;
-        if (id == "RANDOM" && UnityEngine.Random.Range(0, 100) < 7)
+        GameObject.Find("MainCamera").GetComponent<IN_GAME_MAIN_CAMERA>().setMainObjectASTITAN(obj3);
+        obj3.GetComponent<TITAN>().nonAI = true;
+        obj3.GetComponent<TITAN>().speed = 30f;
+        obj3.GetComponent<TITAN_CONTROLLER>().enabled = true;
+        if ((id == "RANDOM") && (UnityEngine.Random.Range(0, 100) < 7))
         {
-            gameObject2.GetComponent<TITAN>().setAbnormalType(AbnormalType.Crawler, true);
+            obj3.GetComponent<TITAN>().setAbnormalType(AbnormalType.TYPE_CRAWLER, true);
         }
-        IN_GAME_MAIN_CAMERA.MainCamera.enabled = true;
-        IN_GAME_MAIN_CAMERA.SpecMov.disable = true;
-        IN_GAME_MAIN_CAMERA.Look.disable = true;
-        IN_GAME_MAIN_CAMERA.MainCamera.gameOver = false;
-        ExitGames.Client.Photon.Hashtable customProperties = new ExitGames.Client.Photon.Hashtable
-        {
-            {
-                "dead",
-                false
-            }
-        };
-        PhotonNetwork.player.SetCustomProperties(customProperties);
-        customProperties = new ExitGames.Client.Photon.Hashtable
-        {
-            {
-                PhotonPlayerProperty.isTitan,
-                2
-            }
-        };
-        PhotonNetwork.player.SetCustomProperties(customProperties);
-        if (IN_GAME_MAIN_CAMERA.CameraMode == CameraType.TPS)
+        GameObject.Find("MainCamera").GetComponent<IN_GAME_MAIN_CAMERA>().enabled = true;
+        GameObject.Find("MainCamera").GetComponent<SpectatorMovement>().disable = true;
+        GameObject.Find("MainCamera").GetComponent<MouseLook>().disable = true;
+        GameObject.Find("MainCamera").GetComponent<IN_GAME_MAIN_CAMERA>().gameOver = false;
+        ExitGames.Client.Photon.Hashtable hashtable2 = new ExitGames.Client.Photon.Hashtable();
+        hashtable2.Add("dead", false);
+        ExitGames.Client.Photon.Hashtable propertiesToSet = hashtable2;
+        PhotonNetwork.player.SetCustomProperties(propertiesToSet);
+        hashtable2 = new ExitGames.Client.Photon.Hashtable();
+        hashtable2.Add(PhotonPlayerProperty.isTitan, 2);
+        propertiesToSet = hashtable2;
+        PhotonNetwork.player.SetCustomProperties(propertiesToSet);
+        if (IN_GAME_MAIN_CAMERA.cameraMode == CAMERA_TYPE.TPS)
         {
             Screen.lockCursor = true;
         }
@@ -2196,108 +1961,52 @@ public class FengGameManagerMKII : Photon.MonoBehaviour
 
     public void SpawnPlayer(string id, string tag = "playerRespawn")
     {
-        this.SpawnPlayerAt(id);
-    }
-
-    public void SpawnPlayerAt(string id)
-    {
-        Vector3 pos;
-        Quaternion rot = Quaternion.identity;
-        if (IN_GAME_MAIN_CAMERA.GameMode == GameMode.PVP_CAPTURE)
+        if (IN_GAME_MAIN_CAMERA.gamemode == GAMEMODE.PVP_CAPTURE)
         {
-            pos = this.checkpoint.transform.position;
-        }
-        else if (RCManager.racingSpawnPointSet)
-        {
-            pos = RCManager.racingSpawnPoint;
-            rot = RCManager.racingSpawnPointRotation;
-        }
-        else if (Level.Name.StartsWith("Custom"))
-        {
-            List<Vector3> list = new List<Vector3>();
-            switch (PhotonNetwork.player.RCteam)
-            {
-                case 0:
-                    for (int i = 0; i < 2; i++)
-                    {
-                        string type = (i == 0) ? "C" : "M";
-                        foreach (Vector3 vec in CustomLevel.spawnPositions["Player" + type])
-                        {
-                            list.Add(vec);
-                        }
-                    }
-                    break;
-                case 1:
-                    using (List<Vector3>.Enumerator enumerator = CustomLevel.spawnPositions["PlayerC"].GetEnumerator())
-                    {
-                        while (enumerator.MoveNext())
-                        {
-                            Vector3 vec2 = enumerator.Current;
-                            list.Add(vec2);
-                        }
-                    }
-                    break;
-                case 2:
-                    using (List<Vector3>.Enumerator enumerator = CustomLevel.spawnPositions["PlayerM"].GetEnumerator())
-                    {
-                        while (enumerator.MoveNext())
-                        {
-                            Vector3 vec2 = enumerator.Current;
-                            list.Add(vec2);
-                        }
-                    }
-                    break;
-                default:
-                    foreach (Vector3 vec3 in CustomLevel.spawnPositions["PlayerM"])
-                    {
-                        list.Add(vec3);
-                    }
-                    break;
-            }
-            if (list.Count > 0)
-            {
-                pos = list[UnityEngine.Random.Range(0, list.Count)];
-            }
-            else
-            {
-                pos = RespawnPositions.RandomHeroPos;
-            }
+            this.SpawnPlayerAt(id, this.checkpoint);
         }
         else
         {
-            pos = RespawnPositions.RandomHeroPos;
+            this.myLastRespawnTag = tag;
+            GameObject[] objArray = GameObject.FindGameObjectsWithTag(tag);
+            GameObject pos = objArray[UnityEngine.Random.Range(0, objArray.Length)];
+            this.SpawnPlayerAt(id, pos);
         }
-        IN_GAME_MAIN_CAMERA component = IN_GAME_MAIN_CAMERA.MainCamera;
+    }
+
+    public void SpawnPlayerAt(string id, GameObject pos)
+    {
+        IN_GAME_MAIN_CAMERA component = GameObject.Find("MainCamera").GetComponent<IN_GAME_MAIN_CAMERA>();
         this.myLastHero = id.ToUpper();
-        if (IN_GAME_MAIN_CAMERA.GameType == GameType.Single)
+        if (IN_GAME_MAIN_CAMERA.gametype == GAMETYPE.SINGLE)
         {
             if (IN_GAME_MAIN_CAMERA.singleCharacter == "TITAN_EREN")
             {
-                component.SetMainObject(((GameObject)UnityEngine.Object.Instantiate(CacheResources.Load("TITAN_EREN"), pos, Quaternion.identity)).GetComponent<TITAN_EREN>(), true, false);
+                component.setMainObject((GameObject) UnityEngine.Object.Instantiate(Resources.Load("TITAN_EREN"), pos.transform.position, pos.transform.rotation), true, false);
             }
             else
             {
-                component.SetMainObject(((GameObject)UnityEngine.Object.Instantiate(CacheResources.Load("AOTTG_HERO 1"), pos, rot)).GetComponent<HERO>(), true, false);
-                if (IN_GAME_MAIN_CAMERA.singleCharacter == "SET 1" || IN_GAME_MAIN_CAMERA.singleCharacter == "SET 2" || IN_GAME_MAIN_CAMERA.singleCharacter == "SET 3")
+                component.setMainObject((GameObject) UnityEngine.Object.Instantiate(Resources.Load("AOTTG_HERO 1"), pos.transform.position, pos.transform.rotation), true, false);
+                if (((IN_GAME_MAIN_CAMERA.singleCharacter == "SET 1") || (IN_GAME_MAIN_CAMERA.singleCharacter == "SET 2")) || (IN_GAME_MAIN_CAMERA.singleCharacter == "SET 3"))
                 {
-                    HeroCostume heroCostume = CostumeConeveter.LocalDataToHeroCostume(IN_GAME_MAIN_CAMERA.singleCharacter);
-                    heroCostume.Checkstat();
-                    CostumeConeveter.HeroCostumeToLocalData(heroCostume, IN_GAME_MAIN_CAMERA.singleCharacter);
-                    IN_GAME_MAIN_CAMERA.MainHERO.setup.Init();
-                    if (heroCostume != null)
+                    HeroCostume costume = CostumeConeveter.LocalDataToHeroCostume(IN_GAME_MAIN_CAMERA.singleCharacter);
+                    costume.checkstat();
+                    CostumeConeveter.HeroCostumeToLocalData(costume, IN_GAME_MAIN_CAMERA.singleCharacter);
+                    component.main_object.GetComponent<HERO>().GetComponent<HERO_SETUP>().init();
+                    if (costume != null)
                     {
-                        IN_GAME_MAIN_CAMERA.MainHERO.setup.myCostume = heroCostume;
-                        IN_GAME_MAIN_CAMERA.MainHERO.setup.myCostume.stat = heroCostume.stat;
+                        component.main_object.GetComponent<HERO>().GetComponent<HERO_SETUP>().myCostume = costume;
+                        component.main_object.GetComponent<HERO>().GetComponent<HERO_SETUP>().myCostume.stat = costume.stat;
                     }
                     else
                     {
-                        heroCostume = HeroCostume.costumeOption[3];
-                        IN_GAME_MAIN_CAMERA.MainHERO.setup.myCostume = heroCostume;
-                        IN_GAME_MAIN_CAMERA.MainHERO.setup.myCostume.stat = HeroStat.getInfo(heroCostume.name.ToUpper());
+                        costume = HeroCostume.costumeOption[3];
+                        component.main_object.GetComponent<HERO>().GetComponent<HERO_SETUP>().myCostume = costume;
+                        component.main_object.GetComponent<HERO>().GetComponent<HERO_SETUP>().myCostume.stat = HeroStat.getInfo(costume.name.ToUpper());
                     }
-                    IN_GAME_MAIN_CAMERA.MainHERO.setup.SetCharacterComponent();
-                    IN_GAME_MAIN_CAMERA.MainHERO.setStat();
-                    IN_GAME_MAIN_CAMERA.MainHERO.setSkillHUDPosition();
+                    component.main_object.GetComponent<HERO>().GetComponent<HERO_SETUP>().setCharacterComponent();
+                    component.main_object.GetComponent<HERO>().setStat();
+                    component.main_object.GetComponent<HERO>().setSkillHUDPosition();
                 }
                 else
                 {
@@ -2305,17 +2014,17 @@ public class FengGameManagerMKII : Photon.MonoBehaviour
                     {
                         if (HeroCostume.costume[i].name.ToUpper() == IN_GAME_MAIN_CAMERA.singleCharacter.ToUpper())
                         {
-                            int num = HeroCostume.costume[i].id + CheckBoxCostume.costumeSet - 1;
-                            if (HeroCostume.costume[num].name != HeroCostume.costume[i].name)
+                            int index = (HeroCostume.costume[i].id + CheckBoxCostume.costumeSet) - 1;
+                            if (HeroCostume.costume[index].name != HeroCostume.costume[i].name)
                             {
-                                num = HeroCostume.costume[i].id + 1;
+                                index = HeroCostume.costume[i].id + 1;
                             }
-                            IN_GAME_MAIN_CAMERA.MainHERO.setup.Init();
-                            IN_GAME_MAIN_CAMERA.MainHERO.setup.myCostume = HeroCostume.costume[num];
-                            IN_GAME_MAIN_CAMERA.MainHERO.setup.myCostume.stat = HeroStat.getInfo(HeroCostume.costume[num].name.ToUpper());
-                            IN_GAME_MAIN_CAMERA.MainHERO.setup.SetCharacterComponent();
-                            IN_GAME_MAIN_CAMERA.MainHERO.setStat();
-                            IN_GAME_MAIN_CAMERA.MainHERO.setSkillHUDPosition();
+                            component.main_object.GetComponent<HERO>().GetComponent<HERO_SETUP>().init();
+                            component.main_object.GetComponent<HERO>().GetComponent<HERO_SETUP>().myCostume = HeroCostume.costume[index];
+                            component.main_object.GetComponent<HERO>().GetComponent<HERO_SETUP>().myCostume.stat = HeroStat.getInfo(HeroCostume.costume[index].name.ToUpper());
+                            component.main_object.GetComponent<HERO>().GetComponent<HERO_SETUP>().setCharacterComponent();
+                            component.main_object.GetComponent<HERO>().setStat();
+                            component.main_object.GetComponent<HERO>().setSkillHUDPosition();
                             break;
                         }
                     }
@@ -2324,28 +2033,28 @@ public class FengGameManagerMKII : Photon.MonoBehaviour
         }
         else
         {
-            component.SetMainObject(Optimization.Caching.Pool.NetworkEnable("AOTTG_HERO 1", pos, Quaternion.identity, 0).GetComponent<HERO>(), true, false);
+            component.setMainObject(PhotonNetwork.Instantiate("AOTTG_HERO 1", pos.transform.position, pos.transform.rotation, 0), true, false);
             id = id.ToUpper();
-            if (id == "SET 1" || id == "SET 2" || id == "SET 3")
+            if (((id == "SET 1") || (id == "SET 2")) || (id == "SET 3"))
             {
-                HeroCostume heroCostume2 = CostumeConeveter.LocalDataToHeroCostume(id);
-                heroCostume2.Checkstat();
-                CostumeConeveter.HeroCostumeToLocalData(heroCostume2, id);
-                IN_GAME_MAIN_CAMERA.MainHERO.setup.Init();
-                if (heroCostume2 != null)
+                HeroCostume costume2 = CostumeConeveter.LocalDataToHeroCostume(id);
+                costume2.checkstat();
+                CostumeConeveter.HeroCostumeToLocalData(costume2, id);
+                component.main_object.GetComponent<HERO>().GetComponent<HERO_SETUP>().init();
+                if (costume2 != null)
                 {
-                    IN_GAME_MAIN_CAMERA.MainHERO.setup.myCostume = heroCostume2;
-                    IN_GAME_MAIN_CAMERA.MainHERO.setup.myCostume.stat = heroCostume2.stat;
+                    component.main_object.GetComponent<HERO>().GetComponent<HERO_SETUP>().myCostume = costume2;
+                    component.main_object.GetComponent<HERO>().GetComponent<HERO_SETUP>().myCostume.stat = costume2.stat;
                 }
                 else
                 {
-                    heroCostume2 = HeroCostume.costumeOption[3];
-                    IN_GAME_MAIN_CAMERA.MainHERO.setup.myCostume = heroCostume2;
-                    IN_GAME_MAIN_CAMERA.MainHERO.setup.myCostume.stat = HeroStat.getInfo(heroCostume2.name.ToUpper());
+                    costume2 = HeroCostume.costumeOption[3];
+                    component.main_object.GetComponent<HERO>().GetComponent<HERO_SETUP>().myCostume = costume2;
+                    component.main_object.GetComponent<HERO>().GetComponent<HERO_SETUP>().myCostume.stat = HeroStat.getInfo(costume2.name.ToUpper());
                 }
-                IN_GAME_MAIN_CAMERA.MainHERO.setup.SetCharacterComponent();
-                IN_GAME_MAIN_CAMERA.MainHERO.setStat();
-                IN_GAME_MAIN_CAMERA.MainHERO.setSkillHUDPosition();
+                component.main_object.GetComponent<HERO>().GetComponent<HERO_SETUP>().setCharacterComponent();
+                component.main_object.GetComponent<HERO>().setStat();
+                component.main_object.GetComponent<HERO>().setSkillHUDPosition();
             }
             else
             {
@@ -2353,39 +2062,46 @@ public class FengGameManagerMKII : Photon.MonoBehaviour
                 {
                     if (HeroCostume.costume[j].name.ToUpper() == id.ToUpper())
                     {
-                        int num2 = HeroCostume.costume[j].id;
+                        int num4 = HeroCostume.costume[j].id;
                         if (id.ToUpper() != "AHSS")
                         {
-                            num2 += CheckBoxCostume.costumeSet - 1;
+                            num4 += CheckBoxCostume.costumeSet - 1;
                         }
-                        if (HeroCostume.costume[num2].name != HeroCostume.costume[j].name)
+                        if (HeroCostume.costume[num4].name != HeroCostume.costume[j].name)
                         {
-                            num2 = HeroCostume.costume[j].id + 1;
+                            num4 = HeroCostume.costume[j].id + 1;
                         }
-                        IN_GAME_MAIN_CAMERA.MainHERO.setup.Init();
-                        IN_GAME_MAIN_CAMERA.MainHERO.setup.myCostume = HeroCostume.costume[num2];
-                        IN_GAME_MAIN_CAMERA.MainHERO.setup.myCostume.stat = HeroStat.getInfo(HeroCostume.costume[num2].name.ToUpper());
-                        IN_GAME_MAIN_CAMERA.MainHERO.setup.SetCharacterComponent();
-                        IN_GAME_MAIN_CAMERA.MainHERO.setStat();
-                        IN_GAME_MAIN_CAMERA.MainHERO.setSkillHUDPosition();
+                        component.main_object.GetComponent<HERO>().GetComponent<HERO_SETUP>().init();
+                        component.main_object.GetComponent<HERO>().GetComponent<HERO_SETUP>().myCostume = HeroCostume.costume[num4];
+                        component.main_object.GetComponent<HERO>().GetComponent<HERO_SETUP>().myCostume.stat = HeroStat.getInfo(HeroCostume.costume[num4].name.ToUpper());
+                        component.main_object.GetComponent<HERO>().GetComponent<HERO_SETUP>().setCharacterComponent();
+                        component.main_object.GetComponent<HERO>().setStat();
+                        component.main_object.GetComponent<HERO>().setSkillHUDPosition();
                         break;
                     }
                 }
             }
-            CostumeConeveter.HeroCostumeToPhotonData(IN_GAME_MAIN_CAMERA.MainHERO.setup.myCostume, PhotonNetwork.player);
-            if (IN_GAME_MAIN_CAMERA.GameMode == GameMode.PVP_CAPTURE)
+            CostumeConeveter.HeroCostumeToPhotonData(component.main_object.GetComponent<HERO>().GetComponent<HERO_SETUP>().myCostume, PhotonNetwork.player);
+            if (IN_GAME_MAIN_CAMERA.gamemode == GAMEMODE.PVP_CAPTURE)
             {
-                IN_GAME_MAIN_CAMERA.MainT.position += new Vector3((float)UnityEngine.Random.Range(-20, 20), 2f, (float)UnityEngine.Random.Range(-20, 20));
+                Transform transform = component.main_object.transform;
+                transform.position += new Vector3((float) UnityEngine.Random.Range(-20, 20), 2f, (float) UnityEngine.Random.Range(-20, 20));
             }
-            PhotonNetwork.player.Dead = false;
-            PhotonNetwork.player.IsTitan = false;
+            ExitGames.Client.Photon.Hashtable hashtable2 = new ExitGames.Client.Photon.Hashtable();
+            hashtable2.Add("dead", false);
+            ExitGames.Client.Photon.Hashtable propertiesToSet = hashtable2;
+            PhotonNetwork.player.SetCustomProperties(propertiesToSet);
+            hashtable2 = new ExitGames.Client.Photon.Hashtable();
+            hashtable2.Add(PhotonPlayerProperty.isTitan, 1);
+            propertiesToSet = hashtable2;
+            PhotonNetwork.player.SetCustomProperties(propertiesToSet);
         }
         component.enabled = true;
-        IN_GAME_MAIN_CAMERA.MainCamera.setHUDposition();
-        IN_GAME_MAIN_CAMERA.SpecMov.disable = true;
-        IN_GAME_MAIN_CAMERA.Look.disable = true;
+        GameObject.Find("MainCamera").GetComponent<IN_GAME_MAIN_CAMERA>().setHUDposition();
+        GameObject.Find("MainCamera").GetComponent<SpectatorMovement>().disable = true;
+        GameObject.Find("MainCamera").GetComponent<MouseLook>().disable = true;
         component.gameOver = false;
-        if (IN_GAME_MAIN_CAMERA.CameraMode == CameraType.TPS)
+        if (IN_GAME_MAIN_CAMERA.cameraMode == CAMERA_TYPE.TPS)
         {
             Screen.lockCursor = true;
         }
@@ -2398,181 +2114,269 @@ public class FengGameManagerMKII : Photon.MonoBehaviour
         this.ShowHUDInfoCenter(string.Empty);
     }
 
-    public TITAN SpawnTitan(int rate, Vector3 position, Quaternion rotation, bool punk = false)
+    public GameObject spawnTitan(int rate, Vector3 position, Quaternion rotation, bool punk = false)
     {
-        TITAN tit = this.spawnTitanRaw(position, rotation);
+        GameObject obj3;
+        GameObject obj2 = this.spawnTitanRaw(position, rotation);
         if (punk)
         {
-            tit.setAbnormalType(AbnormalType.Punk, false);
+            obj2.GetComponent<TITAN>().setAbnormalType(AbnormalType.TYPE_PUNK, false);
         }
         else if (UnityEngine.Random.Range(0, 100) < rate)
         {
             if (IN_GAME_MAIN_CAMERA.difficulty == 2)
             {
-                if (UnityEngine.Random.Range(0f, 1f) < 0.7f || FengGameManagerMKII.Level.NoCrawler)
+                if ((UnityEngine.Random.Range((float) 0f, (float) 1f) < 0.7f) || LevelInfo.getInfo(level).noCrawler)
                 {
-                    tit.setAbnormalType(AbnormalType.Jumper, false);
+                    obj2.GetComponent<TITAN>().setAbnormalType(AbnormalType.TYPE_JUMPER, false);
                 }
                 else
                 {
-                    tit.setAbnormalType(AbnormalType.Crawler, false);
+                    obj2.GetComponent<TITAN>().setAbnormalType(AbnormalType.TYPE_CRAWLER, false);
                 }
             }
         }
         else if (IN_GAME_MAIN_CAMERA.difficulty == 2)
         {
-            if (UnityEngine.Random.Range(0f, 1f) < 0.7f || FengGameManagerMKII.Level.NoCrawler)
+            if ((UnityEngine.Random.Range((float) 0f, (float) 1f) < 0.7f) || LevelInfo.getInfo(level).noCrawler)
             {
-                tit.setAbnormalType(AbnormalType.Jumper, false);
+                obj2.GetComponent<TITAN>().setAbnormalType(AbnormalType.TYPE_JUMPER, false);
             }
             else
             {
-                tit.setAbnormalType(AbnormalType.Crawler, false);
+                obj2.GetComponent<TITAN>().setAbnormalType(AbnormalType.TYPE_CRAWLER, false);
             }
         }
         else if (UnityEngine.Random.Range(0, 100) < rate)
         {
-            if (UnityEngine.Random.Range(0f, 1f) < 0.8f || FengGameManagerMKII.Level.NoCrawler)
+            if ((UnityEngine.Random.Range((float) 0f, (float) 1f) < 0.8f) || LevelInfo.getInfo(level).noCrawler)
             {
-                tit.setAbnormalType(AbnormalType.Aberrant, false);
+                obj2.GetComponent<TITAN>().setAbnormalType(AbnormalType.TYPE_I, false);
             }
             else
             {
-                tit.setAbnormalType(AbnormalType.Crawler, false);
+                obj2.GetComponent<TITAN>().setAbnormalType(AbnormalType.TYPE_CRAWLER, false);
             }
         }
-        else if (UnityEngine.Random.Range(0f, 1f) < 0.8f || FengGameManagerMKII.Level.NoCrawler)
+        else if ((UnityEngine.Random.Range((float) 0f, (float) 1f) < 0.8f) || LevelInfo.getInfo(level).noCrawler)
         {
-            tit.setAbnormalType(AbnormalType.Jumper, false);
+            obj2.GetComponent<TITAN>().setAbnormalType(AbnormalType.TYPE_JUMPER, false);
         }
         else
         {
-            tit.setAbnormalType(AbnormalType.Crawler, false);
+            obj2.GetComponent<TITAN>().setAbnormalType(AbnormalType.TYPE_CRAWLER, false);
         }
-        GameObject gameObject2;
-        if (IN_GAME_MAIN_CAMERA.GameType == GameType.Single)
+        if (IN_GAME_MAIN_CAMERA.gametype == GAMETYPE.SINGLE)
         {
-            gameObject2 = Pool.Enable("FX/FXtitanSpawn", tit.transform.position, Quaternion.Euler(-90f, 0f, 0f));//(GameObject)UnityEngine.Object.Instantiate(CacheResources.Load("FX/FXtitanSpawn"), tit.transform.position, Quaternion.Euler(-90f, 0f, 0f));
+            obj3 = (GameObject) UnityEngine.Object.Instantiate(Resources.Load("FX/FXtitanSpawn"), obj2.transform.position, Quaternion.Euler(-90f, 0f, 0f));
         }
         else
         {
-            gameObject2 = Optimization.Caching.Pool.NetworkEnable("FX/FXtitanSpawn", tit.transform.position, Quaternion.Euler(-90f, 0f, 0f), 0);
+            obj3 = PhotonNetwork.Instantiate("FX/FXtitanSpawn", obj2.transform.position, Quaternion.Euler(-90f, 0f, 0f), 0);
         }
-        gameObject2.transform.localScale = tit.transform.localScale;
-        return tit;
+        obj3.transform.localScale = obj2.transform.localScale;
+        return obj2;
     }
 
-    public void spawnTitanAction(int type, float size, int health, int number)
+    private GameObject spawnTitanRaw(Vector3 position, Quaternion rotation)
     {
-        Vector3 position = new Vector3(UnityEngine.Random.Range(-400f, 400f), 0f, UnityEngine.Random.Range(-400f, 400f));
-        Quaternion rotation = new Quaternion(0f, 0f, 0f, 1f);
-        if (CustomLevel.spawnPositions["Titan"].Count > 0)
+        if (IN_GAME_MAIN_CAMERA.gametype == GAMETYPE.SINGLE)
         {
-            position = CustomLevel.spawnPositions["Titan"][UnityEngine.Random.Range(0, CustomLevel.spawnPositions["Titan"].Count)];
+            return (GameObject) UnityEngine.Object.Instantiate(Resources.Load("TITAN_VER3.1"), position, rotation);
         }
-        else
-        {
-            GameObject[] objArray = GameObject.FindGameObjectsWithTag("titanRespawn");
-            if (objArray.Length != 0)
-            {
-                int index = UnityEngine.Random.Range(0, objArray.Length);
-                GameObject obj2 = objArray[index];
-                while (objArray[index] == null)
-                {
-                    index = UnityEngine.Random.Range(0, objArray.Length);
-                    obj2 = objArray[index];
-                }
-                objArray[index] = null;
-                position = obj2.transform.position;
-                rotation = obj2.transform.rotation;
-            }
-        }
-        for (int i = 0; i < number; i++)
-        {
-            TITAN titan = this.spawnTitanRaw(position, rotation);
-            titan.hasSetLevel = true;
-            titan.resetLevel(size);
-            if ((float)health > 0f)
-            {
-                titan.armor = health;
-            }
-            switch (type)
-            {
-                case 0:
-                    titan.setAbnormalType(AbnormalType.Normal);
-                    break;
-                case 1:
-                    titan.setAbnormalType(AbnormalType.Aberrant);
-                    break;
-                case 2:
-                    titan.setAbnormalType(AbnormalType.Jumper);
-                    break;
-                case 3:
-                    titan.setAbnormalType(AbnormalType.Crawler);
-                    break;
-                case 4:
-                    titan.setAbnormalType(AbnormalType.Punk);
-                    break;
-            }
-        }
+        return PhotonNetwork.Instantiate("TITAN_VER3.1", position, rotation, 0);
     }
 
-    public void spawnTitanAtAction(int type, float size, int health, int number, float posX, float posY, float posZ)
+    private void Start()
     {
-        Vector3 position = new Vector3(posX, posY, posZ);
-        Quaternion rotation = new Quaternion(0f, 0f, 0f, 1f);
-        for (int i = 0; i < number; i++)
-        {
-            TITAN obj2 = this.spawnTitanRaw(position, rotation);
-            obj2.resetLevel(size);
-            obj2.hasSetLevel = true;
-            if ((float)health > 0f)
-            {
-                obj2.armor = health;
-            }
-            switch (type)
-            {
-                case 0:
-                    obj2.setAbnormalType(AbnormalType.Normal);
-                    break;
-                case 1:
-                    obj2.setAbnormalType(AbnormalType.Normal);
-                    break;
-                case 2:
-                    obj2.setAbnormalType(AbnormalType.Normal);
-                    break;
-                case 3:
-                    obj2.setAbnormalType(AbnormalType.Normal);
-                    break;
-                case 4:
-                    obj2.setAbnormalType(AbnormalType.Normal);
-                    break;
-            }
-        }
+        base.gameObject.name = "MultiplayerManager";
+        HeroCostume.init();
+        CharacterMaterials.init();
+        UnityEngine.Object.DontDestroyOnLoad(base.gameObject);
+        this.heroes = new ArrayList();
+        this.eT = new ArrayList();
+        this.titans = new ArrayList();
+        this.fT = new ArrayList();
+        this.cT = new ArrayList();
+        this.hooks = new ArrayList();
     }
 
-    public void TitanGetKill(PhotonPlayer player, int Damage, string name)
+    [RPC]
+    public void titanGetKill(PhotonPlayer player, int Damage, string name)
     {
         Damage = Mathf.Max(10, Damage);
-        BasePV.RPC("netShowDamage", player, new object[]
-        {
-            Damage
-        });
-        BasePV.RPC("oneTitanDown", PhotonTargets.MasterClient, new object[]
-        {
-            name,
-            false
-        });
-        this.SendKillInfo(false, player.UIName, true, name, Damage);
-        this.PlayerKillInfoUpdate(player, Damage);
+        object[] parameters = new object[] { Damage };
+        base.photonView.RPC("netShowDamage", player, parameters);
+        object[] objArray2 = new object[] { name, false };
+        base.photonView.RPC("oneTitanDown", PhotonTargets.MasterClient, objArray2);
+        this.sendKillInfo(false, (string) player.customProperties[PhotonPlayerProperty.name], true, name, Damage);
+        this.playerKillInfoUpdate(player, Damage);
     }
 
-    public void TitanGetKillbyServer(int Damage, string name)
+    public void titanGetKillbyServer(int Damage, string name)
     {
         Damage = Mathf.Max(10, Damage);
-        this.SendKillInfo(false, LoginFengKAI.player.name, true, name, Damage);
+        this.sendKillInfo(false, LoginFengKAI.player.name, true, name, Damage);
         this.netShowDamage(Damage);
         this.oneTitanDown(name, false);
-        this.PlayerKillInfoUpdate(PhotonNetwork.player, Damage);
+        this.playerKillInfoUpdate(PhotonNetwork.player, Damage);
+    }
+
+    private void tryKick(KickState tmp)
+    {
+        this.sendChatContentInfo(string.Concat(new object[] { "kicking #", tmp.name, ", ", tmp.getKickCount(), "/", (int) (PhotonNetwork.playerList.Length * 0.5f), "vote" }));
+        if (tmp.getKickCount() >= ((int) (PhotonNetwork.playerList.Length * 0.5f)))
+        {
+            this.kickPhotonPlayer(tmp.name.ToString());
+        }
+    }
+
+    private void Update()
+    {
+        if ((IN_GAME_MAIN_CAMERA.gametype != GAMETYPE.SINGLE) && (GameObject.Find("LabelNetworkStatus") != null))
+        {
+            GameObject.Find("LabelNetworkStatus").GetComponent<UILabel>().text = PhotonNetwork.connectionStateDetailed.ToString();
+            if (PhotonNetwork.connected)
+            {
+                UILabel component = GameObject.Find("LabelNetworkStatus").GetComponent<UILabel>();
+                component.text = component.text + " ping:" + PhotonNetwork.GetPing();
+            }
+        }
+        if (this.gameStart)
+        {
+            IEnumerator enumerator = this.heroes.GetEnumerator();
+            try
+            {
+                while (enumerator.MoveNext())
+                {
+                    ((HERO) enumerator.Current).update();
+                }
+            }
+            finally
+            {
+                IDisposable disposable = enumerator as IDisposable;
+                if (disposable != null)
+                {
+	                disposable.Dispose();
+                }
+            }
+            IEnumerator enumerator2 = this.hooks.GetEnumerator();
+            try
+            {
+                while (enumerator2.MoveNext())
+                {
+                    ((Bullet) enumerator2.Current).update();
+                }
+            }
+            finally
+            {
+                IDisposable disposable2 = enumerator2 as IDisposable;
+                if (disposable2 != null)
+                {
+	                disposable2.Dispose();
+                }
+            }
+            if (this.mainCamera != null)
+            {
+                this.mainCamera.snapShotUpdate();
+            }
+            IEnumerator enumerator3 = this.eT.GetEnumerator();
+            try
+            {
+                while (enumerator3.MoveNext())
+                {
+                    ((TITAN_EREN) enumerator3.Current).update();
+                }
+            }
+            finally
+            {
+                IDisposable disposable3 = enumerator3 as IDisposable;
+                if (disposable3 != null)
+                {
+	                disposable3.Dispose();
+                }
+            }
+            IEnumerator enumerator4 = this.titans.GetEnumerator();
+            try
+            {
+                while (enumerator4.MoveNext())
+                {
+                    ((TITAN) enumerator4.Current).update();
+                }
+            }
+            finally
+            {
+                IDisposable disposable4 = enumerator4 as IDisposable;
+                if (disposable4 != null)
+                {
+	                disposable4.Dispose();
+                }
+            }
+            IEnumerator enumerator5 = this.fT.GetEnumerator();
+            try
+            {
+                while (enumerator5.MoveNext())
+                {
+                    ((FEMALE_TITAN) enumerator5.Current).update();
+                }
+            }
+            finally
+            {
+                IDisposable disposable5 = enumerator5 as IDisposable;
+                if (disposable5 != null)
+                {
+	                disposable5.Dispose();
+                }
+            }
+            IEnumerator enumerator6 = this.cT.GetEnumerator();
+            try
+            {
+                while (enumerator6.MoveNext())
+                {
+                    ((COLOSSAL_TITAN) enumerator6.Current).update();
+                }
+            }
+            finally
+            {
+                IDisposable disposable6 = enumerator6 as IDisposable;
+                if (disposable6 != null)
+                {
+	                disposable6.Dispose();
+                }
+            }
+            if (this.mainCamera != null)
+            {
+                this.mainCamera.update();
+            }
+        }
+    }
+
+    [RPC]
+    private void updateKillInfo(bool t1, string killer, bool t2, string victim, int dmg)
+    {
+        GameObject obj4;
+        GameObject obj2 = GameObject.Find("UI_IN_GAME");
+        GameObject obj3 = (GameObject) UnityEngine.Object.Instantiate(Resources.Load("UI/KillInfo"));
+        for (int i = 0; i < this.killInfoGO.Count; i++)
+        {
+            obj4 = (GameObject) this.killInfoGO[i];
+            if (obj4 != null)
+            {
+                obj4.GetComponent<KillInfoComponent>().moveOn();
+            }
+        }
+        if (this.killInfoGO.Count > 4)
+        {
+            obj4 = (GameObject) this.killInfoGO[0];
+            if (obj4 != null)
+            {
+                obj4.GetComponent<KillInfoComponent>().destory();
+            }
+            this.killInfoGO.RemoveAt(0);
+        }
+        obj3.transform.parent = obj2.GetComponent<UIReferArray>().panels[0].transform;
+        obj3.GetComponent<KillInfoComponent>().show(t1, killer, t2, victim, dmg);
+        this.killInfoGO.Add(obj3);
     }
 }
+

@@ -1,8 +1,9 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 public class CameraForLeftEye : MonoBehaviour
 {
-    private new Camera camera;
+    private Camera camera;
     private Camera cameraRightEye;
     public GameObject rightEye;
 
@@ -18,3 +19,4 @@ public class CameraForLeftEye : MonoBehaviour
         this.cameraRightEye = this.rightEye.GetComponent<Camera>();
     }
 }
+

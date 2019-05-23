@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+using System;
+using System.Runtime.CompilerServices;
+using UnityEngine;
 
 public static class GameObjectExtensions
 {
@@ -7,3 +9,4 @@ public static class GameObjectExtensions
         return target.activeInHierarchy;
     }
 }
+

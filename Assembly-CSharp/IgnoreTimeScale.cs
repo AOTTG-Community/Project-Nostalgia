@@ -1,33 +1,14 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 [AddComponentMenu("NGUI/Internal/Ignore TimeScale Behaviour")]
 public class IgnoreTimeScale : MonoBehaviour
 {
     private float mActual;
-
     private float mRt;
-
     private float mTimeDelta;
-
     private float mTimeStart;
-
     private bool mTimeStarted;
-
-    public float realTime
-    {
-        get
-        {
-            return this.mRt;
-        }
-    }
-
-    public float realTimeDelta
-    {
-        get
-        {
-            return this.mTimeDelta;
-        }
-    }
 
     protected virtual void OnEnable()
     {
@@ -59,4 +40,21 @@ public class IgnoreTimeScale : MonoBehaviour
         }
         return this.mTimeDelta;
     }
+
+    public float realTime
+    {
+        get
+        {
+            return this.mRt;
+        }
+    }
+
+    public float realTimeDelta
+    {
+        get
+        {
+            return this.mTimeDelta;
+        }
+    }
 }
+

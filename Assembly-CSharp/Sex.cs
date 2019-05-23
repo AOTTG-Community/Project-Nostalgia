@@ -1,5 +1,8 @@
-﻿public enum Sex
+using System;
+
+public enum SEX
 {
-    Male,
-    Female
+    MALE,
+    FEMALE
 }
+

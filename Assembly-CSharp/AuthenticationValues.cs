@@ -1,12 +1,11 @@
-﻿using System;
+using System;
+using System.Runtime.CompilerServices;
 
 public class AuthenticationValues
 {
     public string AuthParameters;
     public CustomAuthenticationType AuthType;
     public string Secret;
-
-    public object AuthPostData { get; private set; }
 
     public virtual void SetAuthParameters(string user, string token)
     {
@@ -15,7 +14,7 @@ public class AuthenticationValues
 
     public virtual void SetAuthPostData(string stringData)
     {
-        this.AuthPostData = ((!string.IsNullOrEmpty(stringData)) ? stringData : null);
+        this.AuthPostData = !string.IsNullOrEmpty(stringData) ? stringData : null;
     }
 
     public virtual void SetAuthPostData(byte[] byteData)
@@ -25,6 +24,9 @@ public class AuthenticationValues
 
     public override string ToString()
     {
-        return this.AuthParameters + " s: " + this.Secret;
+        return (this.AuthParameters + " s: " + this.Secret);
     }
+
+    public object AuthPostData { get; private set; }
 }
+

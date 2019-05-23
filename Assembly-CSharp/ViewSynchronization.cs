@@ -1,7 +1,10 @@
-﻿public enum ViewSynchronization
+using System;
+
+public enum ViewSynchronization
 {
     Off,
     ReliableDeltaCompressed,
     Unreliable,
     UnreliableOnChange
 }
+

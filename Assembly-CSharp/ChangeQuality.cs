@@ -1,10 +1,39 @@
-﻿using Optimization.Caching;
+using System;
 using UnityEngine;
 
 public class ChangeQuality : MonoBehaviour
 {
     private bool init;
     public static bool isTiltShiftOn;
+
+    private void OnSliderChange()
+    {
+        if (!this.init)
+        {
+            this.init = true;
+            if (PlayerPrefs.HasKey("GameQuality"))
+            {
+                base.gameObject.GetComponent<UISlider>().sliderValue = PlayerPrefs.GetFloat("GameQuality");
+            }
+            else
+            {
+                PlayerPrefs.SetFloat("GameQuality", base.gameObject.GetComponent<UISlider>().sliderValue);
+            }
+        }
+        else
+        {
+            PlayerPrefs.SetFloat("GameQuality", base.gameObject.GetComponent<UISlider>().sliderValue);
+        }
+        setQuality(base.gameObject.GetComponent<UISlider>().sliderValue);
+    }
+
+    public static void setCurrentQuality()
+    {
+        if (PlayerPrefs.HasKey("GameQuality"))
+        {
+            setQuality(PlayerPrefs.GetFloat("GameQuality"));
+        }
+    }
 
     private static void setQuality(float val)
     {
@@ -34,58 +63,30 @@ public class ChangeQuality : MonoBehaviour
         }
         if (val < 0.9f)
         {
-            ChangeQuality.turnOffTiltShift();
+            turnOffTiltShift();
         }
         else
         {
-            ChangeQuality.turnOnTiltShift();
-        }
-    }
-
-    private void OnSliderChange()
-    {
-        if (!this.init)
-        {
-            this.init = true;
-            if (PlayerPrefs.HasKey("GameQuality"))
-            {
-                base.gameObject.GetComponent<UISlider>().sliderValue = PlayerPrefs.GetFloat("GameQuality");
-            }
-            else
-            {
-                PlayerPrefs.SetFloat("GameQuality", base.gameObject.GetComponent<UISlider>().sliderValue);
-            }
-        }
-        else
-        {
-            PlayerPrefs.SetFloat("GameQuality", base.gameObject.GetComponent<UISlider>().sliderValue);
-        }
-        ChangeQuality.setQuality(base.gameObject.GetComponent<UISlider>().sliderValue);
-    }
-
-    public static void setCurrentQuality()
-    {
-        if (PlayerPrefs.HasKey("GameQuality"))
-        {
-            ChangeQuality.setQuality(PlayerPrefs.GetFloat("GameQuality"));
+            turnOnTiltShift();
         }
     }
 
     public static void turnOffTiltShift()
     {
-        ChangeQuality.isTiltShiftOn = false;
-        if (IN_GAME_MAIN_CAMERA.BaseCamera)
+        isTiltShiftOn = false;
+        if (GameObject.Find("MainCamera") != null)
         {
-            IN_GAME_MAIN_CAMERA.BaseCamera.GetComponent<TiltShift>().enabled = false;
+            GameObject.Find("MainCamera").GetComponent<TiltShift>().enabled = false;
         }
     }
 
     public static void turnOnTiltShift()
     {
-        ChangeQuality.isTiltShiftOn = true;
-        if (IN_GAME_MAIN_CAMERA.BaseCamera)
+        isTiltShiftOn = true;
+        if (GameObject.Find("MainCamera") != null)
         {
-            IN_GAME_MAIN_CAMERA.BaseCamera.GetComponent<TiltShift>().enabled = true;
+            GameObject.Find("MainCamera").GetComponent<TiltShift>().enabled = true;
         }
     }
 }
+

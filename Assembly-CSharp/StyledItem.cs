@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 using UnityEngine.UI;
 
 public class StyledItem : MonoBehaviour
@@ -32,3 +33,4 @@ public class StyledItem : MonoBehaviour
     {
     }
 }
+

@@ -1,26 +1,27 @@
-﻿using AnimationOrTween;
+using AnimationOrTween;
+using System;
 using UnityEngine;
 
 [AddComponentMenu("NGUI/Interaction/Button Play Animation")]
 public class UIButtonPlayAnimation : MonoBehaviour
 {
-    private bool mHighlighted;
-    private bool mStarted;
     public string callWhenFinished;
     public bool clearSelection;
     public string clipName;
     public DisableCondition disableWhenFinished;
     public GameObject eventReceiver;
     public EnableCondition ifDisabledOnPlay;
+    private bool mHighlighted;
+    private bool mStarted;
     public ActiveAnimation.OnFinished onFinished;
-    public Direction playDirection = Direction.Forward;
+    public AnimationOrTween.Direction playDirection = AnimationOrTween.Direction.Forward;
     public bool resetOnPlay;
     public Animation target;
-    public Trigger trigger;
+    public AnimationOrTween.Trigger trigger;
 
     private void OnActivate(bool isActive)
     {
-        if (base.enabled && (this.trigger == Trigger.OnActivate || (this.trigger == Trigger.OnActivateTrue && isActive) || (this.trigger == Trigger.OnActivateFalse && !isActive)))
+        if (base.enabled && (((this.trigger == AnimationOrTween.Trigger.OnActivate) || ((this.trigger == AnimationOrTween.Trigger.OnActivateTrue) && isActive)) || ((this.trigger == AnimationOrTween.Trigger.OnActivateFalse) && !isActive)))
         {
             this.Play(isActive);
         }
@@ -28,7 +29,7 @@ public class UIButtonPlayAnimation : MonoBehaviour
 
     private void OnClick()
     {
-        if (base.enabled && this.trigger == Trigger.OnClick)
+        if (base.enabled && (this.trigger == AnimationOrTween.Trigger.OnClick))
         {
             this.Play(true);
         }
@@ -36,7 +37,7 @@ public class UIButtonPlayAnimation : MonoBehaviour
 
     private void OnDoubleClick()
     {
-        if (base.enabled && this.trigger == Trigger.OnDoubleClick)
+        if (base.enabled && (this.trigger == AnimationOrTween.Trigger.OnDoubleClick))
         {
             this.Play(true);
         }
@@ -54,7 +55,7 @@ public class UIButtonPlayAnimation : MonoBehaviour
     {
         if (base.enabled)
         {
-            if (this.trigger == Trigger.OnHover || (this.trigger == Trigger.OnHoverTrue && isOver) || (this.trigger == Trigger.OnHoverFalse && !isOver))
+            if (((this.trigger == AnimationOrTween.Trigger.OnHover) || ((this.trigger == AnimationOrTween.Trigger.OnHoverTrue) && isOver)) || ((this.trigger == AnimationOrTween.Trigger.OnHoverFalse) && !isOver))
             {
                 this.Play(isOver);
             }
@@ -64,7 +65,7 @@ public class UIButtonPlayAnimation : MonoBehaviour
 
     private void OnPress(bool isPressed)
     {
-        if (base.enabled && (this.trigger == Trigger.OnPress || (this.trigger == Trigger.OnPressTrue && isPressed) || (this.trigger == Trigger.OnPressFalse && !isPressed)))
+        if (base.enabled && (((this.trigger == AnimationOrTween.Trigger.OnPress) || ((this.trigger == AnimationOrTween.Trigger.OnPressTrue) && isPressed)) || ((this.trigger == AnimationOrTween.Trigger.OnPressFalse) && !isPressed)))
         {
             this.Play(isPressed);
         }
@@ -72,7 +73,7 @@ public class UIButtonPlayAnimation : MonoBehaviour
 
     private void OnSelect(bool isSelected)
     {
-        if (base.enabled && (this.trigger == Trigger.OnSelect || (this.trigger == Trigger.OnSelectTrue && isSelected) || (this.trigger == Trigger.OnSelectFalse && !isSelected)))
+        if (base.enabled && (((this.trigger == AnimationOrTween.Trigger.OnSelect) || ((this.trigger == AnimationOrTween.Trigger.OnSelectTrue) && isSelected)) || ((this.trigger == AnimationOrTween.Trigger.OnSelectFalse) && !isSelected)))
         {
             this.Play(true);
         }
@@ -86,30 +87,29 @@ public class UIButtonPlayAnimation : MonoBehaviour
         }
         if (this.target != null)
         {
-            if (this.clearSelection && UICamera.selectedObject == base.gameObject)
+            if (this.clearSelection && (UICamera.selectedObject == base.gameObject))
             {
                 UICamera.selectedObject = null;
             }
-            int num = (int)(-(int)this.playDirection);
-            Direction direction = (Direction)((!forward) ? num : ((int)this.playDirection));
-            ActiveAnimation activeAnimation = ActiveAnimation.Play(this.target, this.clipName, direction, this.ifDisabledOnPlay, this.disableWhenFinished);
-            if (activeAnimation == null)
+            int num = -(int)this.playDirection;
+            AnimationOrTween.Direction playDirection = !forward ? ((AnimationOrTween.Direction) num) : this.playDirection;
+            ActiveAnimation animation = ActiveAnimation.Play(this.target, this.clipName, playDirection, this.ifDisabledOnPlay, this.disableWhenFinished);
+            if (animation != null)
             {
-                return;
-            }
-            if (this.resetOnPlay)
-            {
-                activeAnimation.Reset();
-            }
-            activeAnimation.onFinished = this.onFinished;
-            if (this.eventReceiver != null && !string.IsNullOrEmpty(this.callWhenFinished))
-            {
-                activeAnimation.eventReceiver = this.eventReceiver;
-                activeAnimation.callWhenFinished = this.callWhenFinished;
-            }
-            else
-            {
-                activeAnimation.eventReceiver = null;
+                if (this.resetOnPlay)
+                {
+                    animation.Reset();
+                }
+                animation.onFinished = this.onFinished;
+                if ((this.eventReceiver != null) && !string.IsNullOrEmpty(this.callWhenFinished))
+                {
+                    animation.eventReceiver = this.eventReceiver;
+                    animation.callWhenFinished = this.callWhenFinished;
+                }
+                else
+                {
+                    animation.eventReceiver = null;
+                }
             }
         }
     }
@@ -119,3 +119,4 @@ public class UIButtonPlayAnimation : MonoBehaviour
         this.mStarted = true;
     }
 }
+

@@ -1,14 +1,44 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 [AddComponentMenu("NGUI/Tween/Color")]
 public class TweenColor : UITweener
 {
+    public Color from = Color.white;
     private Light mLight;
     private Material mMat;
+    private Transform mTrans;
     private UIWidget mWidget;
-    public Color from = Color.white;
-
     public Color to = Color.white;
+
+    private void Awake()
+    {
+        this.mWidget = base.GetComponentInChildren<UIWidget>();
+        Renderer renderer = base.renderer;
+        if (renderer != null)
+        {
+            this.mMat = renderer.material;
+        }
+        this.mLight = base.light;
+    }
+
+    public static TweenColor Begin(GameObject go, float duration, Color color)
+    {
+        TweenColor color2 = UITweener.Begin<TweenColor>(go, duration);
+        color2.from = color2.color;
+        color2.to = color;
+        if (duration <= 0f)
+        {
+            color2.Sample(1f, true);
+            color2.enabled = false;
+        }
+        return color2;
+    }
+
+    protected override void OnUpdate(float factor, bool isFinished)
+    {
+        this.color = Color.Lerp(this.from, this.to, factor);
+    }
 
     public Color color
     {
@@ -41,37 +71,9 @@ public class TweenColor : UITweener
             if (this.mLight != null)
             {
                 this.mLight.color = value;
-                this.mLight.enabled = (value.r + value.g + value.b > 0.01f);
+                this.mLight.enabled = ((value.r + value.g) + value.b) > 0.01f;
             }
         }
     }
-
-    private void Awake()
-    {
-        this.mWidget = base.GetComponentInChildren<UIWidget>();
-        Renderer renderer = base.renderer;
-        if (renderer != null)
-        {
-            this.mMat = renderer.material;
-        }
-        this.mLight = base.light;
-    }
-
-    protected override void OnUpdate(float factor, bool isFinished)
-    {
-        this.color = Color.Lerp(this.from, this.to, factor);
-    }
-
-    public static TweenColor Begin(GameObject go, float duration, Color color)
-    {
-        TweenColor tweenColor = UITweener.Begin<TweenColor>(go, duration);
-        tweenColor.from = tweenColor.color;
-        tweenColor.to = color;
-        if (duration <= 0f)
-        {
-            tweenColor.Sample(1f, true);
-            tweenColor.enabled = false;
-        }
-        return tweenColor;
-    }
 }
+

@@ -1,4 +1,6 @@
-﻿public enum HeroState
+using System;
+
+public enum HERO_STATE
 {
     Idle,
     Attack,
@@ -16,3 +18,4 @@
     Jump,
     Land
 }
+

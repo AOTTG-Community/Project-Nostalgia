@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 public class SliderMouseSensitivity : MonoBehaviour
 {
@@ -25,3 +26,4 @@ public class SliderMouseSensitivity : MonoBehaviour
         IN_GAME_MAIN_CAMERA.sensitivityMulti = PlayerPrefs.GetFloat("MouseSensitivity");
     }
 }
+

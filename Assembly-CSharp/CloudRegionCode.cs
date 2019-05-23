@@ -1,4 +1,6 @@
-﻿public enum CloudRegionCode
+using System;
+
+public enum CloudRegionCode
 {
     eu,
     us,
@@ -6,3 +8,4 @@
     jp,
     none
 }
+

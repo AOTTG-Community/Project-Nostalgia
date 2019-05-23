@@ -1,50 +1,34 @@
-﻿using Optimization.Caching;
+using System;
 using UnityEngine;
 
 public class BTN_START_MULTI_SERVER : MonoBehaviour
 {
     private void OnClick()
     {
-        string text = CacheGameObject.Find("InputServerName").GetComponent<UIInput>().label.text;
-        int maxPlayers = int.Parse(CacheGameObject.Find("InputMaxPlayer").GetComponent<UIInput>().label.text);
-        int num = int.Parse(CacheGameObject.Find("InputMaxTime").GetComponent<UIInput>().label.text);
-        string selection = CacheGameObject.Find("PopupListMap").GetComponent<UIPopupList>().selection;
-        string text2 = (!CacheGameObject.Find("CheckboxHard").GetComponent<UICheckbox>().isChecked) ? ((!CacheGameObject.Find("CheckboxAbnormal").GetComponent<UICheckbox>().isChecked) ? "normal" : "abnormal") : "hard";
-        string text3 = string.Empty;
-        if (IN_GAME_MAIN_CAMERA.DayLight == DayLight.Day)
+        string text = GameObject.Find("InputServerName").GetComponent<UIInput>().label.text;
+        int maxPlayers = int.Parse(GameObject.Find("InputMaxPlayer").GetComponent<UIInput>().label.text);
+        int num2 = int.Parse(GameObject.Find("InputMaxTime").GetComponent<UIInput>().label.text);
+        string selection = GameObject.Find("PopupListMap").GetComponent<UIPopupList>().selection;
+        string str3 = !GameObject.Find("CheckboxHard").GetComponent<UICheckbox>().isChecked ? (!GameObject.Find("CheckboxAbnormal").GetComponent<UICheckbox>().isChecked ? "normal" : "abnormal") : "hard";
+        string str4 = string.Empty;
+        if (IN_GAME_MAIN_CAMERA.dayLight == DayLight.Day)
         {
-            text3 = "day";
+            str4 = "day";
         }
-        if (IN_GAME_MAIN_CAMERA.DayLight == DayLight.Dawn)
+        if (IN_GAME_MAIN_CAMERA.dayLight == DayLight.Dawn)
         {
-            text3 = "dawn";
+            str4 = "dawn";
         }
-        if (IN_GAME_MAIN_CAMERA.DayLight == DayLight.Night)
+        if (IN_GAME_MAIN_CAMERA.dayLight == DayLight.Night)
         {
-            text3 = "night";
+            str4 = "night";
         }
-        string text4 = CacheGameObject.Find("InputStartServerPWD").GetComponent<UIInput>().label.text;
-        if (text4.Length > 0)
+        string unencrypted = GameObject.Find("InputStartServerPWD").GetComponent<UIInput>().label.text;
+        if (unencrypted.Length > 0)
         {
-            SimpleAES simpleAES = new SimpleAES();
-            text4 = simpleAES.Encrypt(text4);
+            unencrypted = new SimpleAES().Encrypt(unencrypted);
         }
-        text = string.Concat(new object[]
-        {
-            text,
-            "`",
-            selection,
-            "`",
-            text2,
-            "`",
-            num,
-            "`",
-            text3,
-            "`",
-            text4,
-            "`",
-            UnityEngine.Random.Range(0, 50000)
-        });
-        PhotonNetwork.CreateRoom(text, new RoomOptions() { isOpen = true, isVisible = true, maxPlayers = maxPlayers }, null);
+        PhotonNetwork.CreateRoom(string.Concat(new object[] { text, "`", selection, "`", str3, "`", num2, "`", str4, "`", unencrypted, "`", UnityEngine.Random.Range(0, 0xc350) }), true, true, maxPlayers);
     }
 }
+

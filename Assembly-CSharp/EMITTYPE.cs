@@ -1,4 +1,6 @@
-﻿public enum EMITTYPE
+using System;
+
+public enum EMITTYPE
 {
     POINT,
     BOX,
@@ -6,3 +8,4 @@
     CIRCLE,
     LINE
 }
+

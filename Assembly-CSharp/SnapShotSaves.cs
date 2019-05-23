@@ -1,96 +1,92 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 public class SnapShotSaves
 {
     private static int currentIndex;
-
     private static int[] dmg;
-
     private static Texture2D[] img;
-
     private static int index;
-
     private static bool inited;
-
     private static int maxIndex;
 
     public static void addIMG(Texture2D t, int d)
     {
-        SnapShotSaves.init();
-        SnapShotSaves.img[SnapShotSaves.index] = t;
-        SnapShotSaves.dmg[SnapShotSaves.index] = d;
-        SnapShotSaves.currentIndex = SnapShotSaves.index;
-        SnapShotSaves.index++;
-        if (SnapShotSaves.index >= SnapShotSaves.img.Length)
+        init();
+        img[index] = t;
+        dmg[index] = d;
+        currentIndex = index;
+        index++;
+        if (index >= img.Length)
         {
-            SnapShotSaves.index = 0;
+            index = 0;
         }
-        SnapShotSaves.maxIndex = Mathf.Max(SnapShotSaves.index, SnapShotSaves.maxIndex);
+        maxIndex = Mathf.Max(index, maxIndex);
     }
 
     public static int getCurrentDMG()
     {
-        if (SnapShotSaves.maxIndex == 0)
+        if (maxIndex == 0)
         {
             return 0;
         }
-        return SnapShotSaves.dmg[SnapShotSaves.currentIndex];
+        return dmg[currentIndex];
     }
 
     public static Texture2D getCurrentIMG()
     {
-        if (SnapShotSaves.maxIndex == 0)
+        if (maxIndex == 0)
         {
             return null;
         }
-        return SnapShotSaves.img[SnapShotSaves.currentIndex];
+        return img[currentIndex];
     }
 
     public static int getCurrentIndex()
     {
-        return SnapShotSaves.currentIndex;
+        return currentIndex;
     }
 
     public static int getLength()
     {
-        return SnapShotSaves.maxIndex;
+        return maxIndex;
     }
 
     public static int getMaxIndex()
     {
-        return SnapShotSaves.maxIndex;
+        return maxIndex;
     }
 
     public static Texture2D GetNextIMG()
     {
-        SnapShotSaves.currentIndex++;
-        if (SnapShotSaves.currentIndex >= SnapShotSaves.maxIndex)
+        currentIndex++;
+        if (currentIndex >= maxIndex)
         {
-            SnapShotSaves.currentIndex = 0;
+            currentIndex = 0;
         }
-        return SnapShotSaves.getCurrentIMG();
+        return getCurrentIMG();
     }
 
     public static Texture2D GetPrevIMG()
     {
-        SnapShotSaves.currentIndex--;
-        if (SnapShotSaves.currentIndex < 0)
+        currentIndex--;
+        if (currentIndex < 0)
         {
-            SnapShotSaves.currentIndex = SnapShotSaves.maxIndex - 1;
+            currentIndex = maxIndex - 1;
         }
-        return SnapShotSaves.getCurrentIMG();
+        return getCurrentIMG();
     }
 
     public static void init()
     {
-        if (SnapShotSaves.inited)
+        if (!inited)
         {
-            return;
+            inited = true;
+            index = 0;
+            maxIndex = 0;
+            img = new Texture2D[0x63];
+            dmg = new int[0x63];
         }
-        SnapShotSaves.inited = true;
-        SnapShotSaves.index = 0;
-        SnapShotSaves.maxIndex = 0;
-        SnapShotSaves.img = new Texture2D[99];
-        SnapShotSaves.dmg = new int[99];
     }
 }
+

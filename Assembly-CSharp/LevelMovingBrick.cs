@@ -1,13 +1,12 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 public class LevelMovingBrick : MonoBehaviour
 {
     private Vector3 pointA;
     private Vector3 pointB;
     public GameObject pointGOA;
-
     public GameObject pointGOB;
-
     public float speed = 10f;
     public bool towardsA = true;
 
@@ -39,3 +38,4 @@ public class LevelMovingBrick : MonoBehaviour
         }
     }
 }
+

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 [AddComponentMenu("NGUI/Examples/Equip Random Item")]
@@ -8,21 +9,21 @@ public class EquipRandomItem : MonoBehaviour
 
     private void OnClick()
     {
-        if (this.equipment == null)
+        if (this.equipment != null)
         {
-            return;
+            List<InvBaseItem> items = InvDatabase.list[0].items;
+            if (items.Count != 0)
+            {
+                int max = 12;
+                int id = UnityEngine.Random.Range(0, items.Count);
+                InvBaseItem bi = items[id];
+                InvGameItem item = new InvGameItem(id, bi) {
+                    quality = (InvGameItem.Quality) UnityEngine.Random.Range(0, max),
+                    itemLevel = NGUITools.RandomRange(bi.minItemLevel, bi.maxItemLevel)
+                };
+                this.equipment.Equip(item);
+            }
         }
-        List<InvBaseItem> items = InvDatabase.list[0].items;
-        if (items.Count == 0)
-        {
-            return;
-        }
-        int max = 12;
-        int num = UnityEngine.Random.Range(0, items.Count);
-        InvBaseItem invBaseItem = items[num];
-        InvGameItem invGameItem = new InvGameItem(num, invBaseItem);
-        invGameItem.quality = (InvGameItem.Quality)UnityEngine.Random.Range(0, max);
-        invGameItem.itemLevel = NGUITools.RandomRange(invBaseItem.minItemLevel, invBaseItem.maxItemLevel);
-        this.equipment.Equip(invGameItem);
     }
 }
+

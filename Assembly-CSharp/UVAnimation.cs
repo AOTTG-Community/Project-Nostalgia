@@ -1,17 +1,16 @@
-﻿using Optimization.Caching;
+using System;
 using System.IO;
 using UnityEngine;
 
 public class UVAnimation
 {
-    protected int numLoops;
-    protected int stepDir = 1;
     public int curFrame;
     public Vector2[] frames;
-
     public int loopCycles;
     public bool loopReverse;
     public string name;
+    protected int numLoops;
+    protected int stepDir = 1;
     public Vector2[] UVDimensions;
 
     public void BuildFromFile(string path, int index, float uvTime, Texture mainTex)
@@ -19,56 +18,54 @@ public class UVAnimation
         if (!File.Exists(path))
         {
             Debug.LogError("wrong ean file path!");
-            return;
         }
-        FileStream fileStream = new FileStream(path, FileMode.Open);
-        BinaryReader br = new BinaryReader(fileStream);
-        EanFile eanFile = new EanFile();
-        eanFile.Load(br, fileStream);
-        fileStream.Close();
-        EanAnimation eanAnimation = eanFile.Anims[index];
-        this.frames = new Vector2[(int)eanAnimation.TotalCount];
-        this.UVDimensions = new Vector2[(int)eanAnimation.TotalCount];
-        int tileCount = (int)eanAnimation.TileCount;
-        int num = ((int)eanAnimation.TotalCount + tileCount - 1) / tileCount;
-        int num2 = 0;
-        int width = mainTex.width;
-        int height = mainTex.height;
-        for (int i = 0; i < num; i++)
+        else
         {
+            FileStream input = new FileStream(path, FileMode.Open);
+            BinaryReader br = new BinaryReader(input);
+            EanFile file = new EanFile();
+            file.Load(br, input);
+            input.Close();
+            EanAnimation animation = file.Anims[index];
+            this.frames = new Vector2[animation.TotalCount];
+            this.UVDimensions = new Vector2[animation.TotalCount];
+            int tileCount = animation.TileCount;
+            int num2 = ((animation.TotalCount + tileCount) - 1) / tileCount;
             int num3 = 0;
-            while (num3 < tileCount && num2 < (int)eanAnimation.TotalCount)
+            int width = mainTex.width;
+            int height = mainTex.height;
+            for (int i = 0; i < num2; i++)
             {
-                Vector2 zero = Vectors.v2zero;
-                zero.x = (float)eanAnimation.Frames[num2].Width / (float)width;
-                zero.y = (float)eanAnimation.Frames[num2].Height / (float)height;
-                this.frames[num2].x = (float)eanAnimation.Frames[num2].X / (float)width;
-                this.frames[num2].y = 1f - (float)eanAnimation.Frames[num2].Y / (float)height;
-                this.UVDimensions[num2] = zero;
-                this.UVDimensions[num2].y = -this.UVDimensions[num2].y;
-                num2++;
-                num3++;
+                for (int j = 0; (j < tileCount) && (num3 < animation.TotalCount); j++)
+                {
+                    Vector2 zero = Vector2.zero;
+                    zero.x = ((float) animation.Frames[num3].Width) / ((float) width);
+                    zero.y = ((float) animation.Frames[num3].Height) / ((float) height);
+                    this.frames[num3].x = ((float) animation.Frames[num3].X) / ((float) width);
+                    this.frames[num3].y = 1f - (((float) animation.Frames[num3].Y) / ((float) height));
+                    this.UVDimensions[num3] = zero;
+                    this.UVDimensions[num3].y = -this.UVDimensions[num3].y;
+                    num3++;
+                }
             }
         }
     }
 
     public Vector2[] BuildUVAnim(Vector2 start, Vector2 cellSize, int cols, int rows, int totalCells)
     {
-        int num = 0;
+        int index = 0;
         this.frames = new Vector2[totalCells];
         this.UVDimensions = new Vector2[totalCells];
         this.frames[0] = start;
         for (int i = 0; i < rows; i++)
         {
-            int num2 = 0;
-            while (num2 < cols && num < totalCells)
+            for (int j = 0; (j < cols) && (index < totalCells); j++)
             {
-                this.frames[num].x = start.x + cellSize.x * (float)num2;
-                this.frames[num].y = start.y - cellSize.y * (float)i;
-                this.UVDimensions[num] = cellSize;
-                this.UVDimensions[num].y = -this.UVDimensions[num].y;
-                num++;
-                num2++;
+                this.frames[index].x = start.x + (cellSize.x * j);
+                this.frames[index].y = start.y - (cellSize.y * i);
+                this.UVDimensions[index] = cellSize;
+                this.UVDimensions[index].y = -this.UVDimensions[index].y;
+                index++;
             }
         }
         return this.frames;
@@ -76,9 +73,9 @@ public class UVAnimation
 
     public bool GetNextFrame(ref Vector2 uv, ref Vector2 dm)
     {
-        if (this.curFrame + this.stepDir >= this.frames.Length || this.curFrame + this.stepDir < 0)
+        if (((this.curFrame + this.stepDir) >= this.frames.Length) || ((this.curFrame + this.stepDir) < 0))
         {
-            if (this.stepDir > 0 && this.loopReverse)
+            if ((this.stepDir > 0) && this.loopReverse)
             {
                 this.stepDir = -1;
                 this.curFrame += this.stepDir;
@@ -87,7 +84,7 @@ public class UVAnimation
             }
             else
             {
-                if (this.numLoops + 1 > this.loopCycles && this.loopCycles != -1)
+                if (((this.numLoops + 1) > this.loopCycles) && (this.loopCycles != -1))
                 {
                     return false;
                 }
@@ -132,3 +129,4 @@ public class UVAnimation
         this.frames = anim;
     }
 }
+

@@ -1,14 +1,12 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
-[ExecuteInEditMode]
-[AddComponentMenu("NGUI/Interaction/Drag Panel Contents")]
+[ExecuteInEditMode, AddComponentMenu("NGUI/Interaction/Drag Panel Contents")]
 public class UIDragPanelContents : MonoBehaviour
 {
-    [HideInInspector]
-    [SerializeField]
-    private UIPanel panel;
-
     public UIDraggablePanel draggablePanel;
+    [HideInInspector, SerializeField]
+    private UIPanel panel;
 
     private void Awake()
     {
@@ -28,7 +26,7 @@ public class UIDragPanelContents : MonoBehaviour
 
     private void OnDrag(Vector2 delta)
     {
-        if (base.enabled && NGUITools.GetActive(base.gameObject) && this.draggablePanel != null)
+        if ((base.enabled && NGUITools.GetActive(base.gameObject)) && (this.draggablePanel != null))
         {
             this.draggablePanel.Drag();
         }
@@ -36,7 +34,7 @@ public class UIDragPanelContents : MonoBehaviour
 
     private void OnPress(bool pressed)
     {
-        if (base.enabled && NGUITools.GetActive(base.gameObject) && this.draggablePanel != null)
+        if ((base.enabled && NGUITools.GetActive(base.gameObject)) && (this.draggablePanel != null))
         {
             this.draggablePanel.Press(pressed);
         }
@@ -44,7 +42,7 @@ public class UIDragPanelContents : MonoBehaviour
 
     private void OnScroll(float delta)
     {
-        if (base.enabled && NGUITools.GetActive(base.gameObject) && this.draggablePanel != null)
+        if ((base.enabled && NGUITools.GetActive(base.gameObject)) && (this.draggablePanel != null))
         {
             this.draggablePanel.Scroll(delta);
         }
@@ -58,3 +56,4 @@ public class UIDragPanelContents : MonoBehaviour
         }
     }
 }
+

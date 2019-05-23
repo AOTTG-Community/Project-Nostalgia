@@ -1,15 +1,25 @@
-﻿using UnityEngine;
-
-namespace Photon
+﻿namespace Photon
 {
+    using UnityEngine;
+
     public class MonoBehaviour : UnityEngine.MonoBehaviour
     {
-        private PhotonView pv;
-        internal PhotonView BasePV => pv ?? (pv = PhotonView.Get(this));
+        public PhotonView networkView
+        {
+            get
+            {
+                Debug.LogWarning("Why are you still using networkView? should be PhotonView?");
+                return PhotonView.Get(this);
+            }
+        }
 
-        //private void OnDestroy()
-        //{
-        //    CacheTransform.RemoveParent(transform);
-        //}
+        public PhotonView photonView
+        {
+            get
+            {
+                return PhotonView.Get(this);
+            }
+        }
     }
 }
+

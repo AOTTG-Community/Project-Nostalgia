@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 public class PanelLoginGroupManager : MonoBehaviour
 {
@@ -6,34 +7,17 @@ public class PanelLoginGroupManager : MonoBehaviour
     private string _loginPassword = string.Empty;
     public LoginFengKAI logincomponent;
     public GameObject[] panels;
-
     public PanelGroupManager pgm;
 
-    public string loginName
+    public void SignIn()
     {
-        set
-        {
-            this._loginName = value;
-        }
-    }
-
-    public string loginPassword
-    {
-        set
-        {
-            this._loginPassword = value;
-        }
+        this.logincomponent.login(this._loginName, this._loginPassword);
     }
 
     private void Start()
     {
         this.pgm = new PanelGroupManager();
         this.pgm.panelGroup = this.panels;
-    }
-
-    public void SignIn()
-    {
-        this.logincomponent.login(this._loginName, this._loginPassword);
     }
 
     public void toChangeGuildNamePanel()
@@ -65,4 +49,21 @@ public class PanelLoginGroupManager : MonoBehaviour
     {
         this.pgm.ActivePanel(5);
     }
+
+    public string loginName
+    {
+        set
+        {
+            this._loginName = value;
+        }
+    }
+
+    public string loginPassword
+    {
+        set
+        {
+            this._loginPassword = value;
+        }
+    }
 }
+

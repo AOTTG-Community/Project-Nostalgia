@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 [AddComponentMenu("Game/UI/Button Key Binding")]
 public class UIButtonKeyBinding : MonoBehaviour
@@ -7,12 +8,8 @@ public class UIButtonKeyBinding : MonoBehaviour
 
     private void Update()
     {
-        if (!UICamera.inputHasFocus)
+        if (!UICamera.inputHasFocus && (this.keyCode != KeyCode.None))
         {
-            if (this.keyCode == KeyCode.None)
-            {
-                return;
-            }
             if (Input.GetKeyDown(this.keyCode))
             {
                 base.SendMessage("OnPress", true, SendMessageOptions.DontRequireReceiver);
@@ -25,3 +22,4 @@ public class UIButtonKeyBinding : MonoBehaviour
         }
     }
 }
+

@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 public class TestStyledComboBox : MonoBehaviour
 {
@@ -6,19 +7,8 @@ public class TestStyledComboBox : MonoBehaviour
 
     private void Start()
     {
-        this.comboBox.AddItems(new object[]
-        {
-            "English",
-            "简体中文",
-            "繁體中文",
-            "繁體中文",
-            "繁體中文",
-            "繁體中文",
-            "繁體中文",
-            "繁體中文",
-            "繁體中文",
-            "繁體中文",
-            "繁體中文"
-        });
+        object[] list = new object[] { "English", "简体中文", "繁體中文", "繁體中文", "繁體中文", "繁體中文", "繁體中文", "繁體中文", "繁體中文", "繁體中文", "繁體中文" };
+        this.comboBox.AddItems(list);
     }
 }
+

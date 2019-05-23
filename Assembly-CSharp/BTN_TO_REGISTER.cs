@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 public class BTN_TO_REGISTER : MonoBehaviour
 {
@@ -10,3 +11,4 @@ public class BTN_TO_REGISTER : MonoBehaviour
         NGUITools.SetActive(this.registerPanel, true);
     }
 }
+

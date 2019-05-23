@@ -1,4 +1,6 @@
-﻿public enum HintType
+using System;
+
+public enum HintType
 {
     MOVE,
     TELE,
@@ -11,3 +13,4 @@
     DODGE,
     ATTACK
 }
+

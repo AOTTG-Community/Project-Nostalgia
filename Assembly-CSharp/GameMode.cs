@@ -1,4 +1,6 @@
-﻿public enum GameMode
+using System;
+
+public enum GAMEMODE
 {
     KILL_TITAN,
     PVP_AHSS,
@@ -9,6 +11,6 @@
     TROST,
     TUTORIAL,
     RACING,
-    PVP_CAPTURE,
-    None
+    PVP_CAPTURE
 }
+

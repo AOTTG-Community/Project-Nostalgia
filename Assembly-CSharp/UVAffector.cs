@@ -1,12 +1,10 @@
-﻿using Optimization.Caching;
+using System;
 using UnityEngine;
 
 public class UVAffector : Affector
 {
     protected float ElapsedTime;
-
     protected UVAnimation Frames;
-
     protected float UVTime;
 
     public UVAffector(UVAnimation frame, float time, EffectNode node) : base(node)
@@ -23,24 +21,25 @@ public class UVAffector : Affector
 
     public override void Update()
     {
-        this.ElapsedTime += Time.deltaTime;
         float num;
+        this.ElapsedTime += Time.deltaTime;
         if (this.UVTime <= 0f)
         {
-            num = this.Node.GetLifeTime() / (float)this.Frames.frames.Length;
+            num = base.Node.GetLifeTime() / ((float) this.Frames.frames.Length);
         }
         else
         {
-            num = this.UVTime / (float)this.Frames.frames.Length;
+            num = this.UVTime / ((float) this.Frames.frames.Length);
         }
         if (this.ElapsedTime >= num)
         {
-            Vector2 zero = Vectors.v2zero;
-            Vector2 zero2 = Vectors.v2zero;
-            this.Frames.GetNextFrame(ref zero, ref zero2);
-            this.Node.LowerLeftUV = zero;
-            this.Node.UVDimensions = zero2;
+            Vector2 zero = Vector2.zero;
+            Vector2 dm = Vector2.zero;
+            this.Frames.GetNextFrame(ref zero, ref dm);
+            base.Node.LowerLeftUV = zero;
+            base.Node.UVDimensions = dm;
             this.ElapsedTime -= num;
         }
     }
 }
+

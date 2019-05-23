@@ -1,4 +1,6 @@
-﻿public enum PhotonTargets
+using System;
+
+public enum PhotonTargets
 {
     All,
     Others,
@@ -8,3 +10,4 @@
     AllViaServer,
     AllBufferedViaServer
 }
+

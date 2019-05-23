@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 [Serializable]
@@ -8,28 +8,26 @@ public class BMGlyph
     public int channel;
     public int height;
     public int index;
-
     public List<int> kerning;
     public int offsetX;
     public int offsetY;
     public int width;
     public int x;
-
     public int y;
 
     public int GetKerning(int previousChar)
     {
         if (this.kerning != null)
         {
-            int i = 0;
+            int num = 0;
             int count = this.kerning.Count;
-            while (i < count)
+            while (num < count)
             {
-                if (this.kerning[i] == previousChar)
+                if (this.kerning[num] == previousChar)
                 {
-                    return this.kerning[i + 1];
+                    return this.kerning[num + 1];
                 }
-                i += 2;
+                num += 2;
             }
         }
         return 0;
@@ -81,3 +79,4 @@ public class BMGlyph
         }
     }
 }
+

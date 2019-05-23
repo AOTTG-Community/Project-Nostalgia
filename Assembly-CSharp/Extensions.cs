@@ -1,40 +1,43 @@
-﻿using ExitGames.Client.Photon;
+using ExitGames.Client.Photon;
+using System;
 using System.Collections;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 public static class Extensions
 {
-    public static bool AlmostEquals(this Vector3 target, Vector3 second, float sqrMagnitudePrecision)
+    public static bool AlmostEquals(this float target, float second, float floatDiff)
     {
-        return (target - second).sqrMagnitude < sqrMagnitudePrecision;
-    }
-
-    public static bool AlmostEquals(this Vector2 target, Vector2 second, float sqrMagnitudePrecision)
-    {
-        return (target - second).sqrMagnitude < sqrMagnitudePrecision;
+        return (Mathf.Abs((float) (target - second)) < floatDiff);
     }
 
     public static bool AlmostEquals(this Quaternion target, Quaternion second, float maxAngle)
     {
-        return Quaternion.Angle(target, second) < maxAngle;
+        return (Quaternion.Angle(target, second) < maxAngle);
     }
 
-    public static bool AlmostEquals(this float target, float second, float floatDiff)
+    public static bool AlmostEquals(this Vector2 target, Vector2 second, float sqrMagnitudePrecision)
     {
-        return Mathf.Abs(target - second) < floatDiff;
+        Vector2 vector = target - second;
+        return (vector.sqrMagnitude < sqrMagnitudePrecision);
+    }
+
+    public static bool AlmostEquals(this Vector3 target, Vector3 second, float sqrMagnitudePrecision)
+    {
+        Vector3 vector = target - second;
+        return (vector.sqrMagnitude < sqrMagnitudePrecision);
     }
 
     public static bool Contains(this int[] target, int nr)
     {
-        if (target == null)
+        if (target != null)
         {
-            return false;
-        }
-        for (int i = 0; i < target.Length; i++)
-        {
-            if (target[i] == nr)
+            for (int i = 0; i < target.Length; i++)
             {
-                return true;
+                if (target[i] == nr)
+                {
+                    return true;
+                }
             }
         }
         return false;
@@ -52,41 +55,79 @@ public static class Extensions
 
     public static void Merge(this IDictionary target, IDictionary addHash)
     {
-        if (addHash == null || target.Equals(addHash))
+        if ((addHash != null) && !target.Equals(addHash))
         {
-            return;
-        }
-        foreach (object key in addHash.Keys)
-        {
-            target[key] = addHash[key];
+            IEnumerator enumerator = addHash.Keys.GetEnumerator();
+            try
+            {
+                while (enumerator.MoveNext())
+                {
+                    object current = enumerator.Current;
+                    target[current] = addHash[current];
+                }
+            }
+            finally
+            {
+                IDisposable disposable = enumerator as IDisposable;
+                if (disposable != null)
+                {
+	                disposable.Dispose();
+                }
+            }
         }
     }
 
     public static void MergeStringKeys(this IDictionary target, IDictionary addHash)
     {
-        if (addHash == null || target.Equals(addHash))
+        if ((addHash != null) && !target.Equals(addHash))
         {
-            return;
-        }
-        foreach (object obj in addHash.Keys)
-        {
-            if (obj is string)
+            IEnumerator enumerator = addHash.Keys.GetEnumerator();
+            try
             {
-                target[obj] = addHash[obj];
+                while (enumerator.MoveNext())
+                {
+                    object current = enumerator.Current;
+                    if (current is string)
+                    {
+                        target[current] = addHash[current];
+                    }
+                }
+            }
+            finally
+            {
+                IDisposable disposable = enumerator as IDisposable;
+                if (disposable != null)
+                {
+	                disposable.Dispose();
+                }
             }
         }
     }
 
     public static void StripKeysWithNullValues(this IDictionary original)
     {
-        object[] array = new object[original.Count];
+        object[] objArray = new object[original.Count];
         int num = 0;
-        foreach (object obj in original.Keys)
+        IEnumerator enumerator = original.Keys.GetEnumerator();
+        try
         {
-            array[num++] = obj;
+            while (enumerator.MoveNext())
+            {
+                object current = enumerator.Current;
+                objArray[num++] = current;
+            }
         }
-        foreach (object key in array)
+        finally
         {
+            IDisposable disposable = enumerator as IDisposable;
+            if (disposable != null)
+            {
+	            disposable.Dispose();
+            }
+        }
+        for (int i = 0; i < objArray.Length; i++)
+        {
+            object key = objArray[i];
             if (original[key] == null)
             {
                 original.Remove(key);
@@ -97,12 +138,24 @@ public static class Extensions
     public static ExitGames.Client.Photon.Hashtable StripToStringKeys(this IDictionary original)
     {
         ExitGames.Client.Photon.Hashtable hashtable = new ExitGames.Client.Photon.Hashtable();
-        foreach (object obj in original)
+        IDictionaryEnumerator enumerator = original.GetEnumerator();
+        try
         {
-            DictionaryEntry dictionaryEntry = (DictionaryEntry)obj;
-            if (dictionaryEntry.Key is string)
+            while (enumerator.MoveNext())
             {
-                hashtable[dictionaryEntry.Key] = dictionaryEntry.Value;
+                DictionaryEntry current = (DictionaryEntry) enumerator.Current;
+                if (current.Key is string)
+                {
+                    hashtable[current.Key] = current.Value;
+                }
+            }
+        }
+        finally
+        {
+            IDisposable disposable = enumerator as IDisposable;
+            if (disposable != null)
+            {
+	            disposable.Dispose();
             }
         }
         return hashtable;
@@ -113,3 +166,4 @@ public static class Extensions
         return SupportClass.DictionaryToString(origin, false);
     }
 }
+

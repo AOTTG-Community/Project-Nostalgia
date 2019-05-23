@@ -1,8 +1,9 @@
-﻿public class TypedLobby
+using System;
+
+public class TypedLobby
 {
     public static readonly TypedLobby Default = new TypedLobby();
     public string Name;
-
     public LobbyType Type;
 
     public TypedLobby()
@@ -17,16 +18,17 @@
         this.Type = type;
     }
 
-    public bool IsDefault
-    {
-        get
-        {
-            return this.Type == LobbyType.Default && string.IsNullOrEmpty(this.Name);
-        }
-    }
-
     public override string ToString()
     {
         return string.Format("Lobby '{0}'[{1}]", this.Name, this.Type);
     }
+
+    public bool IsDefault
+    {
+        get
+        {
+            return ((this.Type == LobbyType.Default) && string.IsNullOrEmpty(this.Name));
+        }
+    }
 }
+

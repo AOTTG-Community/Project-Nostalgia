@@ -1,40 +1,20 @@
-﻿using ExitGames.Client.Photon;
+using ExitGames.Client.Photon;
+using System;
 using UnityEngine;
 
 public class InRoomRoundTimer : MonoBehaviour
 {
-    private const string StartTimeKey = "st";
-    private bool startRoundWhenTimeIsSynced;
     public int SecondsPerTurn = 5;
+    private bool startRoundWhenTimeIsSynced;
     public double StartTime;
+    private const string StartTimeKey = "st";
     public Rect TextPos = new Rect(0f, 80f, 150f, 300f);
-
-    private void StartRoundNow()
-    {
-        if (PhotonNetwork.time < 9.9999997473787516E-05)
-        {
-            this.startRoundWhenTimeIsSynced = true;
-            return;
-        }
-        this.startRoundWhenTimeIsSynced = false;
-        Hashtable hashtable = new Hashtable();
-        hashtable["st"] = PhotonNetwork.time;
-        PhotonNetwork.room.SetCustomProperties(hashtable);
-    }
-
-    private void Update()
-    {
-        if (this.startRoundWhenTimeIsSynced)
-        {
-            this.StartRoundNow();
-        }
-    }
 
     public void OnGUI()
     {
         double num = PhotonNetwork.time - this.StartTime;
-        double num2 = (double)this.SecondsPerTurn - num % (double)this.SecondsPerTurn;
-        int num3 = (int)(num / (double)this.SecondsPerTurn);
+        double num2 = this.SecondsPerTurn - (num % ((double) this.SecondsPerTurn));
+        int num3 = (int) (num / ((double) this.SecondsPerTurn));
         GUILayout.BeginArea(this.TextPos);
         GUILayout.Label(string.Format("elapsed: {0:0.000}", num), new GUILayoutOption[0]);
         GUILayout.Label(string.Format("remaining: {0:0.000}", num2), new GUILayoutOption[0]);
@@ -48,7 +28,7 @@ public class InRoomRoundTimer : MonoBehaviour
 
     public void OnJoinedRoom()
     {
-        if (PhotonNetwork.IsMasterClient)
+        if (PhotonNetwork.isMasterClient)
         {
             this.StartRoundNow();
         }
@@ -71,7 +51,31 @@ public class InRoomRoundTimer : MonoBehaviour
     {
         if (propertiesThatChanged.ContainsKey("st"))
         {
-            this.StartTime = (double)propertiesThatChanged["st"];
+            this.StartTime = (double) propertiesThatChanged["st"];
+        }
+    }
+
+    private void StartRoundNow()
+    {
+        if (PhotonNetwork.time < 9.9999997473787516E-05)
+        {
+            this.startRoundWhenTimeIsSynced = true;
+        }
+        else
+        {
+            this.startRoundWhenTimeIsSynced = false;
+            Hashtable propertiesToSet = new Hashtable();
+            propertiesToSet["st"] = PhotonNetwork.time;
+            PhotonNetwork.room.SetCustomProperties(propertiesToSet);
+        }
+    }
+
+    private void Update()
+    {
+        if (this.startRoundWhenTimeIsSynced)
+        {
+            this.StartRoundNow();
         }
     }
 }
+

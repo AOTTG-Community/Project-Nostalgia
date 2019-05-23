@@ -1,11 +1,11 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 using UnityEngine.UI;
 
 public class StyledItemButtonImageText : StyledItem
 {
     public Button buttonCtrl;
     public RawImage rawImageCtrl;
-
     public Text textCtrl;
 
     public override Button GetButton()
@@ -25,31 +25,35 @@ public class StyledItemButtonImageText : StyledItem
 
     public override void Populate(object o)
     {
-        Texture2D texture2D = o as Texture2D;
-        if (texture2D != null)
+        Texture2D textured = o as Texture2D;
+        if (textured != null)
         {
             if (this.rawImageCtrl != null)
             {
-                this.rawImageCtrl.texture = texture2D;
+                this.rawImageCtrl.texture = textured;
             }
-            return;
         }
-        StyledItemButtonImageText.Data data = o as StyledItemButtonImageText.Data;
-        if (data == null)
+        else
         {
-            if (this.textCtrl != null)
+            Data data = o as Data;
+            if (data == null)
             {
-                this.textCtrl.text = o.ToString();
+                if (this.textCtrl != null)
+                {
+                    this.textCtrl.text = o.ToString();
+                }
             }
-            return;
-        }
-        if (this.rawImageCtrl != null)
-        {
-            this.rawImageCtrl.texture = data.image;
-        }
-        if (this.textCtrl != null)
-        {
-            this.textCtrl.text = data.text;
+            else
+            {
+                if (this.rawImageCtrl != null)
+                {
+                    this.rawImageCtrl.texture = data.image;
+                }
+                if (this.textCtrl != null)
+                {
+                    this.textCtrl.text = data.text;
+                }
+            }
         }
     }
 
@@ -65,3 +69,4 @@ public class StyledItemButtonImageText : StyledItem
         }
     }
 }
+

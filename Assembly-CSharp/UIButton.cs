@@ -1,31 +1,10 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 [AddComponentMenu("NGUI/Interaction/Button")]
 public class UIButton : UIButtonColor
 {
     public Color disabledColor = Color.grey;
-
-    public bool isEnabled
-    {
-        get
-        {
-            Collider collider = base.collider;
-            return collider && collider.enabled;
-        }
-        set
-        {
-            Collider collider = base.collider;
-            if (!collider)
-            {
-                return;
-            }
-            if (collider.enabled != value)
-            {
-                collider.enabled = value;
-                this.UpdateColor(value, false);
-            }
-        }
-    }
 
     protected override void OnEnable()
     {
@@ -57,20 +36,39 @@ public class UIButton : UIButtonColor
 
     public void UpdateColor(bool shouldBeEnabled, bool immediate)
     {
-        if (this.tweenTarget)
+        if (base.tweenTarget != null)
         {
-            if (!this.mStarted)
+            if (!base.mStarted)
             {
-                this.mStarted = true;
+                base.mStarted = true;
                 base.Init();
             }
-            Color color = (!shouldBeEnabled) ? this.disabledColor : base.defaultColor;
-            TweenColor tweenColor = TweenColor.Begin(this.tweenTarget, 0.15f, color);
+            Color color = !shouldBeEnabled ? this.disabledColor : base.defaultColor;
+            TweenColor color2 = TweenColor.Begin(base.tweenTarget, 0.15f, color);
             if (immediate)
             {
-                tweenColor.color = color;
-                tweenColor.enabled = false;
+                color2.color = color;
+                color2.enabled = false;
+            }
+        }
+    }
+
+    public bool isEnabled
+    {
+        get
+        {
+            Collider collider = base.collider;
+            return ((collider != null) && collider.enabled);
+        }
+        set
+        {
+            Collider collider = base.collider;
+            if ((collider != null) && (collider.enabled != value))
+            {
+                collider.enabled = value;
+                this.UpdateColor(value, false);
             }
         }
     }
 }
+

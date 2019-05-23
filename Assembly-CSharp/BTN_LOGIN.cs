@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 public class BTN_LOGIN : MonoBehaviour
 {
@@ -13,3 +14,4 @@ public class BTN_LOGIN : MonoBehaviour
         this.output.GetComponent<UILabel>().text = "please wait...";
     }
 }
+

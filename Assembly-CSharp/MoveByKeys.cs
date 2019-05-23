@@ -1,4 +1,5 @@
-﻿using Optimization.Caching;
+using Photon;
+using System;
 using UnityEngine;
 
 [RequireComponent(typeof(PhotonView))]
@@ -8,26 +9,31 @@ public class MoveByKeys : Photon.MonoBehaviour
 
     private void Start()
     {
-        base.enabled = BasePV.IsMine;
+        base.enabled = base.photonView.isMine;
     }
 
     private void Update()
     {
         if (Input.GetKey(KeyCode.A))
         {
-            base.transform.position += Vectors.left * (this.speed * Time.deltaTime);
+            Transform transform = base.transform;
+            transform.position += (Vector3) (Vector3.left * (this.speed * Time.deltaTime));
         }
         if (Input.GetKey(KeyCode.D))
         {
-            base.transform.position += Vectors.right * (this.speed * Time.deltaTime);
+            Transform transform2 = base.transform;
+            transform2.position += (Vector3) (Vector3.right * (this.speed * Time.deltaTime));
         }
         if (Input.GetKey(KeyCode.W))
         {
-            base.transform.position += Vectors.forward * (this.speed * Time.deltaTime);
+            Transform transform3 = base.transform;
+            transform3.position += (Vector3) (Vector3.forward * (this.speed * Time.deltaTime));
         }
         if (Input.GetKey(KeyCode.S))
         {
-            base.transform.position += Vectors.back * (this.speed * Time.deltaTime);
+            Transform transform4 = base.transform;
+            transform4.position += (Vector3) (Vector3.back * (this.speed * Time.deltaTime));
         }
     }
 }
+

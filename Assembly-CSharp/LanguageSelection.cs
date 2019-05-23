@@ -1,7 +1,7 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
-[AddComponentMenu("NGUI/Interaction/Language Selection")]
-[RequireComponent(typeof(UIPopupList))]
+[AddComponentMenu("NGUI/Interaction/Language Selection"), RequireComponent(typeof(UIPopupList))]
 public class LanguageSelection : MonoBehaviour
 {
     private UIPopupList mList;
@@ -24,21 +24,22 @@ public class LanguageSelection : MonoBehaviour
 
     private void UpdateList()
     {
-        if (Localization.instance != null && Localization.instance.languages != null)
+        if ((Localization.instance != null) && (Localization.instance.languages != null))
         {
             this.mList.items.Clear();
-            int i = 0;
-            int num = Localization.instance.languages.Length;
-            while (i < num)
+            int index = 0;
+            int length = Localization.instance.languages.Length;
+            while (index < length)
             {
-                TextAsset textAsset = Localization.instance.languages[i];
-                if (textAsset != null)
+                TextAsset asset = Localization.instance.languages[index];
+                if (asset != null)
                 {
-                    this.mList.items.Add(textAsset.name);
+                    this.mList.items.Add(asset.name);
                 }
-                i++;
+                index++;
             }
             this.mList.selection = Localization.instance.currentLanguage;
         }
     }
 }
+

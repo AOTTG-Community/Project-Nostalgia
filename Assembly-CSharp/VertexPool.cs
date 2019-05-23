@@ -1,31 +1,31 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 public class VertexPool
 {
-    protected bool FirstUpdate = true;
-    protected int IndexTotal;
-    protected int IndexUsed;
-    protected bool VertCountChanged;
-    protected int VertexTotal;
-    protected int VertexUsed;
-    public const int BlockSize = 36;
-
+    public const int BlockSize = 0x24;
     public float BoundsScheduleTime = 1f;
     public bool ColorChanged;
     public Color[] Colors;
     public float ElapsedTime;
+    protected bool FirstUpdate = true;
+    protected int IndexTotal;
+    protected int IndexUsed;
     public bool IndiceChanged;
     public int[] Indices;
-    public Material Material;
-    public Mesh Mesh;
+    public UnityEngine.Material Material;
+    public UnityEngine.Mesh Mesh;
     public bool UVChanged;
     public Vector2[] UVs;
     public bool VertChanged;
+    protected bool VertCountChanged;
+    protected int VertexTotal;
+    protected int VertexUsed;
     public Vector3[] Vertices;
 
-    public VertexPool(Mesh mesh, Material material)
+    public VertexPool(UnityEngine.Mesh mesh, UnityEngine.Material material)
     {
-        this.VertexTotal = (this.VertexUsed = 0);
+        this.VertexTotal = this.VertexUsed = 0;
         this.VertCountChanged = false;
         this.Mesh = mesh;
         this.Material = material;
@@ -34,29 +34,17 @@ public class VertexPool
         this.Indices = this.Mesh.triangles;
         this.Colors = this.Mesh.colors;
         this.UVs = this.Mesh.uv;
-        this.IndiceChanged = (this.ColorChanged = (this.UVChanged = (this.VertChanged = true)));
-    }
-
-    protected void InitArrays()
-    {
-        this.Vertices = new Vector3[4];
-        this.UVs = new Vector2[4];
-        this.Colors = new Color[4];
-        this.Indices = new int[6];
-        this.VertexTotal = 4;
-        this.IndexTotal = 6;
+        this.IndiceChanged = this.ColorChanged = this.UVChanged = this.VertChanged = true;
     }
 
     public RibbonTrail AddRibbonTrail(float width, int maxelemnt, float len, Vector3 pos, int stretchType, float maxFps)
     {
-        VertexPool.VertexSegment vertices = this.GetVertices(maxelemnt * 2, (maxelemnt - 1) * 6);
-        return new RibbonTrail(vertices, width, maxelemnt, len, pos, stretchType, maxFps);
+        return new RibbonTrail(this.GetVertices(maxelemnt * 2, (maxelemnt - 1) * 6), width, maxelemnt, len, pos, stretchType, maxFps);
     }
 
-    public global::Sprite AddSprite(float width, float height, STYPE type, ORIPOINT ori, Camera cam, int uvStretch, float maxFps)
+    public Sprite AddSprite(float width, float height, STYPE type, ORIPOINT ori, Camera cam, int uvStretch, float maxFps)
     {
-        VertexPool.VertexSegment vertices = this.GetVertices(4, 6);
-        return new global::Sprite(vertices, width, height, type, ori, cam, uvStretch, maxFps);
+        return new Sprite(this.GetVertices(4, 6), width, height, type, ori, cam, uvStretch, maxFps);
     }
 
     public void EnlargeArrays(int count, int icount)
@@ -64,9 +52,9 @@ public class VertexPool
         Vector3[] vertices = this.Vertices;
         this.Vertices = new Vector3[this.Vertices.Length + count];
         vertices.CopyTo(this.Vertices, 0);
-        Vector2[] uvs = this.UVs;
+        Vector2[] uVs = this.UVs;
         this.UVs = new Vector2[this.UVs.Length + count];
-        uvs.CopyTo(this.UVs, 0);
+        uVs.CopyTo(this.UVs, 0);
         Color[] colors = this.Colors;
         this.Colors = new Color[this.Colors.Length + count];
         colors.CopyTo(this.Colors, 0);
@@ -80,32 +68,42 @@ public class VertexPool
         this.VertChanged = true;
     }
 
-    public Material GetMaterial()
+    public UnityEngine.Material GetMaterial()
     {
         return this.Material;
     }
 
-    public VertexPool.VertexSegment GetVertices(int vcount, int icount)
+    public VertexSegment GetVertices(int vcount, int icount)
     {
-        int num = 0;
+        int count = 0;
         int num2 = 0;
-        if (this.VertexUsed + vcount >= this.VertexTotal)
+        if ((this.VertexUsed + vcount) >= this.VertexTotal)
         {
-            num = (vcount / 36 + 1) * 36;
+            count = ((vcount / 0x24) + 1) * 0x24;
         }
-        if (this.IndexUsed + icount >= this.IndexTotal)
+        if ((this.IndexUsed + icount) >= this.IndexTotal)
         {
-            num2 = (icount / 36 + 1) * 36;
+            num2 = ((icount / 0x24) + 1) * 0x24;
         }
         this.VertexUsed += vcount;
         this.IndexUsed += icount;
-        if (num != 0 || num2 != 0)
+        if ((count != 0) || (num2 != 0))
         {
-            this.EnlargeArrays(num, num2);
-            this.VertexTotal += num;
+            this.EnlargeArrays(count, num2);
+            this.VertexTotal += count;
             this.IndexTotal += num2;
         }
-        return new VertexPool.VertexSegment(this.VertexUsed - vcount, vcount, this.IndexUsed - icount, icount, this);
+        return new VertexSegment(this.VertexUsed - vcount, vcount, this.IndexUsed - icount, icount, this);
+    }
+
+    protected void InitArrays()
+    {
+        this.Vertices = new Vector3[4];
+        this.UVs = new Vector2[4];
+        this.Colors = new Color[4];
+        this.Indices = new int[6];
+        this.VertexTotal = 4;
+        this.IndexTotal = 6;
     }
 
     public void LateUpdate()
@@ -128,7 +126,7 @@ public class VertexPool
             this.Mesh.triangles = this.Indices;
         }
         this.ElapsedTime += Time.deltaTime;
-        if (this.ElapsedTime > this.BoundsScheduleTime || this.FirstUpdate)
+        if ((this.ElapsedTime > this.BoundsScheduleTime) || this.FirstUpdate)
         {
             this.RecalculateBounds();
             this.ElapsedTime = 0f;
@@ -167,3 +165,4 @@ public class VertexPool
         }
     }
 }
+

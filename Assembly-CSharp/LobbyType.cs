@@ -1,5 +1,8 @@
-﻿public enum LobbyType : byte
+using System;
+
+public enum LobbyType : byte
 {
-    Default,
+    Default = 0,
     SqlLobby = 2
 }
+

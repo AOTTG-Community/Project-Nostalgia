@@ -1,30 +1,29 @@
-﻿using Optimization.Caching;
+using System;
 using UnityEngine;
 
 public class LevelBottom : MonoBehaviour
 {
     public GameObject link;
-
     public BottomType type;
 
     private void OnTriggerStay(Collider other)
     {
-        if (other.gameObject.CompareTag("Player"))
+        if (other.gameObject.tag == "Player")
         {
             if (this.type == BottomType.Die)
             {
-                if (other.gameObject.GetComponent<HERO>())
+                if (other.gameObject.GetComponent<HERO>() != null)
                 {
-                    if (IN_GAME_MAIN_CAMERA.GameType == GameType.Multi)
+                    if (IN_GAME_MAIN_CAMERA.gametype == GAMETYPE.MULTIPLAYER)
                     {
-                        if (other.gameObject.GetPhotonView().IsMine)
+                        if (other.gameObject.GetPhotonView().isMine)
                         {
-                            other.gameObject.GetComponent<HERO>().netDie(base.rigidbody.velocity * 50f, false, -1, string.Empty, true);
+                            other.gameObject.GetComponent<HERO>().netDie((Vector3) (base.rigidbody.velocity * 50f), false, -1, string.Empty, true);
                         }
                     }
                     else
                     {
-                        other.gameObject.GetComponent<HERO>().die(other.gameObject.rigidbody.velocity * 50f, false);
+                        other.gameObject.GetComponent<HERO>().die((Vector3) (other.gameObject.rigidbody.velocity * 50f), false);
                     }
                 }
             }
@@ -36,9 +35,18 @@ public class LevelBottom : MonoBehaviour
                 }
                 else
                 {
-                    other.gameObject.transform.position = Vectors.zero;
+                    other.gameObject.transform.position = Vector3.zero;
                 }
             }
         }
     }
+
+    private void Start()
+    {
+    }
+
+    private void Update()
+    {
+    }
 }
+

@@ -1,5 +1,7 @@
-﻿namespace AnimationOrTween
+namespace AnimationOrTween
 {
+    using System;
+
     public enum Trigger
     {
         OnClick,
@@ -18,3 +20,4 @@
         OnSelectFalse
     }
 }
+

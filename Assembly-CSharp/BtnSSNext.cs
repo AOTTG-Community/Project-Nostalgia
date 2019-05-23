@@ -1,10 +1,11 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 public class BtnSSNext : MonoBehaviour
 {
     private void OnClick()
     {
-        if (base.gameObject.transform.parent.gameObject.GetComponent<CharacterCreationComponent>())
+        if (base.gameObject.transform.parent.gameObject.GetComponent<CharacterCreationComponent>() != null)
         {
             base.gameObject.transform.parent.gameObject.GetComponent<CharacterCreationComponent>().nextOption();
         }
@@ -14,3 +15,4 @@ public class BtnSSNext : MonoBehaviour
         }
     }
 }
+

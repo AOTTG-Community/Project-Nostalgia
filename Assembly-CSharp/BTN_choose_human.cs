@@ -1,76 +1,73 @@
-﻿using ExitGames.Client.Photon;
-using Optimization.Caching;
+using ExitGames.Client.Photon;
+using System;
 using UnityEngine;
 
 public class BTN_choose_human : MonoBehaviour
 {
-    private void OnClick()
-    {
-        string selection = CacheGameObject.Find("PopupListCharacterHUMAN").GetComponent<UIPopupList>().selection;
-        NGUITools.SetActive(FengGameManagerMKII.UIRefer.panels[0], true);
-        FengGameManagerMKII.FGM.NeedChooseSide = false;
-        if (IN_GAME_MAIN_CAMERA.GameMode == GameMode.PVP_CAPTURE)
-        {
-            FengGameManagerMKII.FGM.checkpoint = CacheGameObject.Find("PVPchkPtH");
-        }
-        if (!PhotonNetwork.IsMasterClient && FengGameManagerMKII.FGM.RoundTime > 60f)
-        {
-            if (!this.isPlayerAllDead())
-            {
-                FengGameManagerMKII.FGM.NOTSpawnPlayer(selection);
-            }
-            else
-            {
-                FengGameManagerMKII.FGM.NOTSpawnPlayer(selection);
-                FengGameManagerMKII.FGM.BasePV.RPC("restartGameByClient", PhotonTargets.MasterClient, new object[0]);
-            }
-        }
-        else if (IN_GAME_MAIN_CAMERA.GameMode == GameMode.BOSS_FIGHT_CT || IN_GAME_MAIN_CAMERA.GameMode == GameMode.TROST || IN_GAME_MAIN_CAMERA.GameMode == GameMode.PVP_CAPTURE)
-        {
-            if (this.isPlayerAllDead())
-            {
-                FengGameManagerMKII.FGM.NOTSpawnPlayer(selection);
-                FengGameManagerMKII.FGM.BasePV.RPC("restartGameByClient", PhotonTargets.MasterClient, new object[0]);
-            }
-            else
-            {
-                FengGameManagerMKII.FGM.SpawnPlayer(selection, "playerRespawn");
-            }
-        }
-        else
-        {
-            FengGameManagerMKII.FGM.SpawnPlayer(selection, "playerRespawn");
-        }
-        NGUITools.SetActive(FengGameManagerMKII.UIRefer.panels[1], false);
-        NGUITools.SetActive(FengGameManagerMKII.UIRefer.panels[2], false);
-        NGUITools.SetActive(FengGameManagerMKII.UIRefer.panels[3], false);
-        IN_GAME_MAIN_CAMERA.usingTitan = false;
-        IN_GAME_MAIN_CAMERA.MainCamera.setHUDposition();
-        Hashtable customProperties = new Hashtable
-        {
-            {
-                PhotonPlayerProperty.character,
-                selection
-            }
-        };
-        PhotonNetwork.player.SetCustomProperties(customProperties);
-    }
-
     public bool isPlayerAllDead()
     {
         int num = 0;
         int num2 = 0;
-        foreach (PhotonPlayer photonPlayer in PhotonNetwork.playerList)
+        foreach (PhotonPlayer player in PhotonNetwork.playerList)
         {
-            if ((int)photonPlayer.Properties[PhotonPlayerProperty.isTitan] == 1)
+            if (((int) player.customProperties[PhotonPlayerProperty.isTitan]) == 1)
             {
                 num++;
-                if ((bool)photonPlayer.Properties[PhotonPlayerProperty.dead])
+                if ((bool) player.customProperties[PhotonPlayerProperty.dead])
                 {
                     num2++;
                 }
             }
         }
-        return num == num2;
+        return (num == num2);
+    }
+
+    private void OnClick()
+    {
+        string selection = GameObject.Find("PopupListCharacterHUMAN").GetComponent<UIPopupList>().selection;
+        NGUITools.SetActive(GameObject.Find("UI_IN_GAME").GetComponent<UIReferArray>().panels[0], true);
+        GameObject.Find("MultiplayerManager").GetComponent<FengGameManagerMKII>().needChooseSide = false;
+        if (IN_GAME_MAIN_CAMERA.gamemode == GAMEMODE.PVP_CAPTURE)
+        {
+            GameObject.Find("MultiplayerManager").GetComponent<FengGameManagerMKII>().checkpoint = GameObject.Find("PVPchkPtH");
+        }
+        if (!PhotonNetwork.isMasterClient && (GameObject.Find("MultiplayerManager").GetComponent<FengGameManagerMKII>().roundTime > 60f))
+        {
+            if (!this.isPlayerAllDead())
+            {
+                GameObject.Find("MultiplayerManager").GetComponent<FengGameManagerMKII>().NOTSpawnPlayer(selection);
+            }
+            else
+            {
+                GameObject.Find("MultiplayerManager").GetComponent<FengGameManagerMKII>().NOTSpawnPlayer(selection);
+                GameObject.Find("MultiplayerManager").GetComponent<FengGameManagerMKII>().photonView.RPC("restartGameByClient", PhotonTargets.MasterClient, new object[0]);
+            }
+        }
+        else if (((IN_GAME_MAIN_CAMERA.gamemode == GAMEMODE.BOSS_FIGHT_CT) || (IN_GAME_MAIN_CAMERA.gamemode == GAMEMODE.TROST)) || (IN_GAME_MAIN_CAMERA.gamemode == GAMEMODE.PVP_CAPTURE))
+        {
+            if (this.isPlayerAllDead())
+            {
+                GameObject.Find("MultiplayerManager").GetComponent<FengGameManagerMKII>().NOTSpawnPlayer(selection);
+                GameObject.Find("MultiplayerManager").GetComponent<FengGameManagerMKII>().photonView.RPC("restartGameByClient", PhotonTargets.MasterClient, new object[0]);
+            }
+            else
+            {
+                GameObject.Find("MultiplayerManager").GetComponent<FengGameManagerMKII>().SpawnPlayer(selection, "playerRespawn");
+            }
+        }
+        else
+        {
+            GameObject.Find("MultiplayerManager").GetComponent<FengGameManagerMKII>().SpawnPlayer(selection, "playerRespawn");
+        }
+        NGUITools.SetActive(GameObject.Find("UI_IN_GAME").GetComponent<UIReferArray>().panels[1], false);
+        NGUITools.SetActive(GameObject.Find("UI_IN_GAME").GetComponent<UIReferArray>().panels[2], false);
+        NGUITools.SetActive(GameObject.Find("UI_IN_GAME").GetComponent<UIReferArray>().panels[3], false);
+        IN_GAME_MAIN_CAMERA.usingTitan = false;
+        GameObject.Find("MainCamera").GetComponent<IN_GAME_MAIN_CAMERA>().setHUDposition();
+        Hashtable hashtable2 = new Hashtable();
+        hashtable2.Add(PhotonPlayerProperty.character, selection);
+        Hashtable propertiesToSet = hashtable2;
+        PhotonNetwork.player.SetCustomProperties(propertiesToSet);
     }
 }
+

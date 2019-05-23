@@ -1,6 +1,9 @@
-﻿public enum PhotonLogLevel
+using System;
+
+public enum PhotonLogLevel
 {
     ErrorsOnly,
     Informational,
     Full
 }
+

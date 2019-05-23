@@ -1,13 +1,14 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 [AddComponentMenu("NGUI/Examples/Window Drag Tilt")]
 public class WindowDragTilt : MonoBehaviour
 {
+    public float degrees = 30f;
     private float mAngle;
     private bool mInit = true;
     private Vector3 mLastPos;
     private Transform mTrans;
-    public float degrees = 30f;
     public int updateOrder;
 
     private void CoroutineUpdate(float delta)
@@ -35,3 +36,4 @@ public class WindowDragTilt : MonoBehaviour
         UpdateManager.AddCoroutine(this, this.updateOrder, new UpdateManager.OnUpdate(this.CoroutineUpdate));
     }
 }
+

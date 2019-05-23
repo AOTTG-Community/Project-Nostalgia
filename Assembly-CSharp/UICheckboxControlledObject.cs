@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 [AddComponentMenu("NGUI/Interaction/Checkbox Controlled Object")]
 public class UICheckboxControlledObject : MonoBehaviour
@@ -10,11 +11,11 @@ public class UICheckboxControlledObject : MonoBehaviour
     {
         if (this.target != null)
         {
-            NGUITools.SetActive(this.target, (!this.inverse) ? isActive : (!isActive));
-            UIPanel uipanel = NGUITools.FindInParents<UIPanel>(this.target);
-            if (uipanel != null)
+            NGUITools.SetActive(this.target, !this.inverse ? isActive : !isActive);
+            UIPanel panel = NGUITools.FindInParents<UIPanel>(this.target);
+            if (panel != null)
             {
-                uipanel.Refresh();
+                panel.Refresh();
             }
         }
     }
@@ -28,3 +29,4 @@ public class UICheckboxControlledObject : MonoBehaviour
         }
     }
 }
+

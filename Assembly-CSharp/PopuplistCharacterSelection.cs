@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 public class PopuplistCharacterSelection : MonoBehaviour
 {
@@ -9,27 +10,33 @@ public class PopuplistCharacterSelection : MonoBehaviour
 
     private void onCharacterChange()
     {
+        HeroStat stat;
         string selection = base.GetComponent<UIPopupList>().selection;
-        HeroStat heroStat;
-        if (selection == "Set 1" || selection == "Set 2" || selection == "Set 3")
+        switch (selection)
         {
-            HeroCostume heroCostume = CostumeConeveter.LocalDataToHeroCostume(selection.ToUpper());
-            if (heroCostume == null)
+            case "Set 1":
+            case "Set 2":
+            case "Set 3":
             {
-                heroStat = new HeroStat();
+                HeroCostume costume = CostumeConeveter.LocalDataToHeroCostume(selection.ToUpper());
+                if (costume == null)
+                {
+                    stat = new HeroStat();
+                }
+                else
+                {
+                    stat = costume.stat;
+                }
+                break;
             }
-            else
-            {
-                heroStat = heroCostume.stat;
-            }
+            default:
+                stat = HeroStat.getInfo(base.GetComponent<UIPopupList>().selection);
+                break;
         }
-        else
-        {
-            heroStat = HeroStat.getInfo(base.GetComponent<UIPopupList>().selection);
-        }
-        this.SPD.transform.localScale = new Vector3((float)heroStat.Spd, 20f, 0f);
-        this.GAS.transform.localScale = new Vector3((float)heroStat.Gas, 20f, 0f);
-        this.BLA.transform.localScale = new Vector3((float)heroStat.Bla, 20f, 0f);
-        this.ACL.transform.localScale = new Vector3((float)heroStat.Acl, 20f, 0f);
+        this.SPD.transform.localScale = new Vector3((float) stat.SPD, 20f, 0f);
+        this.GAS.transform.localScale = new Vector3((float) stat.GAS, 20f, 0f);
+        this.BLA.transform.localScale = new Vector3((float) stat.BLA, 20f, 0f);
+        this.ACL.transform.localScale = new Vector3((float) stat.ACL, 20f, 0f);
     }
 }
+

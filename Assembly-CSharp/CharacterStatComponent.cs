@@ -1,9 +1,9 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
 
 public class CharacterStatComponent : MonoBehaviour
 {
     public GameObject manager;
-
     public CreateStat type;
 
     public void nextOption()
@@ -16,3 +16,4 @@ public class CharacterStatComponent : MonoBehaviour
         this.manager.GetComponent<CustomCharacterManager>().prevStatOption(this.type);
     }
 }
+
