@@ -1,3 +1,6 @@
+//TODO: Fix and uncomment
+
+#if false
 using System;
 
 public static class CLZF2
@@ -195,4 +198,4 @@ public static class CLZF2
         return (int) num4;
     }
 }
-
+#endif

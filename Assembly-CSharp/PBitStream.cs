@@ -1,3 +1,6 @@
+//TODO: Fix and uncomment
+
+#if false
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
@@ -106,4 +109,4 @@ public class PBitStream
 
     public int Position { get; set; }
 }
-
+#endif

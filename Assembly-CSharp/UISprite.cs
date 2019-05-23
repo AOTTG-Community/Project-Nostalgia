@@ -85,236 +85,275 @@ public class UISprite : UIWidget
         return true;
     }
 
-    protected unsafe void FilledFill(BetterList<Vector3> verts, BetterList<Vector2> uvs, BetterList<Color32> cols)
-    {
-        float x = 0f;
-        float y = 0f;
-        float num3 = 1f;
-        float num4 = -1f;
-        float xMin = this.mOuterUV.xMin;
-        float yMin = this.mOuterUV.yMin;
-        float xMax = this.mOuterUV.xMax;
-        float yMax = this.mOuterUV.yMax;
-        if ((this.mFillDirection == FillDirection.Horizontal) || (this.mFillDirection == FillDirection.Vertical))
-        {
-            float num9 = (xMax - xMin) * this.mFillAmount;
-            float num10 = (yMax - yMin) * this.mFillAmount;
-            if (this.fillDirection == FillDirection.Horizontal)
-            {
-                if (this.mInvert)
-                {
-                    x = 1f - this.mFillAmount;
-                    xMin = xMax - num9;
-                }
-                else
-                {
-                    num3 *= this.mFillAmount;
-                    xMax = xMin + num9;
-                }
-            }
-            else if (this.fillDirection == FillDirection.Vertical)
-            {
-                if (this.mInvert)
-                {
-                    num4 *= this.mFillAmount;
-                    yMin = yMax - num10;
-                }
-                else
-                {
-                    y = -(1f - this.mFillAmount);
-                    yMax = yMin + num10;
-                }
-            }
-        }
-        Vector2[] xy = new Vector2[4];
-        Vector2[] uv = new Vector2[4];
-        xy[0] = new Vector2(num3, y);
-        xy[1] = new Vector2(num3, num4);
-        xy[2] = new Vector2(x, num4);
-        xy[3] = new Vector2(x, y);
-        uv[0] = new Vector2(xMax, yMax);
-        uv[1] = new Vector2(xMax, yMin);
-        uv[2] = new Vector2(xMin, yMin);
-        uv[3] = new Vector2(xMin, yMax);
-        Color c = base.color;
-        c.a *= base.mPanel.alpha;
-        Color32 item = !this.atlas.premultipliedAlpha ? c : NGUITools.ApplyPMA(c);
-        if (this.fillDirection == FillDirection.Radial90)
-        {
-            if (!this.AdjustRadial(xy, uv, this.mFillAmount, this.mInvert))
-            {
-                return;
-            }
-        }
-        else
-        {
-            if (this.fillDirection == FillDirection.Radial180)
-            {
-                Vector2[] v = new Vector2[4];
-                Vector2[] vectorArray4 = new Vector2[4];
-                for (int j = 0; j < 2; j++)
-                {
-                    float num12;
-                    float num13;
-                    v[0] = new Vector2(0f, 0f);
-                    v[1] = new Vector2(0f, 1f);
-                    v[2] = new Vector2(1f, 1f);
-                    v[3] = new Vector2(1f, 0f);
-                    vectorArray4[0] = new Vector2(0f, 0f);
-                    vectorArray4[1] = new Vector2(0f, 1f);
-                    vectorArray4[2] = new Vector2(1f, 1f);
-                    vectorArray4[3] = new Vector2(1f, 0f);
-                    if (this.mInvert)
-                    {
-                        if (j > 0)
-                        {
-                            this.Rotate(v, j);
-                            this.Rotate(vectorArray4, j);
-                        }
-                    }
-                    else if (j < 1)
-                    {
-                        this.Rotate(v, 1 - j);
-                        this.Rotate(vectorArray4, 1 - j);
-                    }
-                    if (j == 1)
-                    {
-                        num12 = !this.mInvert ? 1f : 0.5f;
-                        num13 = !this.mInvert ? 0.5f : 1f;
-                    }
-                    else
-                    {
-                        num12 = !this.mInvert ? 0.5f : 1f;
-                        num13 = !this.mInvert ? 1f : 0.5f;
-                    }
-                    v[1].y = Mathf.Lerp(num12, num13, v[1].y);
-                    v[2].y = Mathf.Lerp(num12, num13, v[2].y);
-                    vectorArray4[1].y = Mathf.Lerp(num12, num13, vectorArray4[1].y);
-                    vectorArray4[2].y = Mathf.Lerp(num12, num13, vectorArray4[2].y);
-                    float fill = (this.mFillAmount * 2f) - j;
-                    bool flag = (j % 2) == 1;
-                    if (this.AdjustRadial(v, vectorArray4, fill, !flag))
-                    {
-                        if (this.mInvert)
-                        {
-                            flag = !flag;
-                        }
-                        if (flag)
-                        {
-                            for (int k = 0; k < 4; k++)
-                            {
-                                num12 = Mathf.Lerp(xy[0].x, xy[2].x, v[k].x);
-                                num13 = Mathf.Lerp(xy[0].y, xy[2].y, v[k].y);
-                                float num16 = Mathf.Lerp(uv[0].x, uv[2].x, vectorArray4[k].x);
-                                float num17 = Mathf.Lerp(uv[0].y, uv[2].y, vectorArray4[k].y);
-                                verts.Add(new Vector3(num12, num13, 0f));
-                                uvs.Add(new Vector2(num16, num17));
-                                cols.Add(item);
-                            }
-                        }
-                        else
-                        {
-                            for (int m = 3; m > -1; m--)
-                            {
-                                num12 = Mathf.Lerp(xy[0].x, xy[2].x, v[m].x);
-                                num13 = Mathf.Lerp(xy[0].y, xy[2].y, v[m].y);
-                                float num19 = Mathf.Lerp(uv[0].x, uv[2].x, vectorArray4[m].x);
-                                float num20 = Mathf.Lerp(uv[0].y, uv[2].y, vectorArray4[m].y);
-                                verts.Add(new Vector3(num12, num13, 0f));
-                                uvs.Add(new Vector2(num19, num20));
-                                cols.Add(item);
-                            }
-                        }
-                    }
-                }
-                return;
-            }
-            if (this.fillDirection == FillDirection.Radial360)
-            {
-                float[] numArray = new float[] { 0.5f, 1f, 0f, 0.5f, 0.5f, 1f, 0.5f, 1f, 0f, 0.5f, 0.5f, 1f, 0f, 0.5f, 0f, 0.5f };
-                Vector2[] vectorArray5 = new Vector2[4];
-                Vector2[] vectorArray6 = new Vector2[4];
-                for (int n = 0; n < 4; n++)
-                {
-                    vectorArray5[0] = new Vector2(0f, 0f);
-                    vectorArray5[1] = new Vector2(0f, 1f);
-                    vectorArray5[2] = new Vector2(1f, 1f);
-                    vectorArray5[3] = new Vector2(1f, 0f);
-                    vectorArray6[0] = new Vector2(0f, 0f);
-                    vectorArray6[1] = new Vector2(0f, 1f);
-                    vectorArray6[2] = new Vector2(1f, 1f);
-                    vectorArray6[3] = new Vector2(1f, 0f);
-                    if (this.mInvert)
-                    {
-                        if (n > 0)
-                        {
-                            this.Rotate(vectorArray5, n);
-                            this.Rotate(vectorArray6, n);
-                        }
-                    }
-                    else if (n < 3)
-                    {
-                        this.Rotate(vectorArray5, 3 - n);
-                        this.Rotate(vectorArray6, 3 - n);
-                    }
-                    for (int num22 = 0; num22 < 4; num22++)
-                    {
-                        int index = !this.mInvert ? (n * 4) : ((3 - n) * 4);
-                        float from = numArray[index];
-                        float to = numArray[index + 1];
-                        float num26 = numArray[index + 2];
-                        float num27 = numArray[index + 3];
-                        vectorArray5[num22].x = Mathf.Lerp(from, to, vectorArray5[num22].x);
-                        vectorArray5[num22].y = Mathf.Lerp(num26, num27, vectorArray5[num22].y);
-                        vectorArray6[num22].x = Mathf.Lerp(from, to, vectorArray6[num22].x);
-                        vectorArray6[num22].y = Mathf.Lerp(num26, num27, vectorArray6[num22].y);
-                    }
-                    float num28 = (this.mFillAmount * 4f) - n;
-                    bool flag2 = (n % 2) == 1;
-                    if (this.AdjustRadial(vectorArray5, vectorArray6, num28, !flag2))
-                    {
-                        if (this.mInvert)
-                        {
-                            flag2 = !flag2;
-                        }
-                        if (flag2)
-                        {
-                            for (int num29 = 0; num29 < 4; num29++)
-                            {
-                                float num30 = Mathf.Lerp(xy[0].x, xy[2].x, vectorArray5[num29].x);
-                                float num31 = Mathf.Lerp(xy[0].y, xy[2].y, vectorArray5[num29].y);
-                                float num32 = Mathf.Lerp(uv[0].x, uv[2].x, vectorArray6[num29].x);
-                                float num33 = Mathf.Lerp(uv[0].y, uv[2].y, vectorArray6[num29].y);
-                                verts.Add(new Vector3(num30, num31, 0f));
-                                uvs.Add(new Vector2(num32, num33));
-                                cols.Add(item);
-                            }
-                        }
-                        else
-                        {
-                            for (int num34 = 3; num34 > -1; num34--)
-                            {
-                                float num35 = Mathf.Lerp(xy[0].x, xy[2].x, vectorArray5[num34].x);
-                                float num36 = Mathf.Lerp(xy[0].y, xy[2].y, vectorArray5[num34].y);
-                                float num37 = Mathf.Lerp(uv[0].x, uv[2].x, vectorArray6[num34].x);
-                                float num38 = Mathf.Lerp(uv[0].y, uv[2].y, vectorArray6[num34].y);
-                                verts.Add(new Vector3(num35, num36, 0f));
-                                uvs.Add(new Vector2(num37, num38));
-                                cols.Add(item);
-                            }
-                        }
-                    }
-                }
-                return;
-            }
-        }
-        for (int i = 0; i < 4; i++)
-        {
-            verts.Add(*((Vector3*) &(xy[i])));
-            uvs.Add(uv[i]);
-            cols.Add(item);
-        }
-    }
+    protected void FilledFill (BetterList<Vector3> verts, BetterList<Vector2> uvs, BetterList<Color32> cols)
+	{
+		float x0 = 0f;
+		float y0 = 0f;
+		float x1 = 1f;
+		float y1 = -1f;
+
+		float u0 = mOuterUV.xMin;
+		float v0 = mOuterUV.yMin;
+		float u1 = mOuterUV.xMax;
+		float v1 = mOuterUV.yMax;
+
+		// Horizontal and vertical filled sprites are simple -- just end the sprite prematurely
+		if (mFillDirection == FillDirection.Horizontal || mFillDirection == FillDirection.Vertical)
+		{
+			float du = (u1 - u0) * mFillAmount;
+			float dv = (v1 - v0) * mFillAmount;
+
+			if (fillDirection == FillDirection.Horizontal)
+			{
+				if (mInvert)
+				{
+					x0 = (1f - mFillAmount);
+					u0 = u1 - du;
+				}
+				else
+				{
+					x1 *= mFillAmount;
+					u1 = u0 + du;
+				}
+			}
+			else if (fillDirection == FillDirection.Vertical)
+			{
+				if (mInvert)
+				{
+					y1 *= mFillAmount;
+					v0 = v1 - dv;
+				}
+				else
+				{
+					y0 = -(1f - mFillAmount);
+					v1 = v0 + dv;
+				}
+			}
+		}
+
+		// Starting quad for the sprite
+		Vector2[] xy = new Vector2[4];
+		Vector2[] uv = new Vector2[4];
+
+		xy[0] = new Vector2(x1, y0);
+		xy[1] = new Vector2(x1, y1);
+		xy[2] = new Vector2(x0, y1);
+		xy[3] = new Vector2(x0, y0);
+
+		uv[0] = new Vector2(u1, v1);
+		uv[1] = new Vector2(u1, v0);
+		uv[2] = new Vector2(u0, v0);
+		uv[3] = new Vector2(u0, v1);
+
+		Color colF = color;
+		colF.a *= mPanel.alpha;
+		Color32 col = atlas.premultipliedAlpha ? NGUITools.ApplyPMA(colF) : colF;
+
+		if (fillDirection == FillDirection.Radial90)
+		{
+			// Adjust the quad radially, and if 'false' is returned (it's not visible), just exit
+			if (!AdjustRadial(xy, uv, mFillAmount, mInvert)) return;
+		}
+		else if (fillDirection == FillDirection.Radial180)
+		{
+			// Working in 0-1 coordinates is easier
+			Vector2[] oxy = new Vector2[4];
+			Vector2[] ouv = new Vector2[4];
+
+			for (int i = 0; i < 2; ++i)
+			{
+				oxy[0] = new Vector2(0f, 0f);
+				oxy[1] = new Vector2(0f, 1f);
+				oxy[2] = new Vector2(1f, 1f);
+				oxy[3] = new Vector2(1f, 0f);
+
+				ouv[0] = new Vector2(0f, 0f);
+				ouv[1] = new Vector2(0f, 1f);
+				ouv[2] = new Vector2(1f, 1f);
+				ouv[3] = new Vector2(1f, 0f);
+
+				// Each half must be rotated 90 degrees clockwise in order for it to fill properly
+				if (mInvert)
+				{
+					if (i > 0)
+					{
+						Rotate(oxy, i);
+						Rotate(ouv, i);
+					}
+				}
+				else if (i < 1)
+				{
+					Rotate(oxy, 1 - i);
+					Rotate(ouv, 1 - i);
+				}
+
+				// Each half must fill in only a part of the space
+				float x, y;
+
+				if (i == 1)
+				{
+					x = mInvert ? 0.5f : 1f;
+					y = mInvert ? 1f : 0.5f;
+				}
+				else
+				{
+					x = mInvert ? 1f : 0.5f;
+					y = mInvert ? 0.5f : 1f;
+				}
+
+				oxy[1].y = Mathf.Lerp(x, y, oxy[1].y);
+				oxy[2].y = Mathf.Lerp(x, y, oxy[2].y);
+				ouv[1].y = Mathf.Lerp(x, y, ouv[1].y);
+				ouv[2].y = Mathf.Lerp(x, y, ouv[2].y);
+
+				float amount = (mFillAmount) * 2 - i;
+				bool odd = (i % 2) == 1;
+
+				if (AdjustRadial(oxy, ouv, amount, !odd))
+				{
+					if (mInvert) odd = !odd;
+
+					// Add every other side in reverse order so they don't come out backface-culled due to rotation
+					if (odd)
+					{
+						for (int b = 0; b < 4; ++b)
+						{
+							x = Mathf.Lerp(xy[0].x, xy[2].x, oxy[b].x);
+							y = Mathf.Lerp(xy[0].y, xy[2].y, oxy[b].y);
+
+							float u = Mathf.Lerp(uv[0].x, uv[2].x, ouv[b].x);
+							float v = Mathf.Lerp(uv[0].y, uv[2].y, ouv[b].y);
+
+							verts.Add(new Vector3(x, y, 0f));
+							uvs.Add(new Vector2(u, v));
+							cols.Add(col);
+						}
+					}
+					else
+					{
+						for (int b = 3; b > -1; --b)
+						{
+							x = Mathf.Lerp(xy[0].x, xy[2].x, oxy[b].x);
+							y = Mathf.Lerp(xy[0].y, xy[2].y, oxy[b].y);
+
+							float u = Mathf.Lerp(uv[0].x, uv[2].x, ouv[b].x);
+							float v = Mathf.Lerp(uv[0].y, uv[2].y, ouv[b].y);
+
+							verts.Add(new Vector3(x, y, 0f));
+							uvs.Add(new Vector2(u, v));
+							cols.Add(col);
+						}
+					}
+				}
+			}
+			return;
+		}
+		else if (fillDirection == FillDirection.Radial360)
+		{
+			float[] matrix = new float[]
+			{
+				// x0 y0  x1   y1
+				0.5f, 1f, 0f, 0.5f, // quadrant 0
+				0.5f, 1f, 0.5f, 1f, // quadrant 1
+				0f, 0.5f, 0.5f, 1f, // quadrant 2
+				0f, 0.5f, 0f, 0.5f, // quadrant 3
+			};
+
+			Vector2[] oxy = new Vector2[4];
+			Vector2[] ouv = new Vector2[4];
+
+			for (int i = 0; i < 4; ++i)
+			{
+				oxy[0] = new Vector2(0f, 0f);
+				oxy[1] = new Vector2(0f, 1f);
+				oxy[2] = new Vector2(1f, 1f);
+				oxy[3] = new Vector2(1f, 0f);
+
+				ouv[0] = new Vector2(0f, 0f);
+				ouv[1] = new Vector2(0f, 1f);
+				ouv[2] = new Vector2(1f, 1f);
+				ouv[3] = new Vector2(1f, 0f);
+
+				// Each quadrant must be rotated 90 degrees clockwise in order for it to fill properly
+				if (mInvert)
+				{
+					if (i > 0)
+					{
+						Rotate(oxy, i);
+						Rotate(ouv, i);
+					}
+				}
+				else if (i < 3)
+				{
+					Rotate(oxy, 3 - i);
+					Rotate(ouv, 3 - i);
+				}
+
+				// Each quadrant must fill in only a quarter of the space
+				for (int b = 0; b < 4; ++b)
+				{
+					int index = (mInvert) ? (3 - i) * 4 : i * 4;
+
+					float fx0 = matrix[index];
+					float fy0 = matrix[index + 1];
+					float fx1 = matrix[index + 2];
+					float fy1 = matrix[index + 3];
+
+					oxy[b].x = Mathf.Lerp(fx0, fy0, oxy[b].x);
+					oxy[b].y = Mathf.Lerp(fx1, fy1, oxy[b].y);
+					ouv[b].x = Mathf.Lerp(fx0, fy0, ouv[b].x);
+					ouv[b].y = Mathf.Lerp(fx1, fy1, ouv[b].y);
+				}
+
+				float amount = (mFillAmount) * 4 - i;
+				bool odd = (i % 2) == 1;
+
+				if (AdjustRadial(oxy, ouv, amount, !odd))
+				{
+					if (mInvert) odd = !odd;
+
+					// Add every other side in reverse order so they don't come out backface-culled due to rotation
+					if (odd)
+					{
+						for (int b = 0; b < 4; ++b)
+						{
+							float x = Mathf.Lerp(xy[0].x, xy[2].x, oxy[b].x);
+							float y = Mathf.Lerp(xy[0].y, xy[2].y, oxy[b].y);
+							float u = Mathf.Lerp(uv[0].x, uv[2].x, ouv[b].x);
+							float v = Mathf.Lerp(uv[0].y, uv[2].y, ouv[b].y);
+
+							verts.Add(new Vector3(x, y, 0f));
+							uvs.Add(new Vector2(u, v));
+							cols.Add(col);
+						}
+					}
+					else
+					{
+						for (int b = 3; b > -1; --b)
+						{
+							float x = Mathf.Lerp(xy[0].x, xy[2].x, oxy[b].x);
+							float y = Mathf.Lerp(xy[0].y, xy[2].y, oxy[b].y);
+							float u = Mathf.Lerp(uv[0].x, uv[2].x, ouv[b].x);
+							float v = Mathf.Lerp(uv[0].y, uv[2].y, ouv[b].y);
+
+							verts.Add(new Vector3(x, y, 0f));
+							uvs.Add(new Vector2(u, v));
+							cols.Add(col);
+						}
+					}
+				}
+			}
+			return;
+		}
+
+		// Fill the buffer with the quad for the sprite
+		for (int i = 0; i < 4; ++i)
+		{
+			verts.Add(xy[i]);
+			uvs.Add(uv[i]);
+			cols.Add(col);
+		}
+	}
 
     public UIAtlas.Sprite GetAtlasSprite()
     {

@@ -18,7 +18,7 @@ public class PhotonPingManager
     [DebuggerHidden]
     public IEnumerator PingSocket(Region region)
     {
-        return new c__IteratorB { region = region, f__this = this};
+        return new PingSocketc__IteratorB { region = region, Sregion = region, f__this = this };
     }
 
     public static string ResolveHost(string hostName)
@@ -78,11 +78,11 @@ public class PhotonPingManager
     }
 
     [CompilerGenerated]
-    private sealed class c__IteratorB : IEnumerator, IDisposable, IEnumerator<object>
+    private sealed class PingSocketc__IteratorB : IEnumerator, IDisposable, IEnumerator<object>
     {
-        internal object current;
-        internal int PC;
-//        internal Region region; //RD:That line was detected as a duplicated variable declaration
+        internal object Scurrent;
+        internal int SPC;
+        internal Region Sregion;
         internal PhotonPingManager f__this;
         internal string cleanIpOfRegion__3;
         internal Exception e__8;
@@ -99,13 +99,43 @@ public class PhotonPingManager
         [DebuggerHidden]
         public void Dispose()
         {
-            this.PC = -1;
+            this.SPC = -1;
+        }
+
+        bool GotoOne()
+        {
+            while (!this.ping__0.Done())
+            {
+                if (this.sw__7.ElapsedMilliseconds >= PhotonPingManager.MaxMilliseconsPerPing)
+                {
+                    this.overtime__6 = true;
+                    break;
+                }
+                this.Scurrent = 0;
+                this.SPC = 1;
+                GotoTwo();
+                //goto Label_02B5;
+            }
+            this.rtt__9 = (int)this.sw__7.ElapsedMilliseconds;
+            if ((!PhotonPingManager.IgnoreInitialAttempt || (this.i__5 != 0)) && (this.ping__0.Successful && !this.overtime__6))
+            {
+                this.rttSum__1 += this.rtt__9;
+                this.replyCount__2++;
+                this.region.Ping = (int)(this.rttSum__1 / ((float)this.replyCount__2));
+            }
+            this.Scurrent = new WaitForSeconds(0.1f);
+            this.SPC = 2;
+            return true;
+        }
+        void GotoTwo()
+        {
+            this.i__5++;
         }
 
         public bool MoveNext()
         {
-            uint num = (uint) this.PC;
-            this.PC = -1;
+            uint num = (uint) this.SPC;
+            this.SPC = -1;
             switch (num)
             {
                 case 0:
@@ -121,13 +151,15 @@ public class PhotonPingManager
                     break;
 
                 case 1:
-                    goto Label_01B9;
+                    return GotoOne();//goto Label_01B9;
+                    //break;
 
                 case 2:
-                    goto Label_0268;
+                    GotoTwo();//goto Label_0268;
+                    break;
 
                 case 3:
-                    this.PC = -1;
+                    this.SPC = -1;
                     goto Label_02B3;
 
                 default:
@@ -159,7 +191,7 @@ public class PhotonPingManager
                     this.f__this.PingsRunning--;
                     break;
                 }
-            Label_01B9:
+            /*Label_01B9:
                 while (!this.ping__0.Done())
                 {
                     if (this.sw__7.ElapsedMilliseconds >= PhotonPingManager.MaxMilliseconsPerPing)
@@ -167,8 +199,8 @@ public class PhotonPingManager
                         this.overtime__6 = true;
                         break;
                     }
-                    this.current = 0;
-                    this.PC = 1;
+                    this.Scurrent = 0;
+                    this.SPC = 1;
                     goto Label_02B5;
                 }
                 this.rtt__9 = (int) this.sw__7.ElapsedMilliseconds;
@@ -178,15 +210,15 @@ public class PhotonPingManager
                     this.replyCount__2++;
                     this.region.Ping = (int) (this.rttSum__1 / ((float) this.replyCount__2));
                 }
-                this.current = new WaitForSeconds(0.1f);
-                this.PC = 2;
-                goto Label_02B5;
-            Label_0268:
-                this.i__5++;
+                this.Scurrent = new WaitForSeconds(0.1f);
+                this.SPC = 2;*/
+                //goto Label_02B5;
+            //Label_0268:
+                //this.i__5++;
             }
             this.f__this.PingsRunning--;
-            this.current = null;
-            this.PC = 3;
+            this.Scurrent = null;
+            this.SPC = 3;
             goto Label_02B5;
         Label_02B3:
             return false;
@@ -205,7 +237,7 @@ public class PhotonPingManager
             [DebuggerHidden]
             get
             {
-                return this.current;
+                return this.Scurrent;
             }
         }
 
@@ -214,7 +246,7 @@ public class PhotonPingManager
             [DebuggerHidden]
             get
             {
-                return this.current;
+                return this.Scurrent;
             }
         }
     }

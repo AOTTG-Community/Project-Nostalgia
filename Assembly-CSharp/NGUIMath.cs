@@ -320,36 +320,42 @@ public static class NGUIMath
         return vector6.magnitude;
     }
 
-    public static unsafe float DistanceToRectangle(Vector2[] screenPoints, Vector2 mousePos)
+    private static float DistanceToRectangle (Vector2[] screenPoints, Vector2 mousePos)
     {
-        bool flag = false;
-        int val = 4;
+        bool oddNodes = false;
+        int j = 4;
+
         for (int i = 0; i < 5; i++)
         {
-            Vector3 vector = *((Vector3*) &(screenPoints[RepeatIndex(i, 4)]));
-            Vector3 vector2 = *((Vector3*) &(screenPoints[RepeatIndex(val, 4)]));
-            if (((vector.y > mousePos.y) != (vector2.y > mousePos.y)) && (mousePos.x < ((((vector2.x - vector.x) * (mousePos.y - vector.y)) / (vector2.y - vector.y)) + vector.x)))
+            Vector3 v0 = screenPoints[NGUIMath.RepeatIndex(i, 4)];
+            Vector3 v1 = screenPoints[NGUIMath.RepeatIndex(j, 4)];
+
+            if ((v0.y > mousePos.y) != (v1.y > mousePos.y))
             {
-                flag = !flag;
+                if (mousePos.x < (v1.x - v0.x) * (mousePos.y - v0.y) / (v1.y - v0.y) + v0.x)
+                {
+                    oddNodes = !oddNodes;
+                }
             }
-            val = i;
+            j = i;
         }
-        if (flag)
+
+        if (!oddNodes)
         {
-            return 0f;
-        }
-        float num4 = -1f;
-        for (int j = 0; j < 4; j++)
-        {
-            Vector3 a = *((Vector3*) &(screenPoints[j]));
-            Vector3 b = *((Vector3*) &(screenPoints[RepeatIndex(j + 1, 4)]));
-            float num3 = DistancePointToLineSegment(mousePos, a, b);
-            if ((num3 < num4) || (num4 < 0f))
+            float dist, closestDist = -1f;
+
+            for (int i = 0; i < 4; i++)
             {
-                num4 = num3;
+                Vector3 v0 = screenPoints[i];
+                Vector3 v1 = screenPoints[NGUIMath.RepeatIndex(i + 1, 4)];
+
+                dist = DistancePointToLineSegment(mousePos, v0, v1);
+
+                if (dist < closestDist || closestDist < 0f) closestDist = dist;
             }
+            return closestDist;
         }
-        return num4;
+        else return 0f;
     }
 
     public static float DistanceToRectangle(Vector3[] worldPoints, Vector2 mousePos, Camera cam)

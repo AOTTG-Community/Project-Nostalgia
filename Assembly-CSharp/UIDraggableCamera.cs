@@ -1,4 +1,5 @@
 using System;
+using System.Configuration.Assemblies;
 using UnityEngine;
 
 [AddComponentMenu("NGUI/Interaction/Draggable Camera"), RequireComponent(typeof(Camera))]
@@ -82,7 +83,7 @@ public class UIDraggableCamera : IgnoreTimeScale
                 delta = (Vector2) (delta * this.mRoot.pixelSizeAdjustment);
             }
             Vector2 vector = Vector2.Scale(delta, -this.scale);
-            this.mTrans.localPosition += vector;
+            this.mTrans.localPosition += (Vector3) vector;
             this.mMomentum = Vector2.Lerp(this.mMomentum, this.mMomentum + ((Vector2) (vector * (0.01f * this.momentumAmount))), 0.67f);
             if ((this.dragEffect != UIDragObject.DragEffect.MomentumAndSpring) && this.ConstrainToBounds(true))
             {
@@ -154,7 +155,7 @@ public class UIDraggableCamera : IgnoreTimeScale
             this.mScroll = NGUIMath.SpringLerp(this.mScroll, 0f, 20f, deltaTime);
             if (this.mMomentum.magnitude > 0.01f)
             {
-                this.mTrans.localPosition += NGUIMath.SpringDampen(ref this.mMomentum, 9f, deltaTime);
+                this.mTrans.localPosition += (Vector3) NGUIMath.SpringDampen(ref this.mMomentum, 9f, deltaTime);
                 this.mBounds = NGUIMath.CalculateAbsoluteWidgetBounds(this.rootForBounds);
                 if (!this.ConstrainToBounds(this.dragEffect == UIDragObject.DragEffect.None))
                 {

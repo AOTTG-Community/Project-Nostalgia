@@ -24,31 +24,31 @@ public class StyledComboBox : StyledItem
     {
         if (this.itemPrefab != null)
         {
-            c__AnonStoreyF yf = new c__AnonStoreyF {
+            AddItemcAnonStoreyF yf = new AddItemcAnonStoreyF {
                 f__this = this
             };
-            Vector3[] vectorArray = new Vector3[4];
-            this.itemPrefab.GetComponent<RectTransform>().GetLocalCorners(vectorArray);
-            Vector3 position = vectorArray[0];
-            float num = position.y - vectorArray[2].y;
+            Vector3[] fourCornersArray = new Vector3[4];
+            this.itemPrefab.GetComponent<RectTransform>().GetLocalCorners(fourCornersArray);
+            Vector3 position = fourCornersArray[0];
+            float num = position.y - fourCornersArray[2].y;
             position.y = this.items.Count * num;
             yf.styledItem = UnityEngine.Object.Instantiate(this.itemPrefab, position, this.root.itemRoot.rotation) as StyledItem;
             RectTransform component = yf.styledItem.GetComponent<RectTransform>();
             yf.styledItem.Populate(data);
             component.SetParent(this.root.itemRoot.transform, false);
-            component.set_pivot(new Vector2(0f, 1f));
-            component.set_anchorMin(new Vector2(0f, 1f));
-            component.set_anchorMax(Vector2.one);
-            component.set_anchoredPosition(new Vector2(0f, position.y));
+            component.pivot = new Vector2(0f, 1f);
+            component.anchorMin = new Vector2(0f, 1f);
+            component.anchorMax = Vector2.one;
+            component.anchoredPosition = new Vector2(0f, position.y);
             this.items.Add(yf.styledItem);
-            component.set_offsetMin(new Vector2(0f, position.y + num));
-            component.set_offsetMax(new Vector2(0f, position.y));
-            this.root.itemRoot.set_offsetMin(new Vector2(this.root.itemRoot.get_offsetMin().x, (this.items.Count + 2) * num));
+            component.offsetMin = new Vector2(0f, position.y + num);
+            component.offsetMax = new Vector2(0f, position.y);
+            this.root.itemRoot.offsetMin = new Vector2(this.root.itemRoot.offsetMin.x, (this.items.Count + 2) * num);
             Button button = yf.styledItem.GetButton();
             yf.curIndex = this.items.Count - 1;
             if (button != null)
             {
-                button.onClick.AddListener(new UnityAction(yf, (IntPtr) this.m__0));
+                button.onClick.AddListener(new UnityAction(yf.m__0));
             }
         }
     }
@@ -91,16 +91,16 @@ public class StyledComboBox : StyledItem
             item.Populate(data);
             item.transform.SetParent(this.root.menuItem.transform, false);
             RectTransform component = item.GetComponent<RectTransform>();
-            component.set_pivot(new Vector2(0.5f, 0.5f));
-            component.set_anchorMin(Vector2.zero);
-            component.set_anchorMax(Vector2.one);
-            component.set_offsetMin(Vector2.zero);
-            component.set_offsetMax(Vector2.zero);
+            component.pivot = new Vector2(0.5f, 0.5f);
+            component.anchorMin = Vector2.zero;
+            component.anchorMax = Vector2.one;
+            component.offsetMin = Vector2.zero;
+            component.offsetMax = Vector2.zero;
             this.root.gameObject.hideFlags = HideFlags.HideInHierarchy;
             Button button = item.GetButton();
             if (button != null)
             {
-                button.onClick.AddListener(new UnityAction(this, (IntPtr) this.TogglePanelState));
+                button.onClick.AddListener(new UnityAction(this.TogglePanelState));
             }
         }
     }
@@ -117,11 +117,11 @@ public class StyledComboBox : StyledItem
             this.root = UnityEngine.Object.Instantiate(this.containerPrefab, component.position, component.rotation) as StyledComboBoxPrefab;
             this.root.transform.SetParent(base.transform, false);
             RectTransform transform2 = this.root.GetComponent<RectTransform>();
-            transform2.set_pivot(new Vector2(0.5f, 0.5f));
-            transform2.set_anchorMin(Vector2.zero);
-            transform2.set_anchorMax(Vector2.one);
-            transform2.set_offsetMax(Vector2.zero);
-            transform2.set_offsetMin(Vector2.zero);
+            transform2.pivot = new Vector2(0.5f, 0.5f);
+            transform2.anchorMin = Vector2.zero;
+            transform2.anchorMax = Vector2.one;
+            transform2.offsetMax = Vector2.zero;
+            transform2.offsetMin = Vector2.zero;
             this.root.gameObject.hideFlags = HideFlags.HideInHierarchy;
             this.root.itemPanel.gameObject.SetActive(this.isToggled);
         }
@@ -172,7 +172,7 @@ public class StyledComboBox : StyledItem
     }
 
     [CompilerGenerated]
-    private sealed class c__AnonStoreyF
+    private sealed class AddItemcAnonStoreyF
     {
         internal StyledComboBox f__this;
         internal int curIndex;

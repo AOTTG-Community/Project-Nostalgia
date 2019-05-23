@@ -58,8 +58,7 @@ namespace Xft
 
         public Vector3 InterpolateByLen(float tl)
         {
-//            float num; //RD:That line was detected as a duplicated variable declaration
-            return this.LenToSegment(tl, out num).Interpolate(num);
+            return this.LenToSegment(tl, out var num).Interpolate(num);
         }
 
         public Vector3 InterpolateNormalByLen(float tl)
