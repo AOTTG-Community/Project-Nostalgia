@@ -57,11 +57,14 @@ But just to be nice.
 
 * Any IDE compatible for .Net/C#
 [Visual studio 2019](https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=Community&rel=16)
+
 [Visual studio code](https://code.visualstudio.com/docs?dv=win&wt.mc_id=DX_841432&sku=codewin)
 
 * Any Git GUI client
 [Github Desktop](https://central.github.com/deployments/desktop/desktop/latest/win32)
+
 [GitKraken](https://www.gitkraken.com/download/windows64)
+
 [SourceTree](https://product-downloads.atlassian.com/software/sourcetree/windows/ga/SourceTreeSetup-3.1.3.exe)
 
 ### Installation
@@ -78,7 +81,7 @@ But just to be nice.
 Contributions are what make the open source community such an amazing place to be learn, inspire, and create. Any contributions you make are **greatly appreciated**.
 
 1. Clone the project
-2. Go to our [Project Feature Wall](https://github.com/Erenx447/BRS-Mod/projects/1)
+2. Go to our [Project Feature Wall](https://github.com/project-brs/Project-Nostalgia/projects/1)
 3. Assign yourself a feature on the to do list or add your own and work on it
 4. Write your code
 5. Test your code by checking all functionalities of the base game and previous mods
