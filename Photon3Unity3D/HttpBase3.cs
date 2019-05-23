@@ -133,13 +133,7 @@ namespace ExitGames.Client.Photon
       if (!this._sendAck)
         return;
       this._sendAck = false;
-      // ISSUE: explicit reference operation
-      // ISSUE: variable of a reference type
-      string& local = @urlParamter;
-      // ISSUE: explicit reference operation
-      string str = ^local + "&ack=" + (object) this._lastSendAck;
-      // ISSUE: explicit reference operation
-      ^local = str;
+      urlParamter += "&ack=" + (object) this._lastSendAck;
       if (this.debugOut >= DebugLevel.ALL)
         this.Listener.DebugReturn(DebugLevel.ALL, string.Format("ack sent for id {0}, pid={1}, cid={2}", (object) this._lastSendAck, (object) this.HttpPeerID, (object) this._challengId));
     }
@@ -204,7 +198,7 @@ namespace ExitGames.Client.Photon
         if (num != -1)
         {
           string s = request.error.Substring(0, num + 1);
-          s.Trim();
+//          s.Trim();
           int.TryParse(s, out result);
         }
         return result;

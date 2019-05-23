@@ -38,7 +38,7 @@ namespace ExitGames.Client.Photon
 
     public IEnumerator<DictionaryEntry> GetEnumerator()
     {
-      return (IEnumerator<DictionaryEntry>) new DictionaryEntryEnumerator(this.GetEnumerator());
+      return this.GetEnumerator();
     }
 
     public override string ToString()

@@ -1465,7 +1465,7 @@ namespace Photon.SocketServer.Numeric
           return false;
         BigInteger bigInteger4 = a.ModPow(exp, bigInteger1);
         if (bigInteger4 == bigInteger2)
-          bigInteger4 = (BigInteger) -1;
+          bigInteger4 = new BigInteger(-1);
         BigInteger bigInteger5 = (BigInteger) BigInteger.Jacobi(a, bigInteger1);
         if (bigInteger4 != bigInteger5)
           return false;
@@ -1638,7 +1638,7 @@ label_11:
       }
       BigInteger exp = bigInteger3 >> num1;
       bigInteger1.bitCount();
-      BigInteger bigInteger4 = (BigInteger) 2.ModPow(exp, bigInteger1);
+      BigInteger bigInteger4 = new BigInteger(2).ModPow(exp, bigInteger1);
       bool flag = false;
       if (bigInteger4.dataLength == 1 && (int) bigInteger4.data[0] == 1)
         flag = true;
@@ -1820,7 +1820,7 @@ label_11:
     {
       uint num1 = bitNum >> 5;
       uint num2 = 1U << (int) (byte) (bitNum & 31U);
-      this.data[(IntPtr) num1] |= num2;
+      this.data[num1] |= num2;
       if ((long) num1 < (long) this.dataLength)
         return;
       this.dataLength = (int) num1 + 1;
@@ -1832,7 +1832,7 @@ label_11:
       if ((long) num1 >= (long) this.dataLength)
         return;
       uint num2 = uint.MaxValue ^ 1U << (int) (byte) (bitNum & 31U);
-      this.data[(IntPtr) num1] &= num2;
+      this.data[num1] &= num2;
       if (this.dataLength > 1 && (int) this.data[this.dataLength - 1] == 0)
         --this.dataLength;
     }
