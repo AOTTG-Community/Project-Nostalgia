@@ -38,24 +38,24 @@
 
 A team of old mod makers, influencers and fans of the original game deciding to work together to create 1 last update.
 
-Here's why:
+**Here's why**:
 * Nostalgia.
-* Some still care about the game.
-* To test ourselves and see how much we've changed throughout the years.
+* The game's community is still going, we want to reinforce this!
+* To test ourselves and see how much we've improved throughout the years.
 * To finally work with other mod makers out there.
 
 
-Of course, we don't want you to waste your time or dedicate your life to this. It's a fan project which you decide how much you work on. All contributions are accepted.
+Of course, this being a fan project, we make no promises and take no vows - the project is maintained by hard working individuals who dedicate their free time, for free, we are not bound to work on this and do not owe the community anything.
+*All contributions are accepted.*
 
 <!-- GETTING STARTED -->
 ## Getting Started
+If you are wondering how to get started on this, you should not get started. 
+But, for the sake of it:
 
-To be honest if you do not know how to get started you shouldn't even be here in the first place.
-But just to be nice.
+### Prerequisites 
 
-### Prerequisites
-
-* Any IDE compatible for .Net/C#
+* Any IDE compatible with .Net/C#
 
 [Visual studio 2019](https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=Community&rel=16)
 
@@ -71,9 +71,9 @@ But just to be nice.
 
 ### Installation
 
-1. Install any IDE of your choice
-2. Clone the repo using any of the clients you've downloaded
-3. Open the .sln file
+1. Install an IDE of your choice;
+2. Clone the repo using any of the clients you've downloaded;
+3. Open the .sln file;
 4. Done, have fun coding.
 
 
@@ -104,8 +104,10 @@ Contributions are what make the open source community such an amazing place to b
 * Feel free to add your own preferred contact method down below
 
 Black Rock Shooter - **Discord**: Meliodas#6452
+Rithari - **Discord**: Rithari#0001
+Hawk - **Discord**: Hawk#7297
 
-Project Link: [BRS Mod](https://github.com/Erenx447/BRS-Mod)
+Project Link: [Nostalgia](https://github.com/AOTTG-Community/Project-Nostalgia)
 
 
 
