@@ -56,11 +56,13 @@ But just to be nice.
 ### Prerequisites
 
 * Any IDE compatible for .Net/C#
+
 [Visual studio 2019](https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=Community&rel=16)
 
 [Visual studio code](https://code.visualstudio.com/docs?dv=win&wt.mc_id=DX_841432&sku=codewin)
 
 * Any Git GUI client
+
 [Github Desktop](https://central.github.com/deployments/desktop/desktop/latest/win32)
 
 [GitKraken](https://www.gitkraken.com/download/windows64)
