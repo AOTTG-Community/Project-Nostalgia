@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27428.2002
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nostalgia", "Assembly-CSharp\Nostalgia.csproj", "{FFF16F95-8AF6-41B2-9FD1-5F82FEAA3E61}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nostalgia", "Nostalgia\Nostalgia.csproj", "{FFF16F95-8AF6-41B2-9FD1-5F82FEAA3E61}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Photon3Unity3D", "Photon3Unity3D\Photon3Unity3D.csproj", "{FDD7DA53-BAAD-4FA7-B66E-0C5BE348552F}"
 EndProject
