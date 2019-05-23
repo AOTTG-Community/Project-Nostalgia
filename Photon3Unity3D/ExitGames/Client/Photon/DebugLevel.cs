@@ -1,11 +1,11 @@
 ﻿namespace ExitGames.Client.Photon
 {
-    public enum DebugLevel : byte
-    {
-        Off,
-        Error,
-        Warning,
-        Info,
-        All = 5
-    }
+  public enum DebugLevel : byte
+  {
+    OFF = 0,
+    ERROR = 1,
+    WARNING = 2,
+    INFO = 3,
+    ALL = 5,
+  }
 }

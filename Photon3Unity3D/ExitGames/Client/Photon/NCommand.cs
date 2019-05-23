@@ -2,388 +2,221 @@
 
 namespace ExitGames.Client.Photon
 {
-    internal class NCommand : IComparable<NCommand>
+  internal class NCommand : IComparable<NCommand>
+  {
+    internal byte reservedByte = 4;
+    internal const int FLAG_RELIABLE = 1;
+    internal const int FLAG_UNSEQUENCED = 2;
+    internal const byte FV_UNRELIABLE = 0;
+    internal const byte FV_RELIABLE = 1;
+    internal const byte FV_UNRELIBALE_UNSEQUENCED = 2;
+    internal const byte CT_NONE = 0;
+    internal const byte CT_ACK = 1;
+    internal const byte CT_CONNECT = 2;
+    internal const byte CT_VERIFYCONNECT = 3;
+    internal const byte CT_DISCONNECT = 4;
+    internal const byte CT_PING = 5;
+    internal const byte CT_SENDRELIABLE = 6;
+    internal const byte CT_SENDUNRELIABLE = 7;
+    internal const byte CT_SENDFRAGMENT = 8;
+    internal const byte CT_EG_SERVERTIME = 12;
+    internal const int HEADER_UDP_PACK_LENGTH = 12;
+    internal const int CmdSizeMinimum = 12;
+    internal const int CmdSizeAck = 20;
+    internal const int CmdSizeConnect = 44;
+    internal const int CmdSizeVerifyConnect = 44;
+    internal const int CmdSizeDisconnect = 12;
+    internal const int CmdSizePing = 12;
+    internal const int CmdSizeReliableHeader = 12;
+    internal const int CmdSizeUnreliableHeader = 16;
+    internal const int CmdSizeFragmentHeader = 32;
+    internal const int CmdSizeMaxHeader = 36;
+    internal byte commandFlags;
+    internal byte commandType;
+    internal byte commandChannelID;
+    internal int reliableSequenceNumber;
+    internal int unreliableSequenceNumber;
+    internal int unsequencedGroupNumber;
+    internal int startSequenceNumber;
+    internal int fragmentCount;
+    internal int fragmentNumber;
+    internal int totalLength;
+    internal int fragmentOffset;
+    internal int fragmentsRemaining;
+    internal byte[] Payload;
+    internal int commandSentTime;
+    internal byte commandSentCount;
+    internal int roundTripTimeout;
+    internal int timeoutTime;
+    internal int ackReceivedReliableSequenceNumber;
+    internal int ackReceivedSentTime;
+    private byte[] completeCommand;
+    internal int Size;
+
+    internal NCommand(EnetPeer peer, byte commandType, byte[] payload, byte channel)
     {
-        private byte[] commandHeader;
-        internal const int CmdSizeAck = 20;
-        internal const int CmdSizeConnect = 44;
-        internal const int CmdSizeDisconnect = 12;
-        internal const int CmdSizeFragmentHeader = 32;
-        internal const int CmdSizeMaxHeader = 36;
-        internal const int CmdSizeMinimum = 12;
-        internal const int CmdSizePing = 12;
-        internal const int CmdSizeReliableHeader = 12;
-        internal const int CmdSizeUnreliableHeader = 16;
-        internal const int CmdSizeUnsequensedHeader = 16;
-        internal const int CmdSizeVerifyConnect = 44;
-        internal const byte CT_ACK = 1;
-        internal const byte CT_CONNECT = 2;
-        internal const byte CT_DISCONNECT = 4;
-        internal const byte CT_EG_ACK_UNSEQUENCED = 16;
-        internal const byte CT_EG_SEND_FRAGMENT_UNSEQUENCED = 15;
-        internal const byte CT_EG_SEND_RELIABLE_UNSEQUENCED = 14;
-        internal const byte CT_EG_SEND_UNRELIABLE_PROCESSED = 13;
-        internal const byte CT_EG_SERVERTIME = 12;
-        internal const byte CT_NONE = 0;
-        internal const byte CT_PING = 5;
-        internal const byte CT_SENDFRAGMENT = 8;
-        internal const byte CT_SENDRELIABLE = 6;
-        internal const byte CT_SENDUNRELIABLE = 7;
-        internal const byte CT_SENDUNSEQUENCED = 11;
-        internal const byte CT_VERIFYCONNECT = 3;
-        internal const byte FV_RELIABLE = 1;
-        internal const byte FV_RELIBALE_UNSEQUENCED = 3;
-        internal const byte FV_UNRELIABLE = 0;
-        internal const byte FV_UNRELIABLE_UNSEQUENCED = 2;
-        internal const int HEADER_UDP_PACK_LENGTH = 12;
-        internal int ackReceivedReliableSequenceNumber;
-        internal int ackReceivedSentTime;
-        internal byte commandChannelID;
-        internal byte commandFlags;
-        internal byte commandSentCount;
-        internal int commandSentTime;
-        internal byte commandType;
-        internal int fragmentCount;
-        internal int fragmentNumber;
-        internal int fragmentOffset;
-        internal int fragmentsRemaining;
-        internal StreamBuffer Payload;
-        internal int reliableSequenceNumber;
-
-        internal byte reservedByte = 4;
-        internal int roundTripTimeout;
-        internal int Size;
-        internal int SizeOfHeader;
-        internal int startSequenceNumber;
-        internal int timeoutTime;
-        internal int totalLength;
-        internal int unreliableSequenceNumber;
-
-        internal int unsequencedGroupNumber;
-
-        internal NCommand(EnetPeer peer, byte commandType, StreamBuffer payload, byte channel)
-        {
-            this.commandType = commandType;
-            this.commandFlags = 1;
-            this.commandChannelID = channel;
-            this.Payload = payload;
-            this.Size = 12;
-            switch (this.commandType)
-            {
-                case 2:
-                    {
-                        this.Size = 44;
-                        byte[] array = new byte[32];
-                        array[0] = 0;
-                        array[1] = 0;
-                        int num = 2;
-                        Protocol.Serialize((short)peer.mtu, array, ref num);
-                        array[4] = 0;
-                        array[5] = 0;
-                        array[6] = 128;
-                        array[7] = 0;
-                        array[11] = 254;
-                        array[15] = 0;
-                        array[19] = 0;
-                        array[22] = 19;
-                        array[23] = 136;
-                        array[27] = 2;
-                        array[31] = 2;
-                        this.Payload = new StreamBuffer(array);
-                        break;
-                    }
-                case 4:
-                    {
-                        this.Size = 12;
-                        bool flag = peer.peerConnectionState != ConnectionStateValue.Connected;
-                        if (flag)
-                        {
-                            this.commandFlags = 2;
-                            bool flag2 = peer.peerConnectionState == ConnectionStateValue.Zombie;
-                            if (flag2)
-                            {
-                                this.reservedByte = 2;
-                            }
-                        }
-                        break;
-                    }
-                case 6:
-                    this.Size = 12 + payload.Length;
-                    break;
-
-                case 7:
-                    this.Size = 16 + payload.Length;
-                    this.commandFlags = 0;
-                    break;
-
-                case 8:
-                    this.Size = 32 + payload.Length;
-                    break;
-
-                case 11:
-                    this.Size = 16 + payload.Length;
-                    this.commandFlags = 2;
-                    break;
-
-                case 14:
-                    this.Size = 12 + payload.Length;
-                    this.commandFlags = 3;
-                    break;
-
-                case 15:
-                    this.Size = 32 + payload.Length;
-                    this.commandFlags = 3;
-                    break;
-            }
-        }
-
-        internal NCommand(EnetPeer peer, byte[] inBuff, ref int readingOffset)
-        {
-            int num = readingOffset;
-            readingOffset = num + 1;
-            this.commandType = inBuff[num];
-            num = readingOffset;
-            readingOffset = num + 1;
-            this.commandChannelID = inBuff[num];
-            num = readingOffset;
-            readingOffset = num + 1;
-            this.commandFlags = inBuff[num];
-            num = readingOffset;
-            readingOffset = num + 1;
-            this.reservedByte = inBuff[num];
-            Protocol.Deserialize(out this.Size, inBuff, ref readingOffset);
-            Protocol.Deserialize(out this.reliableSequenceNumber, inBuff, ref readingOffset);
-            peer.bytesIn += (long)this.Size;
-            int num2 = 0;
-            switch (this.commandType)
-            {
-                case 1:
-                case 16:
-                    Protocol.Deserialize(out this.ackReceivedReliableSequenceNumber, inBuff, ref readingOffset);
-                    Protocol.Deserialize(out this.ackReceivedSentTime, inBuff, ref readingOffset);
-                    break;
-
-                case 3:
-                    {
-                        short peerID;
-                        Protocol.Deserialize(out peerID, inBuff, ref readingOffset);
-                        readingOffset += 30;
-                        bool flag = peer.peerID == -1 || peer.peerID == -2;
-                        if (flag)
-                        {
-                            peer.peerID = peerID;
-                        }
-                        break;
-                    }
-                case 6:
-                case 14:
-                    num2 = this.Size - 12;
-                    break;
-
-                case 7:
-                    Protocol.Deserialize(out this.unreliableSequenceNumber, inBuff, ref readingOffset);
-                    num2 = this.Size - 16;
-                    break;
-
-                case 8:
-                case 15:
-                    Protocol.Deserialize(out this.startSequenceNumber, inBuff, ref readingOffset);
-                    Protocol.Deserialize(out this.fragmentCount, inBuff, ref readingOffset);
-                    Protocol.Deserialize(out this.fragmentNumber, inBuff, ref readingOffset);
-                    Protocol.Deserialize(out this.totalLength, inBuff, ref readingOffset);
-                    Protocol.Deserialize(out this.fragmentOffset, inBuff, ref readingOffset);
-                    num2 = this.Size - 32;
-                    this.fragmentsRemaining = this.fragmentCount;
-                    break;
-
-                case 11:
-                    Protocol.Deserialize(out this.unsequencedGroupNumber, inBuff, ref readingOffset);
-                    num2 = this.Size - 16;
-                    break;
-            }
-            bool flag2 = num2 != 0;
-            if (flag2)
-            {
-                StreamBuffer streamBuffer = PeerBase.MessageBufferPoolGet();
-                streamBuffer.Write(inBuff, readingOffset, num2);
-                this.Payload = streamBuffer;
-                this.Payload.Position = 0;
-                readingOffset += num2;
-            }
-        }
-
-        protected internal bool IsFlaggedReliable
-        {
-            get
-            {
-                return (this.commandFlags & 1) > 0;
-            }
-        }
-
-        protected internal bool IsFlaggedUnsequenced
-        {
-            get
-            {
-                return (this.commandFlags & 2) > 0;
-            }
-        }
-
-        protected internal int SizeOfPayload
-        {
-            get
-            {
-                return (this.Payload != null) ? this.Payload.Length : 0;
-            }
-        }
-
-        internal static void CreateAck(byte[] buffer, int offset, NCommand commandToAck, int sentTime)
-        {
-            buffer[offset++] = (byte)(commandToAck.IsFlaggedUnsequenced ? 16 : 1);
-            buffer[offset++] = commandToAck.commandChannelID;
-            buffer[offset++] = 0;
-            buffer[offset++] = commandToAck.reservedByte;
-            Protocol.Serialize(20, buffer, ref offset);
-            Protocol.Serialize(0, buffer, ref offset);
-            Protocol.Serialize(commandToAck.reliableSequenceNumber, buffer, ref offset);
-            Protocol.Serialize(sentTime, buffer, ref offset);
-        }
-
-        internal byte[] Serialize()
-        {
-            return this.Payload.GetBuffer();
-        }
-
-        internal void SerializeHeader(byte[] buffer, ref int bufferIndex)
-        {
-            bool flag = this.commandHeader != null;
-            if (!flag)
-            {
-                this.SizeOfHeader = 12;
-                bool flag2 = this.commandType == 7;
-                if (flag2)
-                {
-                    this.SizeOfHeader = 16;
-                }
-                else
-                {
-                    bool flag3 = this.commandType == 11;
-                    if (flag3)
-                    {
-                        this.SizeOfHeader = 16;
-                    }
-                    else
-                    {
-                        bool flag4 = this.commandType == 8 || this.commandType == 15;
-                        if (flag4)
-                        {
-                            this.SizeOfHeader = 32;
-                        }
-                    }
-                }
-                int num = bufferIndex;
-                bufferIndex = num + 1;
-                buffer[num] = this.commandType;
-                num = bufferIndex;
-                bufferIndex = num + 1;
-                buffer[num] = this.commandChannelID;
-                num = bufferIndex;
-                bufferIndex = num + 1;
-                buffer[num] = this.commandFlags;
-                num = bufferIndex;
-                bufferIndex = num + 1;
-                buffer[num] = this.reservedByte;
-                Protocol.Serialize(this.Size, buffer, ref bufferIndex);
-                Protocol.Serialize(this.reliableSequenceNumber, buffer, ref bufferIndex);
-                bool flag5 = this.commandType == 7;
-                if (flag5)
-                {
-                    Protocol.Serialize(this.unreliableSequenceNumber, buffer, ref bufferIndex);
-                }
-                else
-                {
-                    bool flag6 = this.commandType == 11;
-                    if (flag6)
-                    {
-                        Protocol.Serialize(this.unsequencedGroupNumber, buffer, ref bufferIndex);
-                    }
-                    else
-                    {
-                        bool flag7 = this.commandType == 8 || this.commandType == 15;
-                        if (flag7)
-                        {
-                            Protocol.Serialize(this.startSequenceNumber, buffer, ref bufferIndex);
-                            Protocol.Serialize(this.fragmentCount, buffer, ref bufferIndex);
-                            Protocol.Serialize(this.fragmentNumber, buffer, ref bufferIndex);
-                            Protocol.Serialize(this.totalLength, buffer, ref bufferIndex);
-                            Protocol.Serialize(this.fragmentOffset, buffer, ref bufferIndex);
-                        }
-                    }
-                }
-            }
-        }
-
-        public int CompareTo(NCommand other)
-        {
-            bool flag = other == null;
-            int result;
-            if (flag)
-            {
-                result = 1;
-            }
-            else
-            {
-                int num = this.reliableSequenceNumber - other.reliableSequenceNumber;
-                bool flag2 = this.IsFlaggedReliable || num != 0;
-                if (flag2)
-                {
-                    result = num;
-                }
-                else
-                {
-                    result = this.unreliableSequenceNumber - other.unreliableSequenceNumber;
-                }
-            }
-            return result;
-        }
-
-        public void FreePayload()
-        {
-            bool flag = this.Payload != null;
-            if (flag)
-            {
-                PeerBase.MessageBufferPoolPut(this.Payload);
-            }
-            this.Payload = null;
-        }
-
-        public override string ToString()
-        {
-            bool flag = this.commandType == 1 || this.commandType == 16;
-            string result;
-            if (flag)
-            {
-                result = string.Format("CMD({1} ack for c#:{0} s#/time {2}/{3})", new object[]
-                {
-                    this.commandChannelID,
-                    this.commandType,
-                    this.ackReceivedReliableSequenceNumber,
-                    this.ackReceivedSentTime
-                });
-            }
-            else
-            {
-                result = string.Format("CMD({1} c#:{0} r/u: {2}/{3} st/r#/rt:{4}/{5}/{6})", new object[]
-                {
-                    this.commandChannelID,
-                    this.commandType,
-                    this.reliableSequenceNumber,
-                    this.unreliableSequenceNumber,
-                    this.commandSentTime,
-                    this.commandSentCount,
-                    this.timeoutTime
-                });
-            }
-            return result;
-        }
+      this.commandType = commandType;
+      this.commandFlags = (byte) 1;
+      this.commandChannelID = channel;
+      this.Payload = payload;
+      this.Size = 12;
+      switch (this.commandType)
+      {
+        case 1:
+          this.Size = 20;
+          this.commandFlags = (byte) 0;
+          break;
+        case 2:
+          this.Size = 44;
+          this.Payload = new byte[32];
+          this.Payload[0] = (byte) 0;
+          this.Payload[1] = (byte) 0;
+          int targetOffset = 2;
+          Protocol.Serialize((short) peer.mtu, this.Payload, ref targetOffset);
+          this.Payload[4] = (byte) 0;
+          this.Payload[5] = (byte) 0;
+          this.Payload[6] = (byte) 128;
+          this.Payload[7] = (byte) 0;
+          this.Payload[11] = peer.ChannelCount;
+          this.Payload[15] = (byte) 0;
+          this.Payload[19] = (byte) 0;
+          this.Payload[22] = (byte) 19;
+          this.Payload[23] = (byte) 136;
+          this.Payload[27] = (byte) 2;
+          this.Payload[31] = (byte) 2;
+          break;
+        case 4:
+          this.Size = 12;
+          if (peer.peerConnectionState == PeerBase.ConnectionStateValue.Connected)
+            break;
+          this.commandFlags = (byte) 2;
+          if (peer.peerConnectionState == PeerBase.ConnectionStateValue.Zombie)
+            this.reservedByte = (byte) 2;
+          break;
+        case 6:
+          this.Size = 12 + payload.Length;
+          break;
+        case 7:
+          this.Size = 16 + payload.Length;
+          this.commandFlags = (byte) 0;
+          break;
+        case 8:
+          this.Size = 32 + payload.Length;
+          break;
+      }
     }
+
+    internal static NCommand CreateAck(EnetPeer peer, NCommand commandToAck, int sentTime)
+    {
+      byte[] numArray = new byte[8];
+      int targetOffset = 0;
+      Protocol.Serialize(commandToAck.reliableSequenceNumber, numArray, ref targetOffset);
+      Protocol.Serialize(sentTime, numArray, ref targetOffset);
+      return new NCommand(peer, (byte) 1, numArray, commandToAck.commandChannelID)
+      {
+        ackReceivedReliableSequenceNumber = commandToAck.reliableSequenceNumber,
+        ackReceivedSentTime = sentTime
+      };
+    }
+
+    internal NCommand(EnetPeer peer, byte[] inBuff, ref int readingOffset)
+    {
+      this.commandType = inBuff[readingOffset++];
+      this.commandChannelID = inBuff[readingOffset++];
+      this.commandFlags = inBuff[readingOffset++];
+      this.reservedByte = inBuff[readingOffset++];
+      Protocol.Deserialize(out this.Size, inBuff, ref readingOffset);
+      Protocol.Deserialize(out this.reliableSequenceNumber, inBuff, ref readingOffset);
+      peer.bytesIn += (long) this.Size;
+      switch (this.commandType)
+      {
+        case 1:
+          Protocol.Deserialize(out this.ackReceivedReliableSequenceNumber, inBuff, ref readingOffset);
+          Protocol.Deserialize(out this.ackReceivedSentTime, inBuff, ref readingOffset);
+          break;
+        case 3:
+          short num;
+          Protocol.Deserialize(out num, inBuff, ref readingOffset);
+          readingOffset += 30;
+          if ((int) peer.peerID == -1)
+          {
+            peer.peerID = num;
+            break;
+          }
+          break;
+        case 6:
+          this.Payload = new byte[this.Size - 12];
+          break;
+        case 7:
+          Protocol.Deserialize(out this.unreliableSequenceNumber, inBuff, ref readingOffset);
+          this.Payload = new byte[this.Size - 16];
+          break;
+        case 8:
+          Protocol.Deserialize(out this.startSequenceNumber, inBuff, ref readingOffset);
+          Protocol.Deserialize(out this.fragmentCount, inBuff, ref readingOffset);
+          Protocol.Deserialize(out this.fragmentNumber, inBuff, ref readingOffset);
+          Protocol.Deserialize(out this.totalLength, inBuff, ref readingOffset);
+          Protocol.Deserialize(out this.fragmentOffset, inBuff, ref readingOffset);
+          this.Payload = new byte[this.Size - 32];
+          this.fragmentsRemaining = this.fragmentCount;
+          break;
+      }
+      if (this.Payload == null)
+        return;
+      Buffer.BlockCopy((Array) inBuff, readingOffset, (Array) this.Payload, 0, this.Payload.Length);
+      readingOffset += this.Payload.Length;
+    }
+
+    internal byte[] Serialize()
+    {
+      if (this.completeCommand != null)
+        return this.completeCommand;
+      int count = this.Payload == null ? 0 : this.Payload.Length;
+      int dstOffset = 12;
+      if ((int) this.commandType == 7)
+        dstOffset = 16;
+      else if ((int) this.commandType == 8)
+        dstOffset = 32;
+      this.completeCommand = new byte[dstOffset + count];
+      this.completeCommand[0] = this.commandType;
+      this.completeCommand[1] = this.commandChannelID;
+      this.completeCommand[2] = this.commandFlags;
+      this.completeCommand[3] = this.reservedByte;
+      int targetOffset = 4;
+      Protocol.Serialize(this.completeCommand.Length, this.completeCommand, ref targetOffset);
+      Protocol.Serialize(this.reliableSequenceNumber, this.completeCommand, ref targetOffset);
+      if ((int) this.commandType == 7)
+      {
+        targetOffset = 12;
+        Protocol.Serialize(this.unreliableSequenceNumber, this.completeCommand, ref targetOffset);
+      }
+      else if ((int) this.commandType == 8)
+      {
+        targetOffset = 12;
+        Protocol.Serialize(this.startSequenceNumber, this.completeCommand, ref targetOffset);
+        Protocol.Serialize(this.fragmentCount, this.completeCommand, ref targetOffset);
+        Protocol.Serialize(this.fragmentNumber, this.completeCommand, ref targetOffset);
+        Protocol.Serialize(this.totalLength, this.completeCommand, ref targetOffset);
+        Protocol.Serialize(this.fragmentOffset, this.completeCommand, ref targetOffset);
+      }
+      if (count > 0)
+        Buffer.BlockCopy((Array) this.Payload, 0, (Array) this.completeCommand, dstOffset, count);
+      this.Payload = (byte[]) null;
+      return this.completeCommand;
+    }
+
+    public int CompareTo(NCommand other)
+    {
+      if (((int) this.commandFlags & 1) != 0)
+        return this.reliableSequenceNumber - other.reliableSequenceNumber;
+      return this.unreliableSequenceNumber - other.unreliableSequenceNumber;
+    }
+
+    public override string ToString()
+    {
+      if ((int) this.commandType == 1)
+        return string.Format("NC({0}|{1} ack s#/time {2}/{3})", (object) this.commandChannelID, (object) this.commandType, (object) this.ackReceivedReliableSequenceNumber, (object) this.ackReceivedSentTime);
+      return string.Format("NC({0}|{1} r/u: {2}/{3} st/r#/rt:{4}/{5}/{6})", (object) this.commandChannelID, (object) this.commandType, (object) this.reliableSequenceNumber, (object) this.unreliableSequenceNumber, (object) this.commandSentTime, (object) this.commandSentCount, (object) this.timeoutTime);
+    }
+  }
 }

@@ -1,4 +1,4 @@
 ﻿namespace ExitGames.Client.Photon
 {
-    public delegate byte[] SerializeMethod(object customObject);
+  public delegate byte[] SerializeMethod(object customObject);
 }
