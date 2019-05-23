@@ -1,0 +1,98 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="3.5" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!--Project was exported from assembly: D:\Development\Attack on Titan\Assemblies\Photon3Unity3D.dll-->
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{87B0F41C-E30E-4736-B3B6-DFA2AE4D14BE}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AssemblyName>Photon3Unity3D</AssemblyName>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <ApplicationVersion>4.0.0.4</ApplicationVersion>
+    <FileAlignment>512</FileAlignment>
+    <RootNamespace>ExitGames.Client.Photon</RootNamespace>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="UnityEngine">
+      <HintPath>lib\UnityEngine.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Photon\SocketServer\Security\OakleyGroups.cs" />
+    <Compile Include="Photon\SocketServer\Security\DiffieHellmanCryptoProvider.cs" />
+    <Compile Include="Photon\SocketServer\Numeric\BigInteger.cs" />
+    <Compile Include="Hashtable.cs" />
+    <Compile Include="DictionaryEntryEnumerator.cs" />
+    <Compile Include="SupportClass.cs" />
+    <Compile Include="StatusCode.cs" />
+    <Compile Include="IPhotonPeerListener.cs" />
+    <Compile Include="PeerStateValue.cs" />
+    <Compile Include="ConnectionProtocol.cs" />
+    <Compile Include="DebugLevel.cs" />
+    <Compile Include="PhotonPeer.cs" />
+    <Compile Include="PhotonCodes.cs" />
+    <Compile Include="PeerBase.cs" />
+    <Compile Include="EnetPeer.cs" />
+    <Compile Include="EnetChannel.cs" />
+    <Compile Include="NCommand.cs" />
+    <Compile Include="TPeer.cs" />
+    <Compile Include="InvocationCache.cs" />
+    <Compile Include="OperationRequest.cs" />
+    <Compile Include="OperationResponse.cs" />
+    <Compile Include="EventData.cs" />
+    <Compile Include="SerializeMethod.cs" />
+    <Compile Include="DeserializeMethod.cs" />
+    <Compile Include="CustomType.cs" />
+    <Compile Include="Protocol.cs" />
+    <Compile Include="PhotonSocketState.cs" />
+    <Compile Include="PhotonDisconnectCause.cs" />
+    <Compile Include="PhotonSocketError.cs" />
+    <Compile Include="IPhotonSocket.cs" />
+    <Compile Include="SocketUdp.cs" />
+    <Compile Include="SocketTcp.cs" />
+    <Compile Include="SocketUdpNativeStatic.cs" />
+    <Compile Include="SocketUdpNativeDynamic.cs" />
+    <Compile Include="SimulationItem.cs" />
+    <Compile Include="NetworkSimulationSet.cs" />
+    <Compile Include="TrafficStatsGameLevel.cs" />
+    <Compile Include="TrafficStats.cs" />
+    <Compile Include="HttpBase3.cs" />
+    <Compile Include="GpType.cs" />
+    <Compile Include="PingNativeDynamic.cs" />
+    <Compile Include="PingNativeStatic.cs" />
+    <Compile Include="PingWindowsStore.cs" />
+    <Compile Include="PingMono.cs" />
+    <Compile Include="PhotonPing.cs" />
+    <Compile Include="Lite\LiteEventCode.cs" />
+    <Compile Include="Lite\LiteEventKey.cs" />
+    <Compile Include="Lite\LiteOpCode.cs" />
+    <Compile Include="Lite\LiteOpKey.cs" />
+    <Compile Include="Lite\LitePropertyTypes.cs" />
+    <Compile Include="Lite\EventCaching.cs" />
+    <Compile Include="Lite\ReceiverGroup.cs" />
+    <Compile Include="Lite\LitePeer.cs" />
+    <Compile Include="AssemblyInfo.cs" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>
