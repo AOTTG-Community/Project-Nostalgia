@@ -4,6 +4,7 @@
     <AssemblyName>Photon3Unity3D</AssemblyName>
     <TargetFramework>net35</TargetFramework>
     <RootNamespace />
+    <OutputPath>..\Build\Photon</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
