@@ -10,10 +10,10 @@ public class BTN_choose_human : MonoBehaviour
         int num2 = 0;
         foreach (PhotonPlayer player in PhotonNetwork.playerList)
         {
-            if (((int)player.customProperties[PhotonPlayerProperty.isTitan]) == 1)
+            if (((int) player.customProperties[PhotonPlayerProperty.isTitan]) == 1)
             {
                 num++;
-                if ((bool)player.customProperties[PhotonPlayerProperty.dead])
+                if ((bool) player.customProperties[PhotonPlayerProperty.dead])
                 {
                     num2++;
                 }
@@ -68,12 +68,6 @@ public class BTN_choose_human : MonoBehaviour
         hashtable2.Add(PhotonPlayerProperty.character, selection);
         Hashtable propertiesToSet = hashtable2;
         PhotonNetwork.player.SetCustomProperties(propertiesToSet);
-    }
-
-    private void Start()
-    {
-        GameObject.Find("PopupListCharacterHUMAN").GetComponent<UIPopupList>().items.Add("Zerros");
-
     }
 }
 
