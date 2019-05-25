@@ -32,7 +32,10 @@ namespace ExitGames.Client.Photon
 
     public IEnumerator<DictionaryEntry> GetEnumerator()
     {
-      return this.GetEnumerator();
+      return new DictionaryEntryEnumerator
+      (
+        ((IDictionary) this).GetEnumerator()
+      );;
     }
 
     public override string ToString()
